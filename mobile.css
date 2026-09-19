@@ -1,0 +1,148 @@
+/* ============================================================
+   麓山绘梦·纹鉴 — 手机端响应式样式 (mobile.css)
+   桌面端布局（三栏）保持不变，这里只在窄屏下重排为单栏 + 底部导航
+   ============================================================ */
+
+/* 通用触控优化 */
+* { -webkit-tap-highlight-color: transparent; }
+html, body { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+img { max-width: 100%; }
+
+/* 手机拍照按钮（仅移动端显示） */
+.mobile-camera-btn { display: none; }
+
+@media (max-width: 820px) {
+
+    /* ---------- 顶部导航 ---------- */
+    body { overflow: auto; }
+    .top-nav {
+        height: 52px; padding: 0 10px; gap: 8px;
+        padding-top: env(safe-area-inset-top);
+        height: calc(52px + env(safe-area-inset-top));
+    }
+    .logo span { font-size: 15px; }
+    .logo-icon { width: 28px; height: 28px; font-size: 15px; border-radius: 7px; }
+    .top-nav .search-bar { display: none; }   /* 手机端收起搜索，避免拥挤 */
+    .lang-switch { display: none; }
+    .user-avatar { display: none; }
+    .top-nav .icon-btn { width: 36px; height: 36px; }
+
+    /* ---------- 主布局：单栏 ---------- */
+    .main-layout {
+        display: block;
+        height: auto;
+        margin-top: calc(52px + env(safe-area-inset-top));
+        padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    }
+
+    /* ---------- 左侧栏 → 底部导航 ---------- */
+    .sidebar {
+        position: fixed;
+        left: 0; right: 0; bottom: 0; top: auto;
+        width: 100%;
+        height: calc(56px + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
+        flex-direction: row;
+        border-right: none;
+        border-top: 1px solid #2a2a40;
+        background: #15152a;
+        z-index: 150;
+        display: flex;
+        align-items: stretch;
+    }
+    .sidebar .sidebar-section { padding: 0; }
+    .sidebar .sidebar-section:not(:first-child),
+    .sidebar .history-section,
+    .sidebar .sidebar-title { display: none; }
+    .sidebar .sidebar-section:first-child { display: flex; flex: 1; }
+    .menu-item {
+        flex: 1;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 2px;
+        padding: 6px 2px;
+        border-radius: 0;
+        border-left: none;
+        position: relative;
+    }
+    .menu-item .icon { font-size: 19px; }
+    .menu-item span:not(.icon):not(.badge) { font-size: 11px; }
+    .menu-item.active { background: rgba(167,139,250,0.16); }
+    .menu-item.active::before { display: none; }
+    .menu-item .badge {
+        position: absolute; top: 4px; right: 50%; margin-right: -22px;
+        transform: none;
+    }
+
+    /* ---------- 中间内容区 ---------- */
+    .center-panel { padding: 12px; height: auto; overflow: visible; }
+    .panel { height: auto; }
+    .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .page-title { font-size: 18px; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .btn-row .btn { flex: 1 1 auto; min-height: 44px; font-size: 14px; }
+
+    /* ---------- 上传区 ---------- */
+    .upload-zone-liner { }
+    .upload-zone { padding: 28px 14px; border-style: dashed; }
+    .upload-zone-icon { font-size: 42px; }
+    .upload-zone-text { font-size: 15px; }
+    .upload-zone-hint { font-size: 12px; }
+    .mobile-camera-btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        margin-top: 14px; min-height: 46px; padding: 0 22px;
+        border-radius: 10px; border: none; cursor: pointer;
+        font-size: 15px; font-weight: 600; color: #fff;
+        background: linear-gradient(135deg, #a78bfa, #818cf8);
+    }
+    .preview-container { margin-top: 14px; }
+    .batch-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .recognizing-overlay { border-radius: 10px; }
+
+    /* ---------- 右侧详情 → 全屏弹层 ---------- */
+    .detail-panel {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100%; height: 100%;
+        z-index: 200;
+        transform: translateX(100%);
+        transition: transform .25s ease;
+        padding: 16px;
+        padding-top: calc(16px + env(safe-area-inset-top));
+        padding-bottom: calc(80px + env(safe-area-inset-bottom));
+        border-left: none;
+    }
+    .detail-panel.open { transform: translateX(0); }
+    .detail-hero { height: 160px; }
+    .detail-title { font-size: 18px; }
+
+    /* 详情关闭按钮（仅移动端，由 mobile.js 控制 .show） */
+    .detail-close { display: none; }
+    .detail-close.show {
+        display: flex; align-items: center; justify-content: center;
+        position: fixed; top: calc(12px + env(safe-area-inset-top)); right: 12px;
+        z-index: 210; width: 40px; height: 40px; border-radius: 50%;
+        background: rgba(0,0,0,0.55); color: #fff; border: none; font-size: 18px;
+    }
+
+    /* ---------- 表格（数据管理）横向滚动 ---------- */
+    .admin-toolbar { flex-wrap: wrap; gap: 8px; }
+    .admin-toolbar input, .admin-toolbar select { flex: 1 1 140px; min-height: 40px; }
+    .admin-table { display: block; overflow-x: auto; white-space: nowrap; font-size: 12px; }
+    .modal { width: 92%; max-height: 88vh; overflow-y: auto; }
+    .form-row { flex-direction: column; gap: 0; }
+    .form-input, .form-textarea { min-height: 42px; font-size: 15px; }
+
+    /* Top-3 候选更紧凑 */
+    .top3-item { padding: 10px 12px; }
+
+    /* 历史/收藏网格单列或两列 */
+    .history-page-grid, .favorites-grid { grid-template-columns: 1fr; gap: 10px; }
+}
+
+/* 极窄屏（小手机）再收紧 */
+@media (max-width: 380px) {
+    .batch-grid { grid-template-columns: repeat(2, 1fr); }
+    .logo span { font-size: 13px; }
+}

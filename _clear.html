@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>清缓存</title></head>
+<body style="background:#0f0f1e;color:#fff;font-family:sans-serif;padding:40px;">
+<h2>纹鉴 - 清缓存工具</h2>
+<p>1. 清空 localStorage（旧版特征缓存）</p>
+<p>2. 清空 IndexedDB（历史/收藏/纹样）</p>
+<p>3. Unregister Service Worker</p>
+<button onclick="doClear()" style="padding:12px 24px;font-size:16px;background:#a78bfa;color:#fff;border:none;border-radius:8px;cursor:pointer;">一键清缓存</button>
+<pre id="log" style="margin-top:20px;color:#0f0;font-size:14px;"></pre>
+<script>
+const log = (m) => { document.getElementById('log').textContent += m + '\n'; };
+async function doClear() {
+  try {
+    // 1. localStorage
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith('libFeatures_') || k === 'baiduKeys') {
+        log('删 localStorage: ' + k);
+        localStorage.removeItem(k);
+      }
+    });
+    // 2. IndexedDB
+    const dbs = await indexedDB.databases();
+    for (const d of dbs) {
+      log('删 IndexedDB: ' + d.name);
+      await new Promise(r => { const req = indexedDB.deleteDatabase(d.name); req.onsuccess = req.onerror = r; });
+    }
+    // 3. SW unregister
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (const r of regs) {
+      log('Unregister SW: ' + r.scope);
+      await r.unregister();
+    }
+    log('✅ 完成！现在请回到主页 Ctrl+Shift+R 硬刷新');
+  } catch (e) {
+    log('❌ ' + e.message);
+  }
+}
+</script>
+</body></html>

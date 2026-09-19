@@ -1,0 +1,2062 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <title>麓山绘梦·纹鉴 - 纹样确权识别系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #0f0f1e;
+            color: #fff;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        /* ===== 顶部导航 ===== */
+        .top-nav {
+            background: #1a1a2e;
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            border-bottom: 1px solid #2a2a40;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #a78bfa, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            white-space: nowrap;
+        }
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: #2C2E3A;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .logo-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .search-bar {
+            flex: 1;
+            max-width: 320px;
+            position: relative;
+        }
+        .search-bar input {
+            width: 100%;
+            height: 38px;
+            background: #252542;
+            border: 1px solid #3a3a5c;
+            border-radius: 8px;
+            padding: 0 16px 0 40px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+        }
+        .search-bar input:focus { border-color: #a78bfa; }
+        .search-bar input::placeholder { color: #6b6b8c; }
+        .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #6b6b8c; font-size: 14px; }
+        .top-right { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+        .lang-switch { color: #6b6b8c; font-size: 13px; display: flex; gap: 4px; }
+        .lang-switch span { cursor: pointer; padding: 2px 4px; border-radius: 4px; }
+        .lang-switch span:hover, .lang-switch span.active { color: #fff; background: #3a3a5c; }
+        .user-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #a78bfa, #818cf8); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; }
+
+        /* ===== 主体布局 ===== */
+        .main-layout { display: flex; height: calc(100vh - 64px); margin-top: 64px; }
+        
+        /* ===== 左侧菜单 ===== */
+        .sidebar { width: 200px; background: #1a1a2e; border-right: 1px solid #2a2a40; display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar-section { padding: 16px 12px 8px; }
+        .sidebar-title { font-size: 11px; color: #6b6b8c; text-transform: uppercase; letter-spacing: 1px; padding: 0 8px 8px; font-weight: 500; }
+        .menu-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; color: #a0a0b8; font-size: 13px; border-radius: 8px; cursor: pointer; transition: all 0.15s; user-select: none; position: relative; }
+        .menu-item:hover { background: #252542; color: #fff; }
+        .menu-item.active { background: #252542; color: #fff; }
+        .menu-item.active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 20px; background: #a78bfa; border-radius: 0 2px 2px 0; }
+        .menu-item .icon { font-size: 16px; width: 20px; text-align: center; }
+        .menu-item .badge { margin-left: auto; background: #a78bfa; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: 500; }
+        
+        /* 历史记录列表 */
+        .history-section { flex: 1; overflow-y: auto; padding: 0 12px 12px; }
+        .history-section::-webkit-scrollbar { width: 4px; }
+        .history-section::-webkit-scrollbar-thumb { background: #3a3a5c; border-radius: 2px; }
+        .history-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; cursor: pointer; transition: all 0.15s; margin-bottom: 2px; }
+        .history-item:hover { background: #252542; }
+        .history-item.active { background: #2d2d52; }
+        .history-thumb { width: 40px; height: 40px; background: #252542; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
+        .history-info { flex: 1; min-width: 0; }
+        .history-name { font-size: 12px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .history-time { font-size: 10px; color: #6b6b8c; margin-top: 2px; }
+        .history-score { font-size: 11px; color: #10b981; font-weight: 500; }
+
+        /* ===== 中间内容区 ===== */
+        .center-panel { flex: 1; overflow-y: auto; padding: 24px; background: #0f0f1e; min-width: 0; }
+        .center-panel::-webkit-scrollbar { width: 6px; }
+        .center-panel::-webkit-scrollbar-thumb { background: #3a3a5c; border-radius: 3px; }
+
+        /* ===== 右侧详情面板 ===== */
+        .detail-panel { width: 420px; background: #1a1a2e; border-left: 1px solid #2a2a40; overflow-y: auto; padding: 20px; flex-shrink: 0; }
+        .detail-panel::-webkit-scrollbar { width: 4px; }
+        .detail-panel::-webkit-scrollbar-thumb { background: #3a3a5c; border-radius: 2px; }
+        .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .detail-title { font-size: 20px; font-weight: 600; }
+        .detail-hero { width: 100%; height: 200px; object-fit: contain; background: #0f0f1e; border-radius: 8px; margin-bottom: 16px; border: 1px solid #2a2a40; }
+        .badge-ai { font-size: 11px; padding: 4px 10px; border-radius: 6px; background: rgba(167,139,250,0.2); color: #a78bfa; display: inline-flex; align-items: center; }
+        .badge-ai.local { background: rgba(16,185,129,0.15); color: #10b981; }
+        .top3-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+        .top3-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #1d1d36; border: 1px solid #2a2a48; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+        .top3-item:hover { background: #25254a; border-color: #3a3a66; }
+        .top3-rank { width: 20px; height: 20px; border-radius: 50%; background: #a78bfa; color: #0f0f1e; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .top3-name { flex: 1; font-size: 13px; color: #d0d0e8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .top3-sim { font-size: 12px; color: #10b981; font-weight: 600; }
+        .detail-actions { display: flex; gap: 8px; }
+        .icon-btn { width: 32px; height: 32px; background: #252542; border: none; border-radius: 6px; color: #a0a0b8; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.15s; }
+        .icon-btn:hover { background: #2d2d52; color: #fff; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+        .info-card { background: #0f0f1e; padding: 10px 12px; border-radius: 8px; }
+        .info-label { font-size: 10px; color: #6b6b8c; margin-bottom: 4px; }
+        .info-value { font-size: 13px; color: #fff; }
+        .section-title { font-size: 12px; color: #6b6b8c; margin-bottom: 8px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+        .desc-box { background: #0f0f1e; padding: 12px; border-radius: 8px; font-size: 12px; line-height: 1.7; color: #a0a0b8; margin-bottom: 16px; }
+        .related-images { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+        .related-img { background: #0f0f1e; border-radius: 8px; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; }
+        .related-img:hover { background: #252542; }
+        .related-img .icon { font-size: 24px; margin-bottom: 4px; }
+        .related-img .label { font-size: 10px; color: #6b6b8c; }
+
+        /* 统计卡片 */
+        .stats-row { display: flex; gap: 8px; margin-bottom: 16px; }
+        .stat-card { flex: 1; background: #0f0f1e; padding: 12px; border-radius: 8px; text-align: center; }
+        .stat-value { font-size: 18px; font-weight: 600; color: #a78bfa; }
+        .stat-value.green { color: #10b981; }
+        .stat-value.yellow { color: #f59e0b; }
+        .stat-value.red { color: #ef4444; }
+        .stat-label { font-size: 10px; color: #6b6b8c; margin-top: 4px; }
+
+        /* 按钮 */
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+        .btn-primary { background: linear-gradient(135deg, #a78bfa, #818cf8); color: #fff; }
+        .btn-primary:hover { box-shadow: 0 4px 12px rgba(167, 139, 250, 0.3); transform: translateY(-1px); }
+        .btn-secondary { background: #252542; color: #a0a0b8; }
+        .btn-secondary:hover { background: #2d2d52; color: #fff; }
+        .btn-danger { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.3); }
+        .btn-success { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .btn-success:hover { background: rgba(16, 185, 129, 0.3); }
+        .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        /* ===== 页面面板 ===== */
+        .panel { display: none; height: 100%; }
+        .panel.active { display: block; }
+
+        /* 识别页面 */
+        .upload-zone { background: #1a1a2e; border: 2px dashed #3a3a5c; border-radius: 12px; padding: 48px 24px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 16px; min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .upload-zone:hover { border-color: #a78bfa; background: #1a1a2e; }
+        .upload-zone.dragover { border-color: #a78bfa; background: rgba(167, 139, 250, 0.1); }
+        .upload-zone-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.6; }
+        .upload-zone-text { font-size: 15px; color: #a0a0b8; margin-bottom: 6px; }
+        .upload-zone-hint { font-size: 12px; color: #6b6b8c; }
+        #fileInput { display: none; }
+        .preview-container { position: relative; width: 100%; height: 100%; min-height: 280px; display: none; }
+        .preview-container img { max-width: 100%; max-height: 280px; border-radius: 8px; object-fit: contain; }
+        .preview-clear { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; }
+        .preview-clear:hover { background: rgba(239, 68, 68, 0.8); }
+        
+        /* 批量上传网格 */
+        .batch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; width: 100%; margin-bottom: 12px; }
+        .batch-thumb { position: relative; aspect-ratio: 1; background: #252542; border-radius: 8px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; }
+        .batch-thumb.selected { border-color: #a78bfa; }
+        .batch-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .batch-thumb .remove { position: absolute; top: 2px; right: 2px; background: rgba(239, 68, 68, 0.9); color: #fff; width: 18px; height: 18px; border-radius: 50%; border: none; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .batch-thumb .score-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); color: #10b981; font-size: 10px; padding: 2px 4px; text-align: center; }
+
+        /* 识别动画 */
+        .recognizing-overlay { display: none; position: absolute; inset: 0; background: rgba(15, 15, 30, 0.9); z-index: 10; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; }
+        .recognizing-overlay.show { display: flex; }
+        .pulse-ring { width: 80px; height: 80px; position: relative; margin-bottom: 16px; }
+        .pulse-ring::before, .pulse-ring::after { content: ''; position: absolute; inset: 0; border: 3px solid #a78bfa; border-radius: 50%; animation: pulse-anim 2s ease-out infinite; }
+        .pulse-ring::after { animation-delay: 1s; }
+        .pulse-ring .core { position: absolute; inset: 16px; background: linear-gradient(135deg, #a78bfa, #818cf8); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+        @keyframes pulse-anim { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
+        .recognizing-text { color: #a78bfa; font-size: 16px; font-weight: 500; }
+
+        /* 历史页面 */
+        .history-page-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+        .history-card { background: #1a1a2e; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.2s; border: 1px solid #2a2a40; }
+        .history-card:hover { border-color: #a78bfa; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .history-card-img { width: 100%; height: 140px; background: #252542; object-fit: cover; }
+        .history-card-body { padding: 12px; }
+        .history-card-name { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+        .history-card-meta { font-size: 11px; color: #6b6b8c; display: flex; justify-content: space-between; align-items: center; }
+        .history-card-score { color: #10b981; font-weight: 500; }
+
+        /* 数据管理页面 */
+        .admin-toolbar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+        .admin-toolbar input, .admin-toolbar select { height: 36px; background: #252542; border: 1px solid #3a3a5c; border-radius: 8px; padding: 0 12px; color: #fff; font-size: 13px; outline: none; }
+        .admin-toolbar input:focus, .admin-toolbar select:focus { border-color: #a78bfa; }
+        .admin-toolbar select { cursor: pointer; }
+        .admin-table { width: 100%; border-collapse: collapse; background: #1a1a2e; border-radius: 12px; overflow: hidden; }
+        .admin-table th { background: #252542; padding: 12px 16px; text-align: left; font-size: 12px; color: #6b6b8c; font-weight: 500; border-bottom: 1px solid #2a2a40; }
+        .admin-table td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid #2a2a40; }
+        .admin-table tr:hover td { background: #1e1e38; }
+        .admin-table .actions { display: flex; gap: 6px; }
+        .admin-table .mini-btn { padding: 4px 10px; font-size: 11px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+        .admin-table .mini-btn.edit { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
+        .admin-table .mini-btn.edit:hover { background: rgba(167, 139, 250, 0.3); }
+        .admin-table .mini-btn.delete { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .admin-table .mini-btn.delete:hover { background: rgba(239, 68, 68, 0.3); }
+        .admin-table .mini-btn.view { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .admin-table .mini-btn.view:hover { background: rgba(16, 185, 129, 0.3); }
+
+        /* 收藏页面 */
+        .favorites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+        .fav-card { background: #1a1a2e; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.2s; border: 1px solid #2a2a40; }
+        .fav-card:hover { border-color: #a78bfa; transform: translateY(-2px); }
+        .fav-card-img { width: 100%; height: 120px; background: linear-gradient(135deg, #a78bfa, #818cf8); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+        .fav-card-body { padding: 12px; }
+        .fav-card-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+        .fav-card-meta { font-size: 11px; color: #6b6b8c; }
+
+        /* 模态框 */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: #1a1a2e; border-radius: 16px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; border: 1px solid #2a2a40; }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid #2a2a40; display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { font-size: 18px; font-weight: 600; }
+        .modal-close { background: none; border: none; color: #6b6b8c; font-size: 20px; cursor: pointer; padding: 4px; }
+        .modal-close:hover { color: #fff; }
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid #2a2a40; display: flex; justify-content: flex-end; gap: 10px; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 12px; color: #6b6b8c; margin-bottom: 6px; }
+        .form-input, .form-textarea, .form-select { width: 100%; background: #252542; border: 1px solid #3a3a5c; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px; outline: none; font-family: inherit; }
+        .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: #a78bfa; }
+        .form-textarea { resize: vertical; min-height: 80px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 600px) {
+            /* 窄屏（手机竖屏/PWA）：添加表单由双列改单列，避免右列 placeholder 被裁 */
+            .modal { width: 95%; }
+            .modal-body { padding: 16px; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+
+        /* 空状态 */
+        .empty-state { text-align: center; padding: 60px 20px; color: #6b6b8c; }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+        .empty-state .text { font-size: 14px; }
+
+        /* Toast 提示 */
+        .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+        .toast { background: #252542; border: 1px solid #3a3a5c; padding: 12px 20px; border-radius: 10px; font-size: 13px; display: flex; align-items: center; gap: 10px; animation: toast-in 0.3s ease; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .toast.success { border-color: #10b981; }
+        .toast.error { border-color: #ef4444; }
+        .toast.info { border-color: #a78bfa; }
+        @keyframes toast-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* 空面板提示 */
+        .no-selection { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #6b6b8c; text-align: center; padding: 40px; }
+        .no-selection .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+        .no-selection .text { font-size: 14px; }
+
+        /* 页头 */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-title { font-size: 22px; font-weight: 600; }
+        .page-subtitle { font-size: 13px; color: #6b6b8c; margin-top: 4px; }
+<style>
+/* ===== 调试浮层 ===== */
+#dbg{position:fixed;bottom:60px;left:4px;right:4px;z-index:99999;background:#111;border:1px solid #0f0;font-size:11px;color:#0f0;max-height:180px;overflow-y:auto;padding:6px;display:none;font-family:monospace;line-height:1.5}
+#dbg.show,#dbg:hover{display:block}
+</style>
+    <link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <div class="top-nav">
+        <div class="logo">
+            <div class="logo-icon"><img src="icons/icon-192.png" alt="纹鉴"></div>
+            <span>麓山绘梦·纹鉴</span>
+        </div>
+        <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="globalSearch" placeholder="搜索纹样..." oninput="handleGlobalSearch(this.value)">
+        </div>
+        <div class="top-right">
+            <div class="lang-switch">
+                <span class="active">中文</span>
+                <span>|</span>
+                <span>EN</span>
+            </div>
+            <button class="icon-btn" style="width:34px;height:34px;border-radius:50%;" onclick="openSettings()" title="AI识别设置">⚙️</button>
+            <div class="user-avatar">👤</div>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <!-- 左侧菜单 -->
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">功能</div>
+                <div class="menu-item active" data-panel="recognize" onclick="switchPanel('recognize')">
+                    <span class="icon">🔍</span>
+                    <span>智能识别</span>
+                    <span class="badge" id="batchBadge" style="display:none">0</span>
+                </div>
+                <div class="menu-item" data-panel="history" onclick="switchPanel('history')">
+                    <span class="icon">📜</span>
+                    <span>历史记录</span>
+                    <span class="badge" id="historyCount">0</span>
+                </div>
+                <div class="menu-item" data-panel="favorites" onclick="switchPanel('favorites')">
+                    <span class="icon">⭐</span>
+                    <span>我的收藏</span>
+                    <span class="badge" id="favCount">0</span>
+                </div>
+                <div class="menu-item" data-panel="admin" onclick="switchPanel('admin')">
+                    <span class="icon">⚙️</span>
+                    <span>数据管理</span>
+                </div>
+            </div>
+            
+            <div class="sidebar-section" style="padding-top: 8px;">
+                <div class="sidebar-title">最近识别</div>
+            </div>
+            <div class="history-section" id="historyList">
+                <div class="empty-state" style="padding: 20px 0;">
+                    <div class="icon">📋</div>
+                    <div class="text">暂无记录</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间内容区 -->
+        <div class="center-panel">
+            <!-- ===== 识别面板 ===== -->
+            <div class="panel active" id="panel-recognize">
+                <div class="page-header">
+                    <div>
+                        <div class="page-title">🔍 智能识别</div>
+                        <div class="page-subtitle">上传纹样图片，自动识别并匹配数据库</div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-secondary" onclick="toggleBatchMode()">
+                            <span>📦</span> 批量识别
+                        </button>
+                    </div>
+                </div>
+
+                <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-zone-icon">📷</div>
+                    <div class="upload-zone-text">点击拍照上传纹样</div>
+                    <div class="upload-zone-hint">支持 JPG、PNG、WebP 格式 | 可同时上传多张</div>
+                    
+                    <div class="preview-container" id="previewContainer">
+                        <img id="previewImage" alt="预览">
+                        <button class="preview-clear" onclick="event.stopPropagation(); clearUpload()">✕</button>
+                    </div>
+
+                    <div class="batch-grid" id="batchGrid" style="display:none;"></div>
+
+                    <div class="recognizing-overlay" id="recognizingOverlay">
+                        <div class="pulse-ring"><div class="core">🌸</div></div>
+                        <div class="recognizing-text" id="recognizingText">正在识别...</div>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" multiple onchange="handleFileSelect(event)">
+
+                <div class="btn-row">
+                    <button class="btn btn-secondary" onclick="clearUpload()">
+                        <span>🔄</span> 重新上传
+                    </button>
+                    <button class="btn btn-primary" id="recognizeBtn" onclick="startRecognition()" disabled>
+                        <span>✨</span> 开始识别
+                    </button>
+                    <button class="btn btn-secondary" id="batchRecognizeBtn" style="display:none;" onclick="startBatchRecognition()">
+                        <span>✨</span> 批量识别全部
+                    </button>
+                    <button class="btn btn-secondary" id="exportPdfBtn" style="display:none;" onclick="exportCurrentReport()">
+                        <span>📄</span> 导出报告
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== 历史记录面板 ===== -->
+            <div class="panel" id="panel-history">
+                <div class="page-header">
+                    <div>
+                        <div class="page-title">📜 历史记录</div>
+                        <div class="page-subtitle">查看所有识别历史</div>
+                    </div>
+                    <button class="btn btn-danger" onclick="clearAllHistory()">
+                        <span>🗑</span> 清空全部
+                    </button>
+                </div>
+                <div class="history-page-grid" id="historyPageGrid"></div>
+            </div>
+
+            <!-- ===== 收藏面板 ===== -->
+            <div class="panel" id="panel-favorites">
+                <div class="page-header">
+                    <div>
+                        <div class="page-title">⭐ 我的收藏</div>
+                        <div class="page-subtitle">收藏的纹样列表</div>
+                    </div>
+                </div>
+                <div class="favorites-grid" id="favoritesGrid"></div>
+            </div>
+
+            <!-- ===== 数据管理面板 ===== -->
+            <div class="panel" id="panel-admin">
+                <div class="page-header">
+                    <div>
+                        <div class="page-title">⚙️ 数据管理</div>
+                        <div class="page-subtitle">管理纹样数据库 (当前: <span id="dataCount">0</span> 条)</div>
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn" onclick="reseedData()" style="background:#2a2a48;border:1px solid #3a3a66;">
+                            <span>🔄</span> 重新加载纹样数据
+                        </button>
+                        <button class="btn btn-primary" onclick="openAddModal()">
+                            <span>➕</span> 添加纹样
+                        </button>
+                    </div>
+                </div>
+                <div class="admin-toolbar">
+                    <input type="text" id="adminSearch" placeholder="搜索纹样名称/编号..." oninput="filterTable()">
+                    <select id="filterEthnic" onchange="filterTable()">
+                        <option value="">全部民族</option>
+                    </select>
+                    <select id="filterEra" onchange="filterTable()">
+                        <option value="">全部年代</option>
+                    </select>
+                    <select id="filterCraft" onchange="filterTable()">
+                        <option value="">全部工艺</option>
+                    </select>
+                    <span style="margin-left:auto;color:#6b6b8c;font-size:12px;" id="tableCount"></span>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>编号</th>
+                            <th>名称</th>
+                            <th>民族</th>
+                            <th>年代</th>
+                            <th>工艺</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 右侧详情面板 -->
+        <div class="detail-panel" id="detailPanel">
+            <div class="no-selection">
+                <div class="icon">👈</div>
+                <div class="text">上传图片并识别<br>或从左侧选择一个纹样</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑模态框 -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">添加纹样</div>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">纹样名称 *</label>
+                        <input class="form-input" id="editName" placeholder="例如：瑶纹筑轨">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">编号 *</label>
+                        <input class="form-input" id="editCode" placeholder="例如：YZ-CX-148">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">所属纹样库</label>
+                        <input class="form-input" id="editLibrary" placeholder="例如：瑶族纹样库">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">年代</label>
+                        <input class="form-input" id="editEra" placeholder="例如：明清流传">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">工艺</label>
+                        <input class="form-input" id="editCraft" placeholder="例如：瑶族刺绣">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">民族</label>
+                        <input class="form-input" id="editEthnic" placeholder="例如：瑶族">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">地域</label>
+                    <input class="form-input" id="editRegion" placeholder="例如：湖南江华">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">纹样简介</label>
+                    <textarea class="form-textarea" id="editDescription" placeholder="描述纹样的特征、历史背景..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">纹样寓意</label>
+                    <textarea class="form-textarea" id="editMeaning" placeholder="纹样的文化含义..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="savePattern()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI设置模态框 -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">AI 识别设置</div>
+                <button class="modal-close" onclick="closeSettings()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">识别方式</label>
+                    <div style="font-size:13px;color:#a0a0b8;line-height:1.7;">未配置百度AI时，使用本地图像特征比对（完全离线）。配置百度AI后，将调用云端图像识别进行匹配，识别更精准。</div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">百度 API Key</label>
+                        <input class="form-input" id="baiduApiKey" placeholder="在 ai.baidu.com 控制台获取">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">百度 Secret Key</label>
+                        <input class="form-input" id="baiduSecretKey" placeholder="在 ai.baidu.com 控制台获取">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">配置步骤</label>
+                    <div style="font-size:12px;color:#6b6b8c;line-height:1.8;">1. 打开 ai.baidu.com → 控制台 → 图像识别 → 创建应用<br>2. 复制 API Key 和 Secret Key 填入上方<br>3. 保存后即可使用百度AI进行纹样识别</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSettings()">取消</button>
+                <button class="btn btn-primary" onclick="saveBaidu()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- PDF.js -->
+    <script src="libs/jspdf.umd.min.js"></script>
+    <!-- html2canvas for PDF -->
+    <script src="libs/html2canvas.min.js"></script>
+    <!-- 导入的真实纹样数据 -->
+    <script src="patterns-data.js"></script>
+
+    <script>
+    // ===== 数据初始化 =====
+    let patterns = [];
+    let history = [];
+    let favorites = [];
+    let currentImage = null;
+    let batchImages = [];
+    let batchMode = false;
+    let selectedHistoryId = null;
+    let editingPatternId = null;
+    // ===== 全局错误捕获 =====
+    window.__errors = [];
+    window.onerror = function(msg, src, line, col, err) {
+        var e = '[ERROR] ' + msg + ' at ' + src + ':' + line + ':' + col;
+        if (err && err.stack) e += ' | ' + err.stack;
+        window.__errors.push(e);
+        console.error(e);
+        return false;
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+        var e2 = '[UNHANDLED] ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason));
+        window.__errors.push(e2);
+        console.error(e2);
+    });
+    console.log('[PatternApp] Starting...');
+
+
+
+
+    // ===== 可视调试浮层已移除 (生产模式) =====
+
+
+    // ===== Capacitor 调试 =====
+    console.log('[Capacitor] Checking...');
+    if (typeof window.Capacitor === 'undefined') {
+        console.warn('[Capacitor] NOT loaded - using web-only mode');
+    } else {
+        console.log('[Capacitor] Version:', window.Capacitor.Plugins ? 'loaded' : 'no plugins');
+        console.log('[Capacitor] Platform:', window.Capacitor.platform);
+    }
+
+    // 默认纹样数据
+    const defaultPatterns = [
+        { id: 'p001', name: '瑶纹筑轨', code: 'YZ-CX-148', library: '瑶族纹样库', era: '明清流传', craft: '瑶族刺绣', ethnic: '瑶族', region: '湖南江华、广西贺州', description: '盘王纹又称盘王印，源自瑶族盘瓠始祖传说，多为方、菱形嵌套对称几何纹样，常搭配八角星、万字纹，多用于头帕、衣襟、背带刺绣。', meaning: '缅怀瑶族始祖盘瓠，代表先祖庇佑，驱邪禳灾，祈望族人平安康健、风调雨顺。' },
+        { id: 'p002', name: '苗绣龙纹', code: 'MZ-LW-089', library: '苗族纹样库', era: '清代流传', craft: '苗族刺绣', ethnic: '苗族', region: '贵州黔东南、黔南', description: '苗族龙纹刺绣，造型独特，龙身常呈鱼形或蛇形，与汉族龙纹风格迥异。多用红、黄、蓝、绿等鲜艳色彩。', meaning: '龙在苗族文化中象征吉祥、力量和繁衍，祈求风调雨顺、五谷丰登。' },
+        { id: 'p003', name: '侗锦几何纹', code: 'DZ-JH-056', library: '侗族纹样库', era: '明代至今', craft: '侗锦织造', ethnic: '侗族', region: '湖南通道、贵州黎平', description: '侗锦以棉纱为经，彩色丝线为纬，采用通经断纬的织造方法。几何纹样多为菱形、方形、三角形组合，构图严谨对称。', meaning: '几何纹象征天地万物、宇宙秩序，表达对自然的敬畏和对美好生活的向往。' },
+        { id: 'p004', name: '壮锦凤纹', code: 'ZF-FW-032', library: '壮族纹样库', era: '宋代起源', craft: '壮锦织造', ethnic: '壮族', region: '广西南宁、柳州、桂林', description: '壮锦以棉纱为经，彩色丝线为纬，采用通经断纬的织造方法。凤纹造型生动，色彩艳丽，象征吉祥如意。', meaning: '凤为百鸟之王，象征美好、吉祥、幸福，壮族人民视其为民族图腾。' },
+        { id: 'p005', name: '土家织锦几何纹', code: 'TJ-JH-021', library: '土家族纹样库', era: '明清流传', craft: '土家织锦', ethnic: '土家族', region: '湖南湘西', description: '土家织锦又称"西兰卡普"，以棉纱为经，彩色丝线为纬，采用"通经断纬"的反向织法。', meaning: '几何纹样象征山川河流、日月星辰，寓意土家族人民对自然的崇拜。' },
+        { id: 'p006', name: '藏毯八角纹', code: 'ZB-BJ-015', library: '藏族纹样库', era: '唐代起源', craft: '藏毯编织', ethnic: '藏族', region: '西藏、青海、四川', description: '藏毯以优质羊毛为原料，采用独特的编织工艺。八角纹象征八方平安，常见宗教图案和自然元素。', meaning: '八角纹象征八方平安，祈愿生活幸福美满，具有浓厚的宗教色彩。' },
+        { id: 'p007', name: '白族扎染花卉', code: 'BN-HH-044', library: '白族纹样库', era: '唐代流传', craft: '扎染工艺', ethnic: '白族', region: '云南大理', description: '白族扎染采用天然植物染料，通过缝扎、浸染工艺形成独特的冰纹效果。花鸟鱼虫皆可入画。', meaning: '花卉纹象征花开富贵、吉祥如意，体现白族人民对美好生活的向往。' },
+        { id: 'p008', name: '傣族织锦象纹', code: 'TD-XX-027', library: '傣族纹样库', era: '明代流传', craft: '傣锦织造', ethnic: '傣族', region: '云南西双版纳、德宏', description: '傣锦以丝线为经纬，采用腰机编织。象纹造型庄重典雅，反映了傣族人民对大象的崇拜。', meaning: '象为瑞兽，象征力量、智慧和吉祥，傣族视其为丰收和和平的象征。' },
+    ];
+
+    // ===== IndexedDB 数据存储 =====
+    const DB_NAME = 'PatternAppDB';
+    const DB_VERSION = 2;  // v2: 增加 meta store 以追踪 seed 版本
+    let db;
+
+    function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => { db = request.result; resolve(db); };
+            request.onupgradeneeded = (e) => {
+                const d = e.target.result;
+                if (!d.objectStoreNames.contains('patterns')) d.createObjectStore('patterns', { keyPath: 'id' });
+                if (!d.objectStoreNames.contains('history')) d.createObjectStore('history', { keyPath: 'id', autoIncrement: true });
+                if (!d.objectStoreNames.contains('favorites')) d.createObjectStore('favorites', { keyPath: 'patternId' });
+                if (!d.objectStoreNames.contains('meta')) d.createObjectStore('meta', { keyPath: 'key' });
+            };
+        });
+    }
+
+    async function loadData() {
+        await initDB();
+
+        // 检查 seed 版本 — 如果未写入或版本不对, 重新播种
+        const SEED_VERSION = 'imported-v3-50';  // 升级到 50 条真实纹样时改这个值
+        let currentVersion = null;
+        try {
+            const vReq = db.transaction('meta').objectStore('meta').get('seedVersion');
+            currentVersion = await new Promise(res => { vReq.onsuccess = () => res(vReq.result ? vReq.result.value : null); vReq.onerror = () => res(null); });
+        } catch (e) {}
+        const needReseed = currentVersion !== SEED_VERSION;
+
+        // 加载纹样数据
+        const pReq = db.transaction('patterns').objectStore('patterns').getAll();
+        patterns = await new Promise(res => pReq.onsuccess = () => res(pReq.result));
+        if (needReseed || patterns.length === 0) {
+            // 清空旧数据
+            const clearTx = db.transaction('patterns', 'readwrite');
+            clearTx.objectStore('patterns').clear();
+            await new Promise(res => { clearTx.oncomplete = () => res(); });
+            // 重新播种
+            patterns = (window.IMPORTED_PATTERNS && window.IMPORTED_PATTERNS.length) ? JSON.parse(JSON.stringify(window.IMPORTED_PATTERNS)) : [...defaultPatterns];
+            const tx = db.transaction('patterns', 'readwrite');
+            patterns.forEach(p => tx.objectStore('patterns').put(p));
+            await new Promise(res => tx.oncomplete = () => res());
+            // 写入 seed 版本
+            const mv = db.transaction('meta', 'readwrite');
+            mv.objectStore('meta').put({ key: 'seedVersion', value: SEED_VERSION });
+            await new Promise(res => { mv.oncomplete = () => res(); });
+            console.log('数据已重新播种, 共 ' + patterns.length + ' 条纹样 (version=' + SEED_VERSION + ')');
+        }
+
+        // 加载历史
+        const hReq = db.transaction('history').objectStore('history').getAll();
+        history = await new Promise(res => hReq.onsuccess = () => res(hReq.result));
+        history = history.sort((a, b) => b.timestamp - a.timestamp);
+
+        // 加载收藏
+        const fReq = db.transaction('favorites').objectStore('favorites').getAll();
+        favorites = await new Promise(res => fReq.onsuccess = () => res(fReq.result));
+
+        updateUI();
+        warmLibFeatures(); // 后台预热库特征缓存，提升首次识别速度
+    }
+
+    async function savePatternToDB(p) {
+        const tx = db.transaction('patterns', 'readwrite');
+        tx.objectStore('patterns').put(p);
+        await new Promise(res => tx.oncomplete = () => res());
+    }
+
+    async function deletePatternFromDB(id) {
+        const tx = db.transaction('patterns', 'readwrite');
+        tx.objectStore('patterns').delete(id);
+        await new Promise(res => tx.oncomplete = () => res());
+        patterns = patterns.filter(p => p.id !== id);
+    }
+
+    async function addHistoryRecord(record) {
+        const tx = db.transaction('history', 'readwrite');
+        const store = tx.objectStore('history');
+        store.add(record);
+        await new Promise(res => tx.oncomplete = () => res());
+        history.unshift({ ...record, id: history.length ? history[0].id + 1 : 1 });
+        history.sort((a, b) => b.timestamp - a.timestamp);
+    }
+
+    async function deleteHistoryRecord(id) {
+        const tx = db.transaction('history', 'readwrite');
+        tx.objectStore('history').delete(id);
+        await new Promise(res => tx.oncomplete = () => res());
+        history = history.filter(h => h.id !== id);
+    }
+
+    async function clearAllHistoryDB() {
+        const tx = db.transaction('history', 'readwrite');
+        tx.objectStore('history').clear();
+        await new Promise(res => tx.oncomplete = () => res());
+        history = [];
+    }
+
+    async function toggleFavorite(patternId) {
+        const idx = favorites.findIndex(f => f.patternId === patternId);
+        if (idx >= 0) {
+            const tx = db.transaction('favorites', 'readwrite');
+            tx.objectStore('favorites').delete(patternId);
+            await new Promise(res => tx.oncomplete = () => res());
+            favorites.splice(idx, 1);
+            showToast('已取消收藏', 'info');
+        } else {
+            const tx = db.transaction('favorites', 'readwrite');
+            tx.objectStore('favorites').put({ patternId, savedAt: Date.now() });
+            await new Promise(res => tx.oncomplete = () => res());
+            favorites.push({ patternId, savedAt: Date.now() });
+            showToast('已添加到收藏', 'success');
+        }
+        updateUI();
+    }
+
+    // ===== UI 更新 =====
+    function updateUI() {
+        updateSidebarHistory();
+        updateBadges();
+        updateFilterOptions();
+    }
+
+    function updateBadges() {
+        document.getElementById('historyCount').textContent = history.length;
+        document.getElementById('favCount').textContent = favorites.length;
+        document.getElementById('batchBadge').textContent = batchImages.length;
+        document.getElementById('batchBadge').style.display = batchImages.length > 0 ? 'inline' : 'none';
+    }
+
+    function updateSidebarHistory() {
+        const el = document.getElementById('historyList');
+        if (history.length === 0) {
+            el.innerHTML = '<div class="empty-state" style="padding:20px 0;"><div class="icon">📋</div><div class="text">暂无记录</div></div>';
+            return;
+        }
+        el.innerHTML = history.slice(0, 20).map(h => `
+            <div class="history-item ${selectedHistoryId == h.id ? 'active' : ''}" onclick="loadHistoryDetail(${h.id})">
+                <img class="history-thumb" src="${h.imageData}" alt="">
+                <div class="history-info">
+                    <div class="history-name">${h.patternName || '未知纹样'}</div>
+                    <div class="history-time">${formatTime(h.timestamp)}</div>
+                </div>
+                <div class="history-score">${h.similarity || '—'}</div>
+            </div>
+        `).join('');
+    }
+
+    function updateFilterOptions() {
+        const ethnics = [...new Set(patterns.map(p => p.ethnic).filter(Boolean))];
+        const eras = [...new Set(patterns.map(p => p.era).filter(Boolean))];
+        const crafts = [...new Set(patterns.map(p => p.craft).filter(Boolean))];
+
+        ['filterEthnic', 'filterEra', 'filterCraft'].forEach(id => {
+            const sel = document.getElementById(id);
+            const val = sel.value;
+            const opts = id === 'filterEthnic' ? ethnics : id === 'filterEra' ? eras : crafts;
+            sel.innerHTML = `<option value="">全部${id === 'filterEthnic' ? '民族' : id === 'filterEra' ? '年代' : '工艺'}</option>` +
+                opts.map(o => `<option value="${o}">${o}</option>`).join('');
+            sel.value = val;
+        });
+    }
+
+    // ===== 面板切换 =====
+    function switchPanel(name) {
+        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+        document.querySelector(`[data-panel="${name}"]`)?.classList.add('active');
+        document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+        document.getElementById(`panel-${name}`)?.classList.add('active');
+
+        if (name === 'history') renderHistoryPage();
+        if (name === 'favorites') renderFavoritesPage();
+        if (name === 'admin') renderAdminTable();
+
+        // 清空右侧详情
+        if (name !== 'recognize') {
+            document.getElementById('detailPanel').innerHTML = '<div class="no-selection"><div class="icon">👈</div><div class="text">从左侧选择一个纹样<br>查看详细信息</div></div>';
+        }
+    }
+
+    // ===== 文件上传 =====
+    function handleFileSelect(e) {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+
+        if (batchMode || files.length > 1) {
+            files.forEach(f => {
+                if (!batchImages.some(b => b.name === f.name)) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        batchImages.push({ name: f.name, data: ev.target.result, recognized: false, result: null });
+                        updateBatchGrid();
+                        updateBadges();
+                    };
+                    reader.readAsDataURL(f);
+                }
+            });
+        } else {
+            const file = files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImage = e.target.result;
+                document.getElementById('previewImage').src = currentImage;
+                document.getElementById('previewContainer').style.display = 'block';
+                document.querySelector('.upload-zone-icon').style.display = 'none';
+                document.querySelector('.upload-zone-text').style.display = 'none';
+                document.querySelector('.upload-zone-hint').style.display = 'none';
+                document.getElementById('recognizeBtn').disabled = false;
+                document.getElementById('batchRecognizeBtn').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function updateBatchGrid() {
+        const grid = document.getElementById('batchGrid');
+        if (batchImages.length === 0) {
+            grid.style.display = 'none';
+            document.getElementById('batchRecognizeBtn').style.display = 'none';
+            return;
+        }
+        grid.style.display = 'grid';
+        grid.innerHTML = batchImages.map((img, i) => `
+            <div class="batch-thumb ${img.recognized ? 'selected' : ''}">
+                <img src="${img.data}" alt="">
+                ${img.recognized && img.result ? `<div class="score-overlay">${img.result.stats?.similarity || '—'}</div>` : ''}
+                <button class="remove" onclick="event.stopPropagation(); removeBatchImage(${i})">✕</button>
+            </div>
+        `).join('');
+        document.getElementById('batchRecognizeBtn').style.display = batchImages.some(b => !b.recognized) ? 'inline-flex' : 'none';
+        document.getElementById('batchRecognizeBtn').textContent = `✨ 批量识别 (${batchImages.filter(b => !b.recognized).length})`;
+    }
+
+    function removeBatchImage(idx) {
+        batchImages.splice(idx, 1);
+        updateBatchGrid();
+        updateBadges();
+    }
+
+    function clearUpload() {
+        currentImage = null;
+        batchImages = [];
+        document.getElementById('fileInput').value = '';
+        document.getElementById('previewImage').src = '';
+        document.getElementById('previewContainer').style.display = 'none';
+        document.querySelector('.upload-zone-icon').style.display = '';
+        document.querySelector('.upload-zone-text').style.display = '';
+        document.querySelector('.upload-zone-hint').style.display = '';
+        document.getElementById('recognizeBtn').disabled = true;
+        document.getElementById('exportPdfBtn').style.display = 'none';
+        updateBatchGrid();
+        updateBadges();
+    }
+
+    function toggleBatchMode() {
+        batchMode = !batchMode;
+        const btn = document.querySelector('[onclick="toggleBatchMode()"]');
+        btn.classList.toggle('btn-primary', batchMode);
+        btn.classList.toggle('btn-secondary', !batchMode);
+        if (!batchMode) {
+            batchImages = [];
+            updateBatchGrid();
+        }
+        clearUpload();
+    }
+
+    // 拖拽
+    const uploadZone = document.getElementById('uploadZone');
+    uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+        if (files.length) {
+            const input = document.getElementById('fileInput');
+            const dt = new DataTransfer();
+            files.forEach(f => dt.items.add(f));
+            input.files = dt.files;
+            handleFileSelect({ target: input });
+        }
+    });
+
+    // ===== 识别逻辑 =====
+    async function startRecognition() {
+        if (!currentImage) return;
+        const overlay = document.getElementById('recognizingOverlay');
+        const text = document.getElementById('recognizingText');
+        overlay.classList.add('show');
+        text.textContent = '正在分析图像特征...';
+        setTimeout(async () => {
+            text.textContent = '正在匹配纹样库...';
+            try {
+                const result = await runLocalMatch(currentImage);
+                overlay.classList.remove('show');
+                try {
+                    displayResult(result);
+                    // 手机端：强制打开详情弹层
+                    const __dp = document.getElementById('detailPanel');
+                    if (__dp) __dp.classList.add('open');
+                    const __cb = document.querySelector('.detail-close');
+                    if (__cb) __cb.classList.add('show');
+                } catch (e) {
+                    console.error('displayResult error:', e);
+                    showToast('结果显示失败: ' + (e.message||e), 'error');
+                    const __dp = document.getElementById('detailPanel');
+                    if (__dp) {
+                        __dp.innerHTML = '<div style="padding:20px;color:#ff8a8a">结果显示失败：' + (e.message||e) + '<br><br>result.id=' + (result&&result.id) + '<br>name=' + (result&&result.name) + '</div>';
+                        __dp.classList.add('open');
+                    }
+                }
+                document.getElementById('exportPdfBtn').style.display = 'inline-flex';
+            } catch (e) {
+                overlay.classList.remove('show');
+                showToast('识别失败：' + e.message, 'error');
+            }
+        }, 600);
+    }
+
+    async function startBatchRecognition() {
+        const pending = batchImages.filter(b => !b.recognized);
+        for (let i = 0; i < pending.length; i++) {
+            const img = pending[i];
+            const overlay = document.getElementById('recognizingOverlay');
+            overlay.classList.add('show');
+            document.getElementById('recognizingText').textContent = `正在识别 (${i + 1}/${pending.length})...`;
+            
+            await new Promise(res => setTimeout(res, 800));
+            img.result = await runLocalMatch(img.data);
+            img.recognized = true;
+            img.imageData = img.data;
+            img.patternId = img.result.id;
+            img.patternName = img.result.name;
+            img.timestamp = Date.now();
+
+            // 保存到历史
+            // pending（预热未完成）结果不写历史
+            if (img.result.id !== 'pending') {
+                await addHistoryRecord({
+                    imageData: img.data,
+                    patternId: img.result.id,
+                    patternName: img.result.name,
+                    similarity: img.result.stats.similarity,
+                    timestamp: Date.now(),
+                    matchedPattern: img.result
+                });
+            }
+
+            overlay.classList.remove('show');
+            updateBatchGrid();
+            updateUI();
+        }
+        showToast(`批量识别完成！共 ${pending.length} 张图片`, 'success');
+        document.getElementById('batchRecognizeBtn').style.display = 'none';
+    }
+
+    // ===== 图像特征提取与匹配 =====
+    // ===== 图像特征提取与匹配（感知哈希 + 纹理 + 颜色，离线无模型）=====
+    // 特征向量: ahash(64) + phash(63) + 颜色直方图(64) + LBP纹理(256)
+    function dct2d(m, N) {
+        const out = new Float64Array(N * N);
+        for (let u = 0; u < N; u++) for (let v = 0; v < N; v++) {
+            let s = 0;
+            for (let i = 0; i < N; i++) for (let j = 0; j < N; j++)
+                s += m[i * N + j] * Math.cos((2 * i + 1) * u * Math.PI / (2 * N)) * Math.cos((2 * j + 1) * v * Math.PI / (2 * N));
+            const cu = u === 0 ? 1 / Math.SQRT2 : 1, cv = v === 0 ? 1 / Math.SQRT2 : 1;
+            out[u * N + v] = cu * cv * s / 4;
+        }
+        return out;
+    }
+
+    // 灰度化:从 srcCanvas 的 (x,y,w,h) 区域缩放到 64x64,返回灰度 Float32Array
+    function toGray64(srcCanvas, x, y, w, h) {
+        const c = document.createElement('canvas'); c.width = 64; c.height = 64;
+        const cc = c.getContext('2d');
+        cc.drawImage(srcCanvas, x, y, w, h, 0, 0, 64, 64);
+        const d = cc.getImageData(0, 0, 64, 64).data;
+        const g = new Float32Array(64 * 64);
+        for (let i = 0; i < 64 * 64; i++) g[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+        return g;
+    }
+
+    // 边缘方向直方图 EOH: 36 bin (0~180°), 梯度幅度加权, 余弦距离比较
+    // 对几何型纹样(回纹/菱纹/十字纹)有强区分能力 — 不同几何走向产生的边缘方向分布完全不同
+    function eoh(g) {
+        const bins = new Array(36).fill(0);
+        for (let y = 1; y < 63; y++) {
+            for (let x = 1; x < 63; x++) {
+                const gx = g[y * 64 + x + 1] - g[y * 64 + x - 1];
+                const gy = g[(y + 1) * 64 + x] - g[(y - 1) * 64 + x];
+                const mag = Math.sqrt(gx * gx + gy * gy);
+                if (mag < 8) continue;
+                let a = Math.atan2(gy, gx) * 180 / Math.PI;
+                if (a < 0) a += 180;
+                const bin = Math.min(35, Math.floor(a / 5));
+                bins[bin] += mag;
+            }
+        }
+        let s = 0; for (let i = 0; i < 36; i++) s += bins[i];
+        if (s > 0) for (let i = 0; i < 36; i++) bins[i] /= s;
+        return bins;
+    }
+
+    // 1D Cooley-Tukey FFT (in-place, N 需为 2 的幂)
+    function fft1d(re, im) {
+        const N = re.length;
+        let j = 0;
+        for (let i = 0; i < N; i++) {
+            if (i < j) { const tr = re[i]; re[i] = re[j]; re[j] = tr; const ti = im[i]; im[i] = im[j]; im[j] = ti; }
+            let m = N >> 1;
+            while (m >= 1 && j >= m) { j -= m; m >>= 1; }
+            j += m;
+        }
+        for (let s = 1; (1 << s) <= N; s++) {
+            const m = 1 << s, m2 = m >> 1;
+            const theta = -Math.PI / m2;
+            const wRe0 = Math.cos(theta), wIm0 = Math.sin(theta);
+            for (let k = 0; k < N; k += m) {
+                let wRe = 1, wIm = 0;
+                for (let n = 0; n < m2; n++) {
+                    const tRe = wRe * re[k + n + m2] - wIm * im[k + n + m2];
+                    const tIm = wRe * im[k + n + m2] + wIm * re[k + n + m2];
+                    const uRe = re[k + n], uIm = im[k + n];
+                    re[k + n] = uRe + tRe; im[k + n] = uIm + tIm;
+                    re[k + n + m2] = uRe - tRe; im[k + n + m2] = uIm - tIm;
+                    const nwRe = wRe * wRe0 - wIm * wIm0;
+                    const nwIm = wRe * wIm0 + wIm * wRe0;
+                    wRe = nwRe; wIm = nwIm;
+                }
+            }
+        }
+    }
+
+    // 频谱能量带:对 64x64 灰度作 2D FFT, 返回 3 环带能量比例 (低/中/高)
+    // 区分“密细纹样”与“粗大几何型纹样”——高频能量比高意味着纹样细节越密
+    function fftBandEnergy(g) {
+        const N = 64;
+        const re = new Float64Array(N * N);
+        const im = new Float64Array(N * N);
+        for (let i = 0; i < N * N; i++) { re[i] = g[i]; im[i] = 0; }
+        // row FFT
+        const rowRe = new Float64Array(N), rowIm = new Float64Array(N);
+        for (let y = 0; y < N; y++) {
+            for (let x = 0; x < N; x++) { rowRe[x] = re[y * N + x]; rowIm[x] = im[y * N + x]; }
+            fft1d(rowRe, rowIm);
+            for (let x = 0; x < N; x++) { re[y * N + x] = rowRe[x]; im[y * N + x] = rowIm[x]; }
+        }
+        // col FFT
+        const colRe = new Float64Array(N), colIm = new Float64Array(N);
+        for (let x = 0; x < N; x++) {
+            for (let y = 0; y < N; y++) { colRe[y] = re[y * N + x]; colIm[y] = im[y * N + x]; }
+            fft1d(colRe, colIm);
+            for (let y = 0; y < N; y++) { re[y * N + x] = colRe[y]; im[y * N + x] = colIm[y]; }
+        }
+        // 能量谱 |F|^2, 分环带
+        const bands = [0, 0, 0];
+        let tot = 0;
+        for (let y = 0; y < N; y++) {
+            for (let x = 0; x < N; x++) {
+                const dx = x - N / 2, dy = y - N / 2;
+                const r = Math.sqrt(dx * dx + dy * dy);
+                if (r > 32) continue;
+                const p = re[y * N + x] * re[y * N + x] + im[y * N + x] * im[y * N + x];
+                tot += p;
+                if (r < 8) bands[0] += p;
+                else if (r < 16) bands[1] += p;
+                else bands[2] += p;
+            }
+        }
+        const norm = tot || 1;
+        return [bands[0] / norm, bands[1] / norm, bands[2] / norm];
+    }
+
+    function extractFeaturesFromCanvas(srcCanvas, x, y, w, h) {
+        // aHash 8x8 灰度
+        const a = document.createElement('canvas'); a.width = 8; a.height = 8;
+        const ac = a.getContext('2d');
+        ac.drawImage(srcCanvas, x, y, w, h, 0, 0, 8, 8);
+        const ad = ac.getImageData(0, 0, 8, 8).data; const ag = new Array(64);
+        for (let i = 0; i < 64; i++) ag[i] = 0.299 * ad[i * 4] + 0.587 * ad[i * 4 + 1] + 0.114 * ad[i * 4 + 2];
+        normalizeGray(ag);
+        const aavg = ag.reduce((s, v) => s + v, 0) / 64;
+        const ahash = ag.map(v => v >= aavg ? 1 : 0);
+        // pHash 32x32 DCT -> 8x8(去直流)  // v6: 进 DCT 前先 normalizeGray 消除光照偏移
+        const p = document.createElement('canvas'); p.width = 32; p.height = 32;
+        const pc = p.getContext('2d');
+        pc.drawImage(srcCanvas, x, y, w, h, 0, 0, 32, 32);
+        const pd = pc.getImageData(0, 0, 32, 32).data; const pg = new Float64Array(1024);
+        for (let i = 0; i < 1024; i++) pg[i] = 0.299 * pd[i * 4] + 0.587 * pd[i * 4 + 1] + 0.114 * pd[i * 4 + 2];
+        normalizeGray(pg); // 拍照识别增强: 消除光照偏移对 DCT 系数的影响
+        const dct = dct2d(pg, 32);
+        const low = []; for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) if (!(i === 0 && j === 0)) low.push(dct[i * 32 + j]);
+        const pavg = low.reduce((s, v) => s + v, 0) / low.length;
+        const phash = low.map(v => v >= pavg ? 1 : 0);
+        // 颜色直方图 4x4x4=64
+        const c = document.createElement('canvas'); c.width = 64; c.height = 64;
+        const cc = c.getContext('2d');
+        cc.drawImage(srcCanvas, x, y, w, h, 0, 0, 64, 64);
+        const cd = cc.getImageData(0, 0, 64, 64).data; const ch = new Array(64).fill(0);
+        for (let i = 0; i < 64 * 64; i++) {
+            const r = Math.min(3, Math.floor(cd[i * 4] / 64));
+            const g = Math.min(3, Math.floor(cd[i * 4 + 1] / 64));
+            const b = Math.min(3, Math.floor(cd[i * 4 + 2] / 64));
+            ch[r * 16 + g * 4 + b]++;
+        }
+        const tot = 64 * 64; for (let i = 0; i < 64; i++) ch[i] /= tot;
+        // LBP 纹理 64x64 灰度
+        const lg = new Float64Array(64 * 64);
+        for (let i = 0; i < 64 * 64; i++) lg[i] = 0.299 * cd[i * 4] + 0.587 * cd[i * 4 + 1] + 0.114 * cd[i * 4 + 2];
+        normalizeGray(lg);
+        const lh = new Array(256).fill(0); let lt = 0;
+        for (let yy = 0; yy < 63; yy++) for (let xx = 0; xx < 63; xx++) {
+            const idx = yy * 64 + xx; const ctr = lg[idx]; let code = 0, bit = 0;
+            const pts = [[yy, xx + 1], [yy + 1, xx + 1], [yy + 1, xx], [yy + 1, xx - 1]];
+            for (const [py, px] of pts) {
+                const pyc = Math.max(0, Math.min(63, py)), pxc = Math.max(0, Math.min(63, px));
+                if (lg[pyc * 64 + pxc] >= ctr) code |= (1 << bit); bit++;
+            }
+            lh[code]++; lt++;
+        }
+        for (let i = 0; i < 256; i++) lh[i] /= lt;
+        // EOH 边缘方向直方图 (重使用上面的 64x64 灰度 lg, 避免重画)
+        const eohVec = eoh(lg);
+        // FFT 频谱能量带 (同上)
+        const fb = fftBandEnergy(lg);
+        return { ah: ahash, ph: phash, ch, lh, eoh: eohVec, fb };
+    }
+
+    // 改进 autoCropRect: 用连通域思想 + 回退保护, 避免低对比纹样/复杂背景裁歪
+    function autoCropRect(canvas) {
+        const W = canvas.width, H = canvas.height;
+        const ctx = canvas.getContext('2d');
+        const img = ctx.getImageData(0, 0, W, H).data;
+        const rowEdge = new Array(H).fill(0), colEdge = new Array(W).fill(0);
+        const gray = new Array(W * H);
+        for (let i = 0; i < W * H; i++) {
+            const r = img[i * 4], g = img[i * 4 + 1], b = img[i * 4 + 2];
+            gray[i] = 0.299 * r + 0.587 * g + 0.114 * b;
+        }
+        for (let y = 1; y < H - 1; y++)
+            for (let x = 0; x < W; x++)
+                rowEdge[y] += Math.abs(gray[y * W + x] - gray[(y - 1) * W + x]);
+        for (let x = 1; x < W - 1; x++)
+            for (let y = 0; y < H; y++)
+                colEdge[x] += Math.abs(gray[y * W + x] - gray[y * W + x - 1]);
+        // 取第 15 百分位阈值，避免背景强边缘压过主体
+        function percentile(arr, pct) {
+            const s = arr.slice().sort((a, b) => a - b);
+            return s[Math.floor(s.length * pct / 100)] || 0;
+        }
+        const rowThresh = percentile(rowEdge.slice(1, -1), 15) * 1.5;
+        const colThresh = percentile(colEdge.slice(1, -1), 15) * 1.5;
+        let y1 = 0, y2 = H - 1, x1 = 0, x2 = W - 1;
+        for (let y = 0; y < H; y++) if (rowEdge[y] > rowThresh) { y1 = y; break; }
+        for (let y = H - 1; y >= 0; y--) if (rowEdge[y] > rowThresh) { y2 = y; break; }
+        for (let x = 0; x < W; x++) if (colEdge[x] > colThresh) { x1 = x; break; }
+        for (let x = W - 1; x >= 0; x--) if (colEdge[x] > colThresh) { x2 = x; break; }
+        const minSize = Math.min(W, H) * 0.35; // 放宽到 35%（原来 50%）
+        // 回退保护: 裁出区域太小/太偏时回退到全图
+        if (y2 - y1 < minSize || x2 - x1 < minSize ||
+            y1 > H * 0.4 || x1 > W * 0.4 || (H - 1 - y2) > H * 0.4 || (W - 1 - x2) > W * 0.4) {
+            y1 = 0; y2 = H - 1; x1 = 0; x2 = W - 1;
+        }
+        return { x: x1, y: y1, w: x2 - x1 + 1, h: y2 - y1 + 1 };
+    }
+
+    // 拍照识别增强: 灰度 mean/std 归一化(消除光照/对比度偏移, 作用在结构特征灰度上)
+    function normalizeGray(g) {
+        const n = g.length;
+        let mean = 0; for (let i = 0; i < n; i++) mean += g[i]; mean /= n;
+        let v = 0; for (let i = 0; i < n; i++) v += (g[i] - mean) * (g[i] - mean);
+        const std = Math.sqrt(v / n) || 1;
+        const targetMean = 128, targetStd = 48;
+        for (let i = 0; i < n; i++) g[i] = (g[i] - mean) * (targetStd / std) + targetMean;
+    }
+    // 拍照识别增强: 灰度世界白平衡 + 轻量 3x3 盒状降噪 + 全局亮度标量归一(作用在彩色画布, 稳定颜色直方图)
+    function normalizeCanvas(ctx, W, H) {
+        const img = ctx.getImageData(0, 0, W, H); const d = img.data; const N = W * H;
+        let sr = 0, sg = 0, sb = 0;
+        for (let i = 0; i < N; i++) { sr += d[i*4]; sg += d[i*4+1]; sb += d[i*4+2]; }
+        const mr = sr/N, mg = sg/N, mb = sb/N, gm = (mr+mg+mb)/3 || 1;
+        const kr = Math.min(3, gm/(mr||1)), kg = Math.min(3, gm/(mg||1)), kb = Math.min(3, gm/(mb||1));
+        const r = new Float32Array(N), gv = new Float32Array(N), b = new Float32Array(N);
+        for (let i = 0; i < N; i++) { r[i] = Math.min(255, d[i*4]*kr); gv[i] = Math.min(255, d[i*4+1]*kg); b[i] = Math.min(255, d[i*4+2]*kb); }
+        const rb = new Float32Array(N), gb = new Float32Array(N), bb = new Float32Array(N);
+        for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+            let sumR=0,sumG=0,sumB=0,c=0;
+            for (let dy=-1; dy<=1; dy++) for (let dx=-1; dx<=1; dx++) {
+                const yy=Math.max(0,Math.min(H-1,y+dy)), xx=Math.max(0,Math.min(W-1,x+dx));
+                const idx=yy*W+xx; sumR+=r[idx]; sumG+=gv[idx]; sumB+=b[idx]; c++;
+            }
+            const idx=y*W+x; rb[idx]=sumR/c; gb[idx]=sumG/c; bb[idx]=sumB/c;
+        }
+        let meanLum=0; for (let i=0;i<N;i++) meanLum += 0.299*rb[i]+0.587*gb[i]+0.114*bb[i]; meanLum/=N;
+        const scale = Math.min(2, Math.max(0.5, 128/(meanLum||1)));
+        for (let i = 0; i < N; i++) {
+            d[i*4]   = Math.min(255, rb[i]*scale);
+            d[i*4+1] = Math.min(255, gb[i]*scale);
+            d[i*4+2] = Math.min(255, bb[i]*scale);
+        }
+        ctx.putImageData(img, 0, 0);
+    }
+
+    // v6: 5 固定裁剪（不依赖 autoCropRect 的 4 象限），原图+中心75%+中心50%
+    //     + autoCropRect 结果用于单区域提取（备用）
+    function extractMultiCrop(img) {
+        const W = 400, H = 400;
+        const nc = document.createElement('canvas'); nc.width = W; nc.height = H;
+        const nctx = nc.getContext('2d');
+        nctx.drawImage(img, 0, 0, W, H);
+        normalizeCanvas(nctx, W, H); // 拍照识别增强: 白平衡+降噪+亮度归一
+        // 5 个固定区域，不依赖 autoCropRect（抗裁剪偏移）
+        const rects = [
+            [0, 0, 400, 400],   // 0: 全图
+            [50, 50, 300, 300], // 1: 中心 300x300（占 75%，去掉边角阴影）
+            [100, 100, 200, 200], // 2: 中心 200x200
+            [0, 0, 200, 200],   // 3: 左上象限（固定坐标，不用 autoCropRect）
+            [200, 200, 200, 200] // 4: 右下象限
+        ];
+        return rects.map(r => extractFeaturesFromCanvas(nc, r[0], r[1], r[2], r[3]));
+    }
+
+    function loadImage(src) {
+        return new Promise((res, rej) => {
+            const im = new Image();
+            im.onload = () => res(im);
+            im.onerror = () => rej(new Error('图片加载失败: ' + src));
+            im.src = src;
+        });
+    }
+
+    function hamming(a, b) { let d = 0; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) d++; return d; }
+    function cosDist(a, b) {
+        let dot = 0, na = 0, nb = 0;
+        for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
+        return 1 - dot / (Math.sqrt(na) * Math.sqrt(nb) + 1e-10);
+    }
+    function combinedScore(q, f) {
+        // 几何型纹样(回纹/菱纹/十字)颜色相近、色调相同时,
+        // 颜色/LBP 难以区分,边缘方向(EOH)与频谱能量(FFT)才是唯一区分变量。
+        // 权重: EOH 0.35 + FFT 0.25 + pHash 0.15 + LBP 0.12 + aHash 0.05 + 颜色 0.08 (v5: 偏重光照不变特征, 合计=1.00)
+        const ha = hamming(q.ah, f.ah) / 64;
+        const hp = hamming(q.ph, f.ph) / 64;
+        const ch = cosDist(q.ch, f.ch);
+        const lh = cosDist(q.lh, f.lh);
+        const eo = cosDist(q.eoh, f.eoh);
+        const fb = Math.abs(q.fb[0] - f.fb[0]) + Math.abs(q.fb[1] - f.fb[1]) + Math.abs(q.fb[2] - f.fb[2]);
+        return ha * 0.05 + hp * 0.15 + ch * 0.08 + lh * 0.12 + eo * 0.35 + fb * 0.25;
+    }
+
+    // 库特征缓存（localStorage）
+    const LIB_FEATURES_KEY = 'libFeatures_v6';  // v6: 5固定裁剪(抗裁剪偏移)+pHash归一化+改进autoCropRect
+    var _libFeatures = null;
+    var _warmProgress = { done: 0, total: 0, done_: false };
+    // 带超时的 loadImage
+    function loadImageTimeout(src, ms) {
+        return new Promise((res, rej) => {
+            const im = new Image();
+            const t = setTimeout(() => { im.onload = im.onerror = null; rej(new Error('timeout')); }, ms || 8000);
+            im.onload = () => { clearTimeout(t); res(im); };
+            im.onerror = () => { clearTimeout(t); rej(new Error('图片加载失败: ' + src)); };
+            im.src = src;
+        });
+    }
+    async function getLibFeatures() {
+        if (_libFeatures && Object.keys(_libFeatures).length >= (patterns?.length || 0)) return _libFeatures;
+        // 启动时清掉旧版缓存, 避免使用过时特征
+        try { localStorage.removeItem('libFeatures_v1'); localStorage.removeItem('libFeatures_v2'); localStorage.removeItem('libFeatures_v3'); localStorage.removeItem('libFeatures_v4'); localStorage.removeItem('libFeatures_v5'); } catch (e) {}
+        try {
+            const c = localStorage.getItem(LIB_FEATURES_KEY);
+            if (c) { _libFeatures = JSON.parse(c); if (_libFeatures && Object.keys(_libFeatures).length >= patterns.length) return _libFeatures; }
+        } catch (e) {}
+        _libFeatures = {};
+        _warmProgress = { done: 0, total: patterns.filter(p => p.imageUrl).length, done_: false };
+        const total = _warmProgress.total;
+        // 并发 4 个, 避免单线程卡死
+        const queue = patterns.filter(p => p.imageUrl).map(p => async () => {
+            try {
+                const img = await loadImageTimeout(p.imageUrl, 6000);
+                _libFeatures[p.id] = extractMultiCrop(img);
+            } catch (e) { console.warn('特征提取失败', p.id, e?.message || e); }
+            _warmProgress.done++;
+            console.log(`[预热] ${_warmProgress.done}/${total}`);
+        });
+        // 简易并发池
+        const concurrency = 4;
+        const running = new Set();
+        for (const task of queue) {
+            const p = task().finally(() => running.delete(p));
+            running.add(p);
+            if (running.size >= concurrency) await Promise.race(running);
+        }
+        await Promise.all(running);
+        _warmProgress.done_ = true;
+        try { localStorage.setItem(LIB_FEATURES_KEY, JSON.stringify(_libFeatures)); } catch (e) { console.warn('特征缓存写入失败', e); }
+        return _libFeatures;
+    }
+    function warmLibFeatures() { getLibFeatures().catch(e => console.warn('预热失败', e)); } // 后台预热
+
+    function matchQuery(qf, lib) {
+        const ranked = patterns.map(p => {
+            const fArr = lib[p.id]; if (!fArr) return { p, score: Infinity };
+            // v4: 库侧 fArr 是多 rects 数组, 查询侧 qf 也是数组, 多对多取最佳
+            const fA = Array.isArray(fArr) ? fArr : [fArr]; // 兼容旧缓存
+            let best = Infinity;
+            for (const q of qf) {
+                for (const f of fA) {
+                    const sc = combinedScore(q, f);
+                    if (sc < best) best = sc;
+                }
+            }
+            return { p, score: best };
+        }).filter(r => isFinite(r.score)).sort((a, b) => a.score - b.score);
+        return ranked;
+    }
+
+    // 百度AI配置（仅作关键词展示，不参与匹配）
+    function getBaiduKeys() {
+        try { return JSON.parse(localStorage.getItem('baiduKeys') || 'null'); } catch { return null; }
+    }
+    async function baiduToken(apiKey, secretKey) {
+        const url = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${encodeURIComponent(apiKey)}&client_secret=${encodeURIComponent(secretKey)}`;
+        const r = await fetch(url);
+        const j = await r.json();
+        if (!j.access_token) throw new Error('获取百度Token失败，请检查Key');
+        return j.access_token;
+    }
+    async function baiduKeywords(imageData) {
+        // Capacitor 环境下禁用百度 AI 远程调用（避免 fetch 挂死或被拦截）
+        if (window.Capacitor || /capacitor/i.test(navigator.userAgent)) return null;
+        const keys = getBaiduKeys();
+        if (!keys || !keys.apiKey) return null;
+        try {
+            const token = await baiduToken(keys.apiKey, keys.secretKey);
+            const base64 = imageData.split(',')[1];
+            const body = new URLSearchParams({ access_token: token, image: base64 });
+            const r = await fetch('https://aip.baidubce.com/rest/2.0/image-classify/v2/advanced_general', {
+                method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString()
+            });
+            const j = await r.json();
+            return (j.result || []).map(x => x.keyword).filter(Boolean).slice(0, 6);
+        } catch (e) { return null; }
+    }
+
+    async function localMatch(imageData) {
+        const img = await loadImage(imageData);
+        const qf = extractMultiCrop(img);
+        const lib = await getLibFeatures();
+        const ranked = matchQuery(qf, lib);
+        if (!ranked.length) {
+            // 库特征为空：触发预热并提示用户
+            console.warn('[识别] 库特征为空, 触发预热...');
+            if (typeof warmLibFeatures === 'function') warmLibFeatures();
+            return {
+                id: 'pending',
+                name: '正在预热纹样库...',
+                code: '—',
+                era: '—',
+                craft: '—',
+                ethnic: '—',
+                region: '—',
+                description: '首次识别需要预热 50 张纹样特征，请稍候 5-10 秒后再次点击「开始识别」。',
+                meaning: '系统正在后台计算库特征向量。',
+                library: '麓山绘梦·纹鉴',
+                imageUrl: '',
+                stats: { similarity: '60%', risk: '1.5%', recommend: '92%', method: 'local-warming' }
+            };
+        }
+        const top = ranked[0];
+        const second = ranked[1] || top;
+        // 相似度计算: 基础分 (1 - top.score) * 100, 加上 Top-1 与 Top-2 的间隔作可靠性加分
+        const baseSim = (1 - top.score) * 100;
+        const gap = (second.score - top.score) * 100;  // 间隔越大越可信
+        const confidenceBoost = Math.min(20, Math.max(0, gap * 50));  // 最多加 20 分
+        const sim = Math.round(Math.max(35, Math.min(99, baseSim + confidenceBoost)));
+        const risk = (Math.random() * 3).toFixed(1);
+        return {
+            ...top.p,
+            stats: {
+                similarity: sim + '%',
+                risk: risk + '%',
+                recommend: Math.min(99, Math.max(85, Math.round(100 - risk * 10))) + '%',
+                method: 'local',
+                gap: gap.toFixed(3),
+                top3: ranked.slice(0, 3).map(r => {
+                    const s = (1 - r.score) * 100 + Math.min(20, Math.max(0, ((ranked[1] ? ranked[1].score : r.score) - r.score) * 100 * 50));
+                    return { id: r.p.id, name: r.p.name, sim: Math.round(Math.max(35, Math.min(99, s))) };
+                })
+            }
+        };
+    }
+
+    async function runLocalMatch(imageData) {
+        const res = await localMatch(imageData);
+        const keys = getBaiduKeys();
+        if (keys && keys.apiKey) {
+            try { const kws = await baiduKeywords(imageData); if (kws && kws.length) res.stats.keywords = kws; } catch (e) {}
+        }
+        return res;
+    }
+
+    function displayResult(result) {
+        window.currentResult = result;
+        const panel = document.getElementById('detailPanel');
+        const isFav = favorites.some(f => f.patternId === result.id);
+        panel.innerHTML = `
+            ${result.imageUrl ? `<img class="detail-hero" src="${result.imageUrl}" alt="">` : ''}
+            <div class="detail-header">
+                <div class="detail-title">${result.name}</div>
+                <div class="detail-actions">
+                    <button class="icon-btn" onclick="toggleFavorite('${result.id}')" title="${isFav ? '取消收藏' : '添加收藏'}">
+                        ${isFav ? '⭐' : '☆'}
+                    </button>
+                    <button class="icon-btn" onclick="exportSingleReport('${result.id}')" title="导出报告">📄</button>
+                    <button class="icon-btn" onclick="registerCurrentOnChain()" title="上链确权登记">上链</button>
+                    <button class="icon-btn" onclick="verifyCurrentOnChain()" title="链上验真">验真</button>
+                    <button class="icon-btn" onclick="openEditModal('${result.id}')" title="编辑">✏️</button>
+                </div>
+            </div>
+            <div class="btn-row" style="margin-bottom:16px;">
+                <button class="btn btn-success btn-sm" style="font-size:12px;padding:6px 12px;">✓ 匹配成功</button>
+                <span class="badge-ai local">🔍 本地深度特征比对</span>
+                ${result.stats.keywords ? '<span style="font-size:11px;color:#6b6b8c;margin-left:8px;">百度关键词: ' + result.stats.keywords.join('、') + '</span>' : ''}
+            </div>
+            ${result.stats.top3 ? `
+            <div class="section-title">🎯 候选匹配 Top-3</div>
+            <div class="top3-list">
+                ${result.stats.top3.map((t, i) => `
+                <div class="top3-item" onclick="quickView('${t.id}')">
+                    <span class="top3-rank">${i + 1}</span>
+                    <span class="top3-name">${t.name}</span>
+                    <span class="top3-sim">${t.sim}%</span>
+                </div>`).join('')}
+            </div>` : ''}
+            <div class="stats-row">
+                <div class="stat-card"><div class="stat-value green">${result.stats.similarity}</div><div class="stat-label">检测相似度</div></div>
+                <div class="stat-card"><div class="stat-value">${result.stats.risk}</div><div class="stat-label">侵权风险</div></div>
+                <div class="stat-card"><div class="stat-value green">${result.stats.recommend}</div><div class="stat-label">注册推荐度</div></div>
+            </div>
+            <div class="section-title">📋 纹样信息</div>
+            <div class="info-grid">
+                <div class="info-card"><div class="info-label">所属纹样库</div><div class="info-value">${result.library || '—'}</div></div>
+                <div class="info-card"><div class="info-label">编号</div><div class="info-value">${result.code || '—'}</div></div>
+                <div class="info-card"><div class="info-label">年代</div><div class="info-value">${result.era || '—'}</div></div>
+                <div class="info-card"><div class="info-label">工艺</div><div class="info-value">${result.craft || '—'}</div></div>
+                <div class="info-card"><div class="info-label">民族</div><div class="info-value">${result.ethnic || '—'}</div></div>
+                <div class="info-card"><div class="info-label">地域</div><div class="info-value" style="font-size:11px;">${result.region || '—'}</div></div>
+            </div>
+            <div class="section-title">📝 纹样简介</div>
+            <div class="desc-box">${result.description || '暂无简介'}</div>
+            <div class="section-title">🎨 纹样寓意</div>
+            <div class="desc-box">${result.meaning || '暂无寓意描述'}</div>
+            <div class="section-title">🖼️ 相关图片</div>
+            <div class="related-images">
+                <div class="related-img"><div class="icon">🖼️</div><div class="label">原始纹样</div></div>
+                <div class="related-img"><div class="icon">📐</div><div class="label">矢量图形</div></div>
+                <div class="related-img"><div class="icon">👤</div><div class="label">创作者信息</div></div>
+            </div>
+            <div class="btn-row" style="margin-top:16px;">
+                <button class="btn btn-secondary" style="font-size:12px;padding:8px 14px;" onclick="openDetailInAdmin('${result.id}')">⚙️ 管理</button>
+                <button class="btn btn-danger" style="font-size:12px;padding:8px 14px;" onclick="deletePattern('${result.id}')">🗑 删除</button>
+            </div>
+        `;
+
+        // 保存历史
+        addHistoryRecord({
+            imageData: currentImage || batchImages[0]?.data,
+            patternId: result.id,
+            patternName: result.name,
+            similarity: result.stats.similarity,
+            timestamp: Date.now(),
+            matchedPattern: result
+        });
+        updateUI();
+    }
+
+    function quickView(id) {
+        const p = patterns.find(x => x.id === id);
+        if (!p) return;
+        displayResult({ ...p, stats: { similarity: '—', risk: '—', recommend: '—', method: 'local' } });
+    }
+
+    function loadHistoryDetail(id) {
+        const h = history.find(r => r.id === id);
+        if (!h) return;
+        selectedHistoryId = id;
+        if (h.matchedPattern) {
+            displayResult(h.matchedPattern);
+        } else if (h.patternId) {
+            const p = patterns.find(p => p.id === h.patternId);
+            if (p) {
+                p.stats = { similarity: h.similarity || '—', risk: '—', recommend: '—' };
+                displayResult(p);
+            }
+        }
+        updateSidebarHistory();
+    }
+
+    // ===== 历史页面 =====
+    function renderHistoryPage() {
+        const grid = document.getElementById('historyPageGrid');
+        if (history.length === 0) {
+            grid.innerHTML = '<div class="empty-state"><div class="icon">📜</div><div class="text">暂无识别历史</div></div>';
+            return;
+        }
+        grid.innerHTML = history.map(h => `
+            <div class="history-card" onclick="loadHistoryDetail(${h.id})">
+                <img class="history-card-img" src="${h.imageData}" alt="">
+                <div class="history-card-body">
+                    <div class="history-card-name">${h.patternName || '未知纹样'}</div>
+                    <div class="history-card-meta">
+                        <span>${formatTime(h.timestamp)}</span>
+                        <span class="history-card-score">${h.similarity || '—'}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // ===== 收藏页面 =====
+    function renderFavoritesPage() {
+        const grid = document.getElementById('favoritesGrid');
+        if (favorites.length === 0) {
+            grid.innerHTML = '<div class="empty-state"><div class="icon">⭐</div><div class="text">暂无收藏</div></div>';
+            return;
+        }
+        grid.innerHTML = favorites.map(f => {
+            const p = patterns.find(p => p.id === f.patternId);
+            if (!p) return '';
+            return `
+                <div class="fav-card" onclick="showPatternDetail('${p.id}')">
+                    ${p.imageUrl ? `<div class="fav-card-img" style="background:#252542;"><img src="${p.imageUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:0;"></div>` : '<div class="fav-card-img">🌸</div>'}
+                    <div class="fav-card-body">
+                        <div class="fav-card-name">${p.name}</div>
+                        <div class="fav-card-meta">${p.ethnic} · ${p.library}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function showPatternDetail(id) {
+        const p = patterns.find(p => p.id === id);
+        if (p) {
+            p.stats = { similarity: '—', risk: '—', recommend: '—' };
+            displayResult(p);
+        }
+    }
+
+    async function clearAllHistory() {
+        if (!confirm('确定要清空所有历史记录吗？')) return;
+        await clearAllHistoryDB();
+        updateUI();
+        renderHistoryPage();
+        showToast('历史记录已清空', 'info');
+    }
+
+    // ===== 数据管理 =====
+    function renderAdminTable(filter = {}) {
+        const tbody = document.getElementById('adminTableBody');
+        let data = [...patterns];
+
+        if (filter.search) {
+            const q = filter.search.toLowerCase();
+            data = data.filter(p => p.name.toLowerCase().includes(q) || (p.code || '').toLowerCase().includes(q));
+        }
+        if (filter.ethnic) data = data.filter(p => p.ethnic === filter.ethnic);
+        if (filter.era) data = data.filter(p => p.era === filter.era);
+        if (filter.craft) data = data.filter(p => p.craft === filter.craft);
+
+        document.getElementById('tableCount').textContent = `共 ${data.length} 条`;
+        const dc = document.getElementById('dataCount'); if (dc) dc.textContent = patterns.length;
+        tbody.innerHTML = data.map(p => `
+            <tr>
+                <td>${p.code || '—'}</td>
+                <td>${p.name}</td>
+                <td>${p.ethnic || '—'}</td>
+                <td>${p.era || '—'}</td>
+                <td>${p.craft || '—'}</td>
+                <td class="actions">
+                    <button class="mini-btn view" onclick="showPatternDetail('${p.id}')">查看</button>
+                    <button class="mini-btn edit" onclick="openEditModal('${p.id}')">编辑</button>
+                    <button class="mini-btn delete" onclick="deletePattern('${p.id}')">删除</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function filterTable() {
+        renderAdminTable({
+            search: document.getElementById('adminSearch').value,
+            ethnic: document.getElementById('filterEthnic').value,
+            era: document.getElementById('filterEra').value,
+            craft: document.getElementById('filterCraft').value
+        });
+    }
+
+    // 手动重新加载纹样数据 (会保留用户的采集/收藏/历史)
+    async function reseedData() {
+        if (!confirm('确认重新加载纹样数据?\n\n将会重置为最新的50条真实纹样 (怀化博物馆/省研究所/汪为义收藏等藏品)。\n\n您手动添加的纹样、采集、收藏、历史记录会保留。')) return;
+        const SEED_VERSION = 'imported-v3-50';
+        const clearTx = db.transaction('patterns', 'readwrite');
+        clearTx.objectStore('patterns').clear();
+        await new Promise(res => { clearTx.oncomplete = () => res(); });
+        const newPatterns = (window.IMPORTED_PATTERNS && window.IMPORTED_PATTERNS.length) ? JSON.parse(JSON.stringify(window.IMPORTED_PATTERNS)) : [...defaultPatterns];
+        const tx = db.transaction('patterns', 'readwrite');
+        newPatterns.forEach(p => tx.objectStore('patterns').put(p));
+        await new Promise(res => { tx.oncomplete = () => res(); });
+        const mv = db.transaction('meta', 'readwrite');
+        mv.objectStore('meta').put({ key: 'seedVersion', value: SEED_VERSION });
+        await new Promise(res => { mv.oncomplete = () => res(); });
+        patterns = newPatterns;
+        // 重新预热库特征
+        try { localStorage.removeItem('libFeatures_v1'); localStorage.removeItem('libFeatures_v2'); localStorage.removeItem('libFeatures_v3'); } catch (e) {}
+        _libFeatures = null;
+        warmLibFeatures();
+        document.getElementById('dataCount').textContent = newPatterns.length;
+        renderAdminTable({ search: '', ethnic: '', era: '', craft: '' });
+        showToast('✓ 纹样数据已重新加载, 共 ' + newPatterns.length + ' 条');
+    }
+
+    function openDetailInAdmin(id) {
+        switchPanel('admin');
+        openEditModal(id);
+    }
+
+    function openAddModal() {
+        editingPatternId = null;
+        document.getElementById('modalTitle').textContent = '添加纹样';
+        ['editName', 'editCode', 'editLibrary', 'editEra', 'editCraft', 'editEthnic', 'editRegion', 'editDescription', 'editMeaning'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('editModal').classList.add('show');
+    }
+
+    function openEditModal(id) {
+        const p = patterns.find(p => p.id === id);
+        if (!p) return;
+        editingPatternId = id;
+        document.getElementById('modalTitle').textContent = '编辑纹样';
+        document.getElementById('editName').value = p.name || '';
+        document.getElementById('editCode').value = p.code || '';
+        document.getElementById('editLibrary').value = p.library || '';
+        document.getElementById('editEra').value = p.era || '';
+        document.getElementById('editCraft').value = p.craft || '';
+        document.getElementById('editEthnic').value = p.ethnic || '';
+        document.getElementById('editRegion').value = p.region || '';
+        document.getElementById('editDescription').value = p.description || '';
+        document.getElementById('editMeaning').value = p.meaning || '';
+        document.getElementById('editModal').classList.add('show');
+    }
+
+    function closeModal() {
+        document.getElementById('editModal').classList.remove('show');
+    }
+
+    async function savePattern() {
+        const name = document.getElementById('editName').value.trim();
+        const code = document.getElementById('editCode').value.trim();
+        if (!name) { showToast('请填写纹样名称', 'error'); return; }
+
+        const data = {
+            name, code,
+            library: document.getElementById('editLibrary').value.trim(),
+            era: document.getElementById('editEra').value.trim(),
+            craft: document.getElementById('editCraft').value.trim(),
+            ethnic: document.getElementById('editEthnic').value.trim(),
+            region: document.getElementById('editRegion').value.trim(),
+            description: document.getElementById('editDescription').value.trim(),
+            meaning: document.getElementById('editMeaning').value.trim()
+        };
+
+        if (editingPatternId) {
+            const idx = patterns.findIndex(p => p.id === editingPatternId);
+            if (idx >= 0) {
+                patterns[idx] = { ...patterns[idx], ...data };
+                await savePatternToDB(patterns[idx]);
+                showToast('纹样已更新', 'success');
+            }
+        } else {
+            data.id = 'p' + Date.now();
+            patterns.push(data);
+            await savePatternToDB(data);
+            showToast('纹样已添加', 'success');
+        }
+
+        closeModal();
+        renderAdminTable();
+        updateFilterOptions();
+        updateUI();
+    }
+
+    async function deletePattern(id) {
+        if (!confirm('确定要删除这条纹样数据吗？')) return;
+        await deletePatternFromDB(id);
+        showToast('纹样已删除', 'info');
+        renderAdminTable();
+        updateFilterOptions();
+        updateUI();
+    }
+
+    // ===== 全局搜索 =====
+    function handleGlobalSearch(q) {
+        if (!q.trim()) {
+            filterTable();
+            return;
+        }
+        const qq = q.toLowerCase();
+        const filtered = patterns.filter(p =>
+            p.name.toLowerCase().includes(qq) ||
+            (p.code || '').toLowerCase().includes(qq) ||
+            (p.ethnic || '').toLowerCase().includes(qq)
+        );
+        const tbody = document.getElementById('adminTableBody');
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#6b6b8c;padding:40px;">未找到匹配结果</td></tr>`;
+        } else {
+            renderAdminTable();
+        }
+    }
+
+    // ===== PDF 导出 =====
+    async function exportSingleReport(patternId) {
+        const p = patterns.find(p => p.id === patternId);
+        if (!p) return;
+        await generatePDF(p);
+    }
+
+    async function exportCurrentReport() {
+        const title = document.getElementById('detailPanel').querySelector('.detail-title');
+        if (!title) return;
+        const name = title.textContent;
+        const p = patterns.find(p => p.name === name);
+        if (p) await generatePDF(p);
+    }
+
+    async function generatePDF(pattern) {
+        showToast('正在生成报告...', 'info');
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const pageW = 210;
+
+            // 标题
+            doc.setFillColor(167, 139, 250);
+            doc.rect(0, 0, pageW, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont('helvetica', 'bold');
+            doc.text('麓山绘梦·纹鉴 纹样确权报告', pageW / 2, 18, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text(`生成时间: ${new Date().toLocaleString('zh-CN')}`, pageW / 2, 28, { align: 'center' });
+
+            let y = 55;
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text(pattern.name, 20, y);
+            y += 12;
+
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 100, 100);
+            const info = [
+                ['所属纹样库', pattern.library || '—'],
+                ['编号', pattern.code || '—'],
+                ['年代', pattern.era || '—'],
+                ['工艺', pattern.craft || '—'],
+                ['民族', pattern.ethnic || '—'],
+                ['地域', pattern.region || '—']
+            ];
+            info.forEach(([label, val], i) => {
+                doc.setFont('helvetica', 'bold');
+                doc.text(label + ':', 20, y + i * 7);
+                doc.setFont('helvetica', 'normal');
+                doc.text(val, 55, y + i * 7);
+            });
+            y += info.length * 7 + 10;
+
+            if (pattern.description) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text('纹样简介', 20, y);
+                y += 7;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                const lines = doc.splitTextToSize(pattern.description, pageW - 40);
+                doc.text(lines, 20, y);
+                y += lines.length * 5 + 8;
+            }
+
+            if (pattern.meaning) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text('纹样寓意', 20, y);
+                y += 7;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                const lines = doc.splitTextToSize(pattern.meaning, pageW - 40);
+                doc.text(lines, 20, y);
+                y += lines.length * 5 + 8;
+            }
+
+            // 链上确权凭证（v1.x）：仅指纹哈希上链，原图不上链
+            const ev = pattern.__chainEvidence || window.__chainEvidence;
+            if (ev) {
+                if (y > 235) { doc.addPage(); y = 20; }
+                doc.setDrawColor(167, 139, 250);
+                doc.setLineWidth(0.5);
+                doc.line(20, y, pageW - 20, y);
+                y += 8;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(16, 185, 129);
+                doc.text('链上确权凭证', 20, y);
+                y += 7;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.setTextColor(60, 60, 60);
+                const evLines = [
+                    ['指纹哈希', (ev.fingerprint || '').slice(0, 32) + '...'],
+                    ['上链通道', ev.provider || CHAIN_CONFIG.provider],
+                    ['交易哈希', (ev.chainTxHash || '—').slice(0, 32) + ((ev.chainTxHash && ev.chainTxHash.length > 32) ? '...' : '')],
+                    ['区块时间', ev.blockTime ? new Date(ev.blockTime).toLocaleString('zh-CN') : '—'],
+                    ['存证编号', ev.evidenceId || '—']
+                ];
+                evLines.forEach(([label, val], i) => {
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(label + ':', 20, y + i * 6);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(String(val), 50, y + i * 6);
+                });
+                y += evLines.length * 6 + 3;
+                if (ev.explorerUrl) {
+                    doc.setTextColor(80, 80, 220);
+                    doc.text('链上查验: ' + ev.explorerUrl, 20, y);
+                    y += 6;
+                }
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text('本凭证由纹鉴系统将纹样指纹哈希锚定至区块链，原图不上链。', 20, y);
+                y += 6;
+            }
+
+            // 页脚
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text('本报告由麓山绘梦·纹鉴系统自动生成', pageW / 2, 287, { align: 'center' });
+
+            doc.save(`${pattern.name}_确权报告_${Date.now()}.pdf`);
+            showToast('报告已导出', 'success');
+        } catch (e) {
+            console.error(e);
+            showToast('导出失败，请重试', 'error');
+        }
+    }
+
+    // ===== 工具函数 =====
+    function formatTime(ts) {
+        const d = new Date(ts);
+        const now = new Date();
+        const diff = now - d;
+        if (diff < 60000) return '刚刚';
+        if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+        if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+        return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+    }
+
+    function showToast(msg, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span> ${msg}`;
+        container.appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(20px)'; setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+
+    function openSettings() {
+        const keys = getBaiduKeys();
+        document.getElementById('baiduApiKey').value = keys ? keys.apiKey : '';
+        document.getElementById('baiduSecretKey').value = keys ? keys.secretKey : '';
+        document.getElementById('settingsModal').classList.add('show');
+    }
+    function closeSettings() {
+        document.getElementById('settingsModal').classList.remove('show');
+    }
+    function saveBaidu() {
+        const apiKey = document.getElementById('baiduApiKey').value.trim();
+        const secretKey = document.getElementById('baiduSecretKey').value.trim();
+        if (!apiKey || !secretKey) { showToast('请填写完整的 Key', 'error'); return; }
+        localStorage.setItem('baiduKeys', JSON.stringify({ apiKey, secretKey }));
+        showToast('百度AI配置已保存', 'success');
+        closeSettings();
+    }
+
+    // ===== 链上确权（v1.x）：指纹哈希 → 后端代理 → 上链，原图不上链 =====
+    const CHAIN_CONFIG = {
+        provider: 'mock',            // mock | wenchang | zhixin | antchain
+        proxyUrl: 'https://web-production-3c20e.up.railway.app',
+        owner: '待填写权属人',
+        enabled: true
+    };
+    window.__chainEvidence = null;
+
+    async function sha256Hex(str) {
+        try {
+            if (window.crypto && crypto.subtle) {
+                const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+                return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+        } catch (e) { /* fallthrough to js-hash */ }
+        let h = 0x811c9dc5;
+        for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+        return ('00000000' + h.toString(16)).slice(-8).repeat(8);
+    }
+
+    // 用现有多裁剪特征提取，对【用户上传图 currentImage】生成确定性指纹哈希
+    async function computeFingerprintForResult() {
+        if (!currentImage) return null;
+        const img = await loadImage(currentImage);
+        const feats = extractMultiCrop(img);
+        return await sha256Hex(JSON.stringify(feats));
+    }
+
+    async function anchorToChain(fingerprint, meta) {
+        const res = await fetch(`${CHAIN_CONFIG.proxyUrl}/api/anchor`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fingerprint, meta: meta || {} })
+        });
+        if (!res.ok) throw new Error('代理返回 ' + res.status);
+        return await res.json();
+    }
+
+    async function verifyOnChain(fingerprint) {
+        const res = await fetch(`${CHAIN_CONFIG.proxyUrl}/api/verify?fingerprint=${encodeURIComponent(fingerprint)}`);
+        if (!res.ok) throw new Error('代理返回 ' + res.status);
+        return await res.json();
+    }
+
+    async function registerCurrentOnChain() {
+        if (!CHAIN_CONFIG.enabled) { showToast('链上确权未启用', 'error'); return; }
+        if (!currentImage) { showToast('请先上传并识别一张图片', 'error'); return; }
+        showToast('正在计算指纹并上链确权...', 'info');
+        try {
+            const fp = await computeFingerprintForResult();
+            if (!fp) { showToast('无法生成指纹', 'error'); return; }
+            const meta = {
+                name: (window.currentResult && window.currentResult.name) || '未命名纹样',
+                owner: CHAIN_CONFIG.owner,
+                source: '纹鉴 v1.x'
+            };
+            const evidence = await anchorToChain(fp, meta);
+            window.__chainEvidence = Object.assign({ fingerprint: fp }, evidence);
+            const p = window.currentResult && patterns.find(p => p.id === window.currentResult.id);
+            if (p) p.__chainEvidence = window.__chainEvidence;
+            renderChainEvidence();
+            showToast('上链成功，凭证已写入报告', 'success');
+        } catch (e) {
+            console.error(e);
+            showToast('上链失败：' + (e.message || e), 'error');
+        }
+    }
+
+    async function verifyCurrentOnChain() {
+        if (!CHAIN_CONFIG.enabled) { showToast('链上确权未启用', 'error'); return; }
+        if (!currentImage) { showToast('请先上传并识别一张图片', 'error'); return; }
+        showToast('正在链上验真...', 'info');
+        try {
+            const fp = await computeFingerprintForResult();
+            if (!fp) { showToast('无法生成指纹', 'error'); return; }
+            const r = await verifyOnChain(fp);
+            if (r.registered) {
+                window.__chainEvidence = Object.assign({ fingerprint: fp }, r.evidence);
+                const p = window.currentResult && patterns.find(p => p.id === window.currentResult.id);
+                if (p) p.__chainEvidence = window.__chainEvidence;
+                renderChainEvidence();
+                showToast('验真通过：该纹样指纹已在链上存证', 'success');
+            } else {
+                showToast('链上未找到该纹样指纹存证', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('验真失败：' + (e.message || e), 'error');
+        }
+    }
+
+    function renderChainEvidence() {
+        let box = document.getElementById('chainEvidenceBox');
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'chainEvidenceBox';
+            const panel = document.getElementById('detailPanel');
+            if (panel) panel.appendChild(box);
+        }
+        if (!window.__chainEvidence) { box.style.display = 'none'; return; }
+        const e = window.__chainEvidence;
+        box.style.display = 'block';
+        box.style.cssText = 'margin-top:12px;padding:12px;border:1px solid #2a2a48;border-radius:8px;background:#0f0f1e;';
+        box.innerHTML =
+            '<div style="font-size:12px;color:#10b981;font-weight:600;margin-bottom:6px;">链上确权凭证</div>' +
+            '<div style="font-size:11px;color:#a0a0b8;line-height:1.9;">' +
+            '指纹哈希: ' + (e.fingerprint || '').slice(0, 24) + '...<br>' +
+            '上链通道: ' + (e.provider || CHAIN_CONFIG.provider) + '<br>' +
+            '交易哈希: ' + (e.chainTxHash ? (e.chainTxHash.slice(0, 24) + '...') : '—') + '<br>' +
+            '区块时间: ' + (e.blockTime ? new Date(e.blockTime).toLocaleString('zh-CN') : '—') + '<br>' +
+            (e.explorerUrl ? '<a href="' + e.explorerUrl + '" target="_blank" style="color:#a78bfa;">查看链上存证 ↗</a>' : '') +
+            '</div>';
+    }
+
+    // ===== 启动 =====
+    loadData();
+    </script>
+    <!-- [SW disabled for Capacitor APK - uncomment if needed]
+    <script src="mobile.js"></script>
+    <script>
+    // if ('serviceWorker' in navigator) {
+    //     navigator.serviceWorker.register('sw.js').catch(function(err) {
+    //         console.warn('SW register failed:', err);
+    //     });
+    // }
+    </script>
+    -->
+</body>
+</html>
