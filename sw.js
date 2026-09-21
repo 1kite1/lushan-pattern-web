@@ -1,5 +1,5 @@
 // Service Worker - 离线缓存（v3: patterns-data.js/index.html 始终走网络，其他资源 cache-first）
-const CACHE_NAME = 'pattern-app-v4';
+const CACHE_NAME = 'pattern-app-v5';
 const NEVER_CACHE = ['./index.html', './patterns-data.js', './sw.js', './_clear.html'];
 const ESSENTIAL = [
     './',
