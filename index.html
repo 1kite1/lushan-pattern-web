@@ -963,7 +963,7 @@
                     const __cb = document.querySelector('.detail-close');
                     if (__cb) __cb.classList.add('show');
                     // 云端相似纹样搜索
-                    if (result.cloudFeatures) fetchCloudSearch(result.cloudFeatures);
+                    if (result.stats && result.stats.cloudFeatures) fetchCloudSearch(result.stats.cloudFeatures);
                 } catch (e) {
                     console.error('displayResult error:', e);
                     showToast('结果显示失败: ' + (e.message||e), 'error');
@@ -1670,7 +1670,7 @@ async function segmentPattern(img) {
                     <span class="top3-sim">${t.sim}%</span>
                 </div>`).join('')}
             </div>` : ''}
-            ${result.cloudFeatures ? `
+            ${(result.stats && result.stats.cloudFeatures) ? `
             <div id="cloud-search-loading" style="text-align:center;padding:10px 0 4px;color:#888;font-size:12px;">🔎 云端纹样库检索中…</div>
             <div id="cloud-search-results"></div>
             ` : ''}
