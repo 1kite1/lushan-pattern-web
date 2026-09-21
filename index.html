@@ -681,7 +681,7 @@
         await initDB();
 
         // 检查 seed 版本 — 如果未写入或版本不对, 重新播种
-        const SEED_VERSION = 'imported-v3-50';  // 升级到 50 条真实纹样时改这个值
+        const SEED_VERSION = 'imported-v4-51';  // 升级到 50 条真实纹样时改这个值
         let currentVersion = null;
         try {
             const vReq = db.transaction('meta').objectStore('meta').get('seedVersion');
@@ -1320,12 +1320,12 @@
             img.src = src;
         });
     }
-    const LIB_FEATURES_KEY = 'libFeatures_v6';  // v6: 5固定裁剪(抗裁剪偏移)+pHash归一化+改进autoCropRect
+    const LIB_FEATURES_KEY = 'libFeatures_v7';  // v6: 5固定裁剪(抗裁剪偏移)+pHash归一化+改进autoCropRect
     var _libFeatures = null;
     async function getLibFeatures() {
         if (_libFeatures) return _libFeatures;
         // 启动时清掉旧版缓存, 避免使用过时特征
-        try { localStorage.removeItem('libFeatures_v1'); localStorage.removeItem('libFeatures_v2'); localStorage.removeItem('libFeatures_v3'); localStorage.removeItem('libFeatures_v4'); localStorage.removeItem('libFeatures_v5'); } catch (e) {}
+        try { localStorage.removeItem('libFeatures_v1'); localStorage.removeItem('libFeatures_v2'); localStorage.removeItem('libFeatures_v3'); localStorage.removeItem('libFeatures_v4'); localStorage.removeItem('libFeatures_v5'); localStorage.removeItem('libFeatures_v6'); } catch (e) {}
         try {
             const c = localStorage.getItem(LIB_FEATURES_KEY);
             if (c) { _libFeatures = JSON.parse(c); if (_libFeatures && Object.keys(_libFeatures).length >= patterns.length) return _libFeatures; }
@@ -1334,10 +1334,15 @@
         let _done = 0, _total = patterns.length;
         for (const p of patterns) {
             if (!p.imageUrl) continue;
-            try {
-                const img = await loadImageWithTimeout(p.imageUrl, 15000); // 单张最多 15s，超时跳过
-                _libFeatures[p.id] = extractMultiCrop(img); // v4: 库侧多 rects // 库只存整图特征
-            } catch (e) { console.warn('特征提取失败/跳过', p.id, e.message || e); }
+            const _urls = (Array.isArray(p.imageUrls) && p.imageUrls.length) ? p.imageUrls : [p.imageUrl];
+            const _feats = [];
+            for (const _u of _urls) {
+                try {
+                    const img = (typeof loadImageWithTimeout === 'function') ? await loadImageWithTimeout(_u, 15000) : await loadImage(_u);
+                    for (const _f of extractMultiCrop(img)) _feats.push(_f); // v7: 一条纹样可挂多张参考图, 特征平铺, 匹配时取最佳
+                } catch (e) { console.warn('特征提取失败/跳过', p.id, _u, e.message || e); }
+            }
+            if (_feats.length) _libFeatures[p.id] = _feats;
             _done++;
             try { window._warmProgress = Math.round(_done / _total * 100); } catch (e) {}
         }
@@ -1871,9 +1876,16 @@ async function segmentPattern(img) {
     async function indexPatternFeature(p) {
         try {
             if (!p || !p.imageUrl) return false;
-            const img = await _loadImgForIndex(p.imageUrl);
-            const f = (typeof extractMultiCrop === 'function') ? extractMultiCrop(img) : null;
-            if (!f) return false;
+            const _urls = (Array.isArray(p.imageUrls) && p.imageUrls.length) ? p.imageUrls : [p.imageUrl];
+            const f = [];
+            for (const _u of _urls) {
+                try {
+                    const _img = await _loadImgForIndex(_u);
+                    const _one = (typeof extractMultiCrop === 'function') ? extractMultiCrop(_img) : null;
+                    if (_one) for (const _x of _one) f.push(_x);
+                } catch (e) { console.warn('参考图特征提取失败', p.id, _u, e.message || e); }
+            }
+            if (!f.length) return false;
             let lib = null;
             try { lib = _libFeatures || JSON.parse(localStorage.getItem(LIB_FEATURES_KEY) || 'null'); } catch (e) { lib = _libFeatures || null; }
             if (lib && Object.keys(lib).length) {
@@ -1937,7 +1949,7 @@ async function segmentPattern(img) {
     // 手动重新加载纹样数据 (会保留用户的采集/收藏/历史)
     async function reseedData() {
         if (!confirm('确认重新加载纹样数据?\n\n将会重置为最新的50条真实纹样 (怀化博物馆/省研究所/汪为义收藏等藏品)。\n\n您手动添加的纹样、采集、收藏、历史记录会保留。')) return;
-        const SEED_VERSION = 'imported-v3-50';
+        const SEED_VERSION = 'imported-v4-51';
         const clearTx = db.transaction('patterns', 'readwrite');
         clearTx.objectStore('patterns').clear();
         await new Promise(res => { clearTx.oncomplete = () => res(); });
