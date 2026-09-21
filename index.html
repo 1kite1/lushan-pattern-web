@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -253,6 +253,14 @@
         .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: #a78bfa; }
         .form-textarea { resize: vertical; min-height: 80px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        /* 纹样图片上传 */
+        .img-upload { display: flex; gap: 14px; align-items: flex-start; }
+        .img-preview { width: 96px; height: 96px; flex: none; border: 1px dashed #3a3a5c; border-radius: 10px; background: #1a1a30; display: flex; align-items: center; justify-content: center; overflow: hidden; color: #6b6b8c; font-size: 22px; }
+        .img-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .img-upload-actions { flex: 1; min-width: 0; }
+        .img-upload-actions .btn { padding: 8px 12px; font-size: 12px; margin: 0 8px 8px 0; }
+        .img-hint { font-size: 11px; color: #6b6b8c; line-height: 1.7; word-break: break-all; }
+        .file-input { display: none; }
         @media (max-width: 600px) {
             /* 窄屏（手机竖屏/PWA）：添加表单由双列改单列，避免右列 placeholder 被裁 */
             .modal { width: 95%; }
@@ -288,6 +296,7 @@
 #dbg.show,#dbg:hover{display:block}
 </style>
     <link rel="stylesheet" href="mobile.css">
+    <link rel="stylesheet" href="region-chain-css.css">
 </head>
 <body>
     <!-- 顶部导航 -->
@@ -456,6 +465,7 @@
                 <table class="admin-table">
                     <thead>
                         <tr>
+                            <th style="width:56px;">图</th>
                             <th>编号</th>
                             <th>名称</th>
                             <th>民族</th>
@@ -487,6 +497,19 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editId">
+                <input type="hidden" id="editImageData">
+                <div class="form-group">
+                    <label class="form-label">纹样图片（上传后自动计算特征，即可被识别匹配）</label>
+                    <div class="img-upload">
+                        <div class="img-preview" id="editImagePreview">🖼️</div>
+                        <div class="img-upload-actions">
+                            <button type="button" class="btn btn-primary" onclick="document.getElementById('editImageFile').click()">📁 选择图片</button>
+                            <button type="button" class="btn" style="background:#2a2a48;border:1px solid #3a3a66;" onclick="clearEditImage()">🗑️ 移除</button>
+                            <input type="file" id="editImageFile" class="file-input" accept="image/*" onchange="handleEditImage(this)">
+                            <div class="img-hint" id="editImageHint">支持 JPG/PNG，手机端可直接拍照。图片会压缩到 ≤768px 存入本地库，保存后自动重算特征。</div>
+                        </div>
+                    </div>
+                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">纹样名称 *</label>
@@ -939,6 +962,8 @@
                     if (__dp) __dp.classList.add('open');
                     const __cb = document.querySelector('.detail-close');
                     if (__cb) __cb.classList.add('show');
+                    // 云端相似纹样搜索
+                    if (result.cloudFeatures) fetchCloudSearch(result.cloudFeatures);
                 } catch (e) {
                     console.error('displayResult error:', e);
                     showToast('结果显示失败: ' + (e.message||e), 'error');
@@ -973,17 +998,14 @@
             img.timestamp = Date.now();
 
             // 保存到历史
-            // pending（预热未完成）结果不写历史
-            if (img.result.id !== 'pending') {
-                await addHistoryRecord({
-                    imageData: img.data,
-                    patternId: img.result.id,
-                    patternName: img.result.name,
-                    similarity: img.result.stats.similarity,
-                    timestamp: Date.now(),
-                    matchedPattern: img.result
-                });
-            }
+            await addHistoryRecord({
+                imageData: img.data,
+                patternId: img.result.id,
+                patternName: img.result.name,
+                similarity: img.result.stats.similarity,
+                timestamp: Date.now(),
+                matchedPattern: img.result
+            });
 
             overlay.classList.remove('show');
             updateBatchGrid();
@@ -1288,21 +1310,20 @@
     }
 
     // 库特征缓存（localStorage）
-    const LIB_FEATURES_KEY = 'libFeatures_v6';  // v6: 5固定裁剪(抗裁剪偏移)+pHash归一化+改进autoCropRect
-    var _libFeatures = null;
-    var _warmProgress = { done: 0, total: 0, done_: false };
-    // 带超时的 loadImage
-    function loadImageTimeout(src, ms) {
-        return new Promise((res, rej) => {
-            const im = new Image();
-            const t = setTimeout(() => { im.onload = im.onerror = null; rej(new Error('timeout')); }, ms || 8000);
-            im.onload = () => { clearTimeout(t); res(im); };
-            im.onerror = () => { clearTimeout(t); rej(new Error('图片加载失败: ' + src)); };
-            im.src = src;
+    // 带超时的图片加载，避免单张图片加载失败导致预热永久卡死
+    function loadImageWithTimeout(src, ms) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const timer = setTimeout(() => { img.src = ''; reject(new Error('load timeout: ' + src)); }, ms || 15000);
+            img.onload = () => { clearTimeout(timer); resolve(img); };
+            img.onerror = (e) => { clearTimeout(timer); reject(new Error('load error: ' + src)); };
+            img.src = src;
         });
     }
+    const LIB_FEATURES_KEY = 'libFeatures_v6';  // v6: 5固定裁剪(抗裁剪偏移)+pHash归一化+改进autoCropRect
+    var _libFeatures = null;
     async function getLibFeatures() {
-        if (_libFeatures && Object.keys(_libFeatures).length >= (patterns?.length || 0)) return _libFeatures;
+        if (_libFeatures) return _libFeatures;
         // 启动时清掉旧版缓存, 避免使用过时特征
         try { localStorage.removeItem('libFeatures_v1'); localStorage.removeItem('libFeatures_v2'); localStorage.removeItem('libFeatures_v3'); localStorage.removeItem('libFeatures_v4'); localStorage.removeItem('libFeatures_v5'); } catch (e) {}
         try {
@@ -1310,31 +1331,20 @@
             if (c) { _libFeatures = JSON.parse(c); if (_libFeatures && Object.keys(_libFeatures).length >= patterns.length) return _libFeatures; }
         } catch (e) {}
         _libFeatures = {};
-        _warmProgress = { done: 0, total: patterns.filter(p => p.imageUrl).length, done_: false };
-        const total = _warmProgress.total;
-        // 并发 4 个, 避免单线程卡死
-        const queue = patterns.filter(p => p.imageUrl).map(p => async () => {
+        let _done = 0, _total = patterns.length;
+        for (const p of patterns) {
+            if (!p.imageUrl) continue;
             try {
-                const img = await loadImageTimeout(p.imageUrl, 6000);
-                _libFeatures[p.id] = extractMultiCrop(img);
-            } catch (e) { console.warn('特征提取失败', p.id, e?.message || e); }
-            _warmProgress.done++;
-            console.log(`[预热] ${_warmProgress.done}/${total}`);
-        });
-        // 简易并发池
-        const concurrency = 4;
-        const running = new Set();
-        for (const task of queue) {
-            const p = task().finally(() => running.delete(p));
-            running.add(p);
-            if (running.size >= concurrency) await Promise.race(running);
+                const img = await loadImageWithTimeout(p.imageUrl, 15000); // 单张最多 15s，超时跳过
+                _libFeatures[p.id] = extractMultiCrop(img); // v4: 库侧多 rects // 库只存整图特征
+            } catch (e) { console.warn('特征提取失败/跳过', p.id, e.message || e); }
+            _done++;
+            try { window._warmProgress = Math.round(_done / _total * 100); } catch (e) {}
         }
-        await Promise.all(running);
-        _warmProgress.done_ = true;
-        try { localStorage.setItem(LIB_FEATURES_KEY, JSON.stringify(_libFeatures)); } catch (e) { console.warn('特征缓存写入失败', e); }
+        try { localStorage.setItem(LIB_FEATURES_KEY, JSON.stringify(_libFeatures)); } catch (e) {}
         return _libFeatures;
     }
-    function warmLibFeatures() { getLibFeatures().catch(e => console.warn('预热失败', e)); } // 后台预热
+    function warmLibFeatures() { getLibFeatures().catch(() => {}); } // 后台预热
 
     function matchQuery(qf, lib) {
         const ranked = patterns.map(p => {
@@ -1381,9 +1391,103 @@
         } catch (e) { return null; }
     }
 
+
+// === U-Net 语义分割（经典CV组合，零体积增加）===
+async function segmentPattern(img) {
+    const W = img.width, H = img.height;
+    // 缩放到 600px 宽
+    const scale = Math.min(1, 600 / Math.max(W, H));
+    const nW = Math.round(W * scale), nH = Math.round(H * scale);
+    const c = document.createElement('canvas');
+    c.width = nW; c.height = nH;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0, nW, nH);
+    const d = ctx.getImageData(0, 0, nW, nH).data;
+
+    // 灰度化
+    const gray = new Float32Array(nW * nH);
+    for (let i = 0; i < nW * nH; i++) {
+        gray[i] = d[i*4] * 0.299 + d[i*4+1] * 0.587 + d[i*4+2] * 0.114;
+    }
+
+    // 四周采样估计背景色
+    const bg = [gray[0], gray[nW-1], gray[(nH-1)*nW], gray[nH*nW-1]];
+    const bgColor = bg.reduce((a,b)=>a+b,0)/bg.length;
+
+    // Otsu 自适应阈值
+    function otsuThreshold(g) {
+        let h = new Array(256).fill(0);
+        for (let v of g) h[Math.min(255,Math.max(0,Math.round(v)))]++;
+        const n = g.length, m = g.reduce((a,b)=>a+b,0)/n;
+        let maxVar = 0, th = 128;
+        for (let t = 0; t < 256; t++) {
+            const w0 = h.slice(0,t).reduce((a,b)=>a+b,0), w1 = n-w0;
+            if (w0===0||w1===0) continue;
+            const m0 = h.slice(0,t).reduce((a,b,i)=>a+i*b,0)/w0;
+            const m1 = (m*w1-w0*m0)/w1;
+            const varB = w0*w1*(m0-m1)*(m0-m1)/(n*n);
+            if (varB > maxVar) { maxVar=varB; th=t; }
+        }
+        return th;
+    }
+    const th = otsuThreshold(gray);
+
+    // 二值化 + 前景掩码
+    const mask = new Uint8Array(nW * nH);
+    for (let i = 0; i < nW*nH; i++) {
+        mask[i] = Math.abs(gray[i]-bgColor) > th * 0.6 ? 255 : 0;
+    }
+
+    // 形态学：闭运算（填孔）+ 开运算（去噪点）
+    function dilate(m, w, h, it) {
+        for (let k=0;k<it;k++){const n=new Uint8Array(w*h);for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const c=y*w+x;n[c]=(m[c-w]||m[c+w]||m[c-1]||m[c+1]||m[c])?255:0;}m=n;}
+        return m;
+    }
+    function erode(m, w, h, it) {
+        for (let k=0;k<it;k++){const n=new Uint8Array(w*h);for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const c=y*w+x;n[c]=(m[c-w]&&m[c+w]&&m[c-1]&&m[c+1]&&m[c])?255:0;}m=n;}
+        return m;
+    }
+    const m1 = dilate(mask, nW, nH, 2);
+    const m2 = erode(m1, nW, nH, 2);
+
+    // 最大连通域
+    function keepLargest(m, w, h) {
+        const vis = new Uint8Array(w*h), label = 0, sizes = [];
+        for (let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){const c=y*w+x;if(!m[c]||vis[c])continue;const list=[c];vis[c]=1;let sz=0;while(list.length){const p=list.pop();m[p]=label+1;sz++;const nx=p%w,ny=(p-nx)/w;[[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy])=>{const nn=ny+dy,px2=nx+dx,pp=nn*w+px2;if(nn>0&&nn<h-1&&px2>0&&px2<w-1&&m[pp]===255&&!vis[pp]){vis[pp]=1;list.push(pp);}});}if(sz>0)sizes.push(sz);}
+        if(!sizes.length)return m;
+        const maxLabel=sizes.reduce((a,b,i,arr)=>b>arr[a]?i:a,0)+1;
+        let maxSz=0,maxLabel2=maxLabel+1;
+        for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const c=y*w+x;if(m[c]===maxLabel+1&&sizes[maxLabel-1]>maxSz){maxSz=sizes[maxLabel-1];maxLabel2=maxLabel;}}
+        for(let i=0;i<w*h;i++) m[i]=(m[i]===maxLabel2)?255:0;
+        return m;
+    }
+    const m3 = keepLargest(m2, nW, nH);
+
+    // 背景置白
+    const out = ctx.createImageData(nW, nH);
+    for (let i=0;i<nW*nH;i++){const bgPx=i*4,c=i*4;
+        out.data[bgPx]=m3[i]?d[bgPx]:255;
+        out.data[bgPx+1]=m3[i]?d[bgPx+1]:255;
+        out.data[bgPx+2]=m3[i]?d[bgPx+2]:255;
+        out.data[bgPx+3]=255;
+    }
+    const result=document.createElement('canvas');result.width=nW;result.height=nH;
+    result.getContext('2d').putImageData(out,0,0);
+    return result;
+}
+
     async function localMatch(imageData) {
+        try { imageData = await segmentPattern(imageData); } catch(e) { console.warn("[分割] 跳过:", e.message); }
         const img = await loadImage(imageData);
         const qf = extractMultiCrop(img);
+        // 聚合 5 个 crop 为 1 组特征（与 compute_features.js 算法一致）
+        const aggFeat = {
+            ah: qf[0].ah, ph: qf[0].ph,
+            ch: qf.map(c => c.ch).reduce((a, b) => a.map((v, i) => v + b[i]), new Array(64).fill(0)),
+            lh: qf.map(c => c.lh).reduce((a, b) => a.map((v, i) => v + b[i]), new Array(256).fill(0)),
+            eoh: qf.map(c => c.eoh).reduce((a, b) => a.map((v, i) => v + b[i]), new Array(36).fill(0)),
+            fb: [0, 1, 2].map(i => qf.reduce((s, c) => s + c.fb[i], 0) / qf.length)
+        };
         const lib = await getLibFeatures();
         const ranked = matchQuery(qf, lib);
         if (!ranked.length) {
@@ -1424,7 +1528,8 @@
                 top3: ranked.slice(0, 3).map(r => {
                     const s = (1 - r.score) * 100 + Math.min(20, Math.max(0, ((ranked[1] ? ranked[1].score : r.score) - r.score) * 100 * 50));
                     return { id: r.p.id, name: r.p.name, sim: Math.round(Math.max(35, Math.min(99, s))) };
-                })
+                }),
+                cloudFeatures: aggFeat
             }
         };
     }
@@ -1436,6 +1541,98 @@
             try { const kws = await baiduKeywords(imageData); if (kws && kws.length) res.stats.keywords = kws; } catch (e) {}
         }
         return res;
+    }
+
+    // ===== 云端相似纹样搜索 =====
+    function gradeCloudRisk(results) {
+        if (!results || !results.length) {
+            return { bestSim: 0, level: '高', riskPct: 88, color: '#f44336',
+                advice: '未匹配到云端公有纹样库记录，无法确认纹样来源，商用前建议人工确权与商标检索。' };
+        }
+        const best = Math.max.apply(null, results.map(function (r) { return parseInt(r.similarity) || 0; }));
+        let level, color, advice;
+        if (best >= 85) {
+            level = '低'; color = '#4caf50';
+            advice = '已匹配公有古纹样（最高相似度 ' + best + '%），属公有领域传统纹样，可安全商用，无原创权属争议。';
+        } else if (best >= 60) {
+            level = '中'; color = '#ff9800';
+            advice = '疑似已知纹样的衍生或变体（最高相似度 ' + best + '%），建议人工复核纹样来源与改编范围。';
+        } else {
+            level = '高'; color = '#f44336';
+            advice = '与已知公有纹样差异显著（最高相似度 ' + best + '%），可能为现代原创设计或近似在册商标，商用前建议进行商标检索与权属确认。';
+        }
+        const riskPct = Math.max(5, Math.min(95, Math.round((100 - best) * 0.9 + 5)));
+        return { bestSim: best, level: level, color: color, advice: advice, riskPct: riskPct };
+    }
+
+    function updateRiskCard(risk) {
+        try {
+            const cards = document.querySelectorAll('#detailPanel .stat-card');
+            if (cards[1]) {
+                const v = cards[1].querySelector('.stat-value');
+                v.textContent = (risk.riskPct != null ? risk.riskPct + '%' : '待定');
+                v.style.color = risk.color;
+            }
+        } catch (e) {}
+    }
+
+    async function fetchCloudSearch(features) {
+        const container = document.getElementById('cloud-search-results');
+        const loading = document.getElementById('cloud-search-loading');
+        if (!container) return;
+        try {
+            const url = `${CHAIN_CONFIG.proxyUrl}/api/search`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ features, top: 5 })
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            if (loading) loading.style.display = 'none';
+            if (data.error) { container.innerHTML = '<div style="color:#ff8a8a;font-size:12px;padding:6px 0;">云端搜索失败：' + data.error + '</div>'; return; }
+            if (!data.results || !data.results.length) {
+                const r0 = gradeCloudRisk([]);
+                window.__cloudRisk = r0; window.__cloudMatches = [];
+                container.innerHTML = `
+                    <div class="section-title" style="margin-top:4px;">☁️ 云端纹样库 Top-5</div>
+                    <div style="color:#888;font-size:12px;padding:6px 0;">未匹配到相似纹样</div>
+                    <div class="section-title" style="margin-top:10px;">⚖️ 侵权风险分级</div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;">
+                        <span style="display:inline-block;min-width:64px;text-align:center;padding:6px 10px;border-radius:8px;font-weight:bold;color:#fff;background:${r0.color};">${r0.level}风险</span>
+                        <span style="font-size:12px;color:#cfcfe8;line-height:1.5;">${r0.advice}</span>
+                    </div>`;
+                updateRiskCard(r0);
+                return;
+            }
+            // 渲染 Top-5 云端结果 + 侵权风险分级
+            const risk = gradeCloudRisk(data.results);
+            window.__cloudRisk = risk;
+            window.__cloudMatches = data.results;
+            container.innerHTML = `
+                <div class="section-title" style="margin-top:4px;">☁️ 云端纹样库 Top-5</div>
+                <div class="top3-list" style="margin-top:4px;">
+                    ${data.results.map((item, i) => `
+                    <div class="top3-item" onclick="quickView('${item.id}')">
+                        <span class="top3-rank">${i + 1}</span>
+                        <span class="top3-name">${item.name}</span>
+                        <span class="top3-sim" style="color:${item.similarity >= 90 ? '#4caf50' : '#ff9800'}">${item.similarity}</span>
+                    </div>`).join('')}
+                </div>
+                <div class="section-title" style="margin-top:10px;">⚖️ 侵权风险分级</div>
+                <div style="display:flex;align-items:center;gap:10px;padding:8px 0;">
+                    <span style="display:inline-block;min-width:64px;text-align:center;padding:6px 10px;border-radius:8px;font-weight:bold;color:#fff;background:${risk.color};">${risk.level}风险</span>
+                    <span style="font-size:12px;color:#cfcfe8;line-height:1.5;">${risk.advice}</span>
+                </div>
+            `;
+            updateRiskCard(risk);
+        } catch (e) {
+            if (loading) loading.style.display = 'none';
+            container.innerHTML = '<div style="color:#ff8a8a;font-size:12px;padding:6px 0;">云端搜索异常：' + e.message + '</div>';
+            const r = { level: '—', riskPct: null, color: '#888', advice: '云端比对未成功，无法评估侵权风险，建议人工确权。' };
+            window.__cloudRisk = r;
+            updateRiskCard(r);
+        }
     }
 
     function displayResult(result) {
@@ -1453,6 +1650,8 @@
                     <button class="icon-btn" onclick="exportSingleReport('${result.id}')" title="导出报告">📄</button>
                     <button class="icon-btn" onclick="registerCurrentOnChain()" title="上链确权登记">上链</button>
                     <button class="icon-btn" onclick="verifyCurrentOnChain()" title="链上验真">验真</button>
+                    <button class="icon-btn" onclick="openRegionChain()" title="区域链确权">区域链</button>
+                    <button class="icon-btn" onclick="generateComplianceReport()" title="商用合规检测报告">合规</button>
                     <button class="icon-btn" onclick="openEditModal('${result.id}')" title="编辑">✏️</button>
                 </div>
             </div>
@@ -1471,6 +1670,10 @@
                     <span class="top3-sim">${t.sim}%</span>
                 </div>`).join('')}
             </div>` : ''}
+            ${result.cloudFeatures ? `
+            <div id="cloud-search-loading" style="text-align:center;padding:10px 0 4px;color:#888;font-size:12px;">🔎 云端纹样库检索中…</div>
+            <div id="cloud-search-results"></div>
+            ` : ''}
             <div class="stats-row">
                 <div class="stat-card"><div class="stat-value green">${result.stats.similarity}</div><div class="stat-label">检测相似度</div></div>
                 <div class="stat-card"><div class="stat-value">${result.stats.risk}</div><div class="stat-label">侵权风险</div></div>
@@ -1594,6 +1797,102 @@
         showToast('历史记录已清空', 'info');
     }
 
+    // ===== 新增纹样：图片上传 + 自动特征入库 =====
+    var IMG_HINT_DEFAULT = '支持 JPG/PNG，手机端可直接拍照。图片会压缩到 ≤768px 存入本地库，保存后自动重算特征。';
+
+    function _loadImgForIndex(src) {
+        if (typeof loadImageWithTimeout === 'function') return loadImageWithTimeout(src, 15000);
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const timer = setTimeout(() => { img.src = ''; reject(new Error('load timeout')); }, 15000);
+            img.onload = () => { clearTimeout(timer); resolve(img); };
+            img.onerror = () => { clearTimeout(timer); reject(new Error('load error')); };
+            img.src = src;
+        });
+    }
+
+    function compressImageToDataURL(file, maxSide) {
+        maxSide = maxSide || 768;
+        return new Promise((resolve, reject) => {
+            const fr = new FileReader();
+            fr.onload = () => {
+                const img = new Image();
+                img.onload = () => {
+                    const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+                    const w = Math.max(1, Math.round(img.width * scale));
+                    const h = Math.max(1, Math.round(img.height * scale));
+                    const c = document.createElement('canvas');
+                    c.width = w; c.height = h;
+                    const ctx = c.getContext('2d');
+                    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+                    ctx.drawImage(img, 0, 0, w, h);
+                    try { resolve(c.toDataURL('image/jpeg', 0.85)); }
+                    catch (e) { reject(new Error('图片编码失败')); }
+                };
+                img.onerror = () => reject(new Error('图片解码失败'));
+                img.src = fr.result;
+            };
+            fr.onerror = () => reject(new Error('图片读取失败'));
+            fr.readAsDataURL(file);
+        });
+    }
+
+    function renderEditImagePreview(src) {
+        const box = document.getElementById('editImagePreview');
+        if (box) box.innerHTML = src ? '<img src="' + src + '" alt="">' : '🖼️';
+    }
+
+    function clearEditImage() {
+        const d = document.getElementById('editImageData'); if (d) d.value = '';
+        renderEditImagePreview('');
+        const h = document.getElementById('editImageHint'); if (h) h.textContent = IMG_HINT_DEFAULT;
+    }
+
+    async function handleEditImage(input) {
+        const f = input.files && input.files[0];
+        input.value = '';
+        if (!f) return;
+        if (!/^image\//.test(f.type)) { showToast('请选择图片文件', 'error'); return; }
+        try {
+            showToast('正在处理图片...', 'info');
+            const dataUrl = await compressImageToDataURL(f);
+            const d = document.getElementById('editImageData'); if (d) d.value = dataUrl;
+            renderEditImagePreview(dataUrl);
+            const kb = Math.round(dataUrl.length * 0.75 / 1024);
+            const h = document.getElementById('editImageHint');
+            if (h) h.textContent = '已选择：' + f.name + '（压缩后约 ' + kb + ' KB）。保存后自动计算特征并入库。';
+            showToast('图片已就绪，保存后自动入库', 'success');
+        } catch (e) {
+            showToast('图片处理失败：' + (e.message || e), 'error');
+        }
+    }
+
+    // 保存后把该纹样的特征并入缓存（增量），否则本地识别匹配不到它
+    async function indexPatternFeature(p) {
+        try {
+            if (!p || !p.imageUrl) return false;
+            const img = await _loadImgForIndex(p.imageUrl);
+            const f = (typeof extractMultiCrop === 'function') ? extractMultiCrop(img) : null;
+            if (!f) return false;
+            let lib = null;
+            try { lib = _libFeatures || JSON.parse(localStorage.getItem(LIB_FEATURES_KEY) || 'null'); } catch (e) { lib = _libFeatures || null; }
+            if (lib && Object.keys(lib).length) {
+                lib[p.id] = f;
+                _libFeatures = lib;
+                try { localStorage.setItem(LIB_FEATURES_KEY, JSON.stringify(lib)); } catch (e) {}
+            } else {
+                // 没有完整缓存 -> 交给后台全量重索引
+                try { localStorage.removeItem(LIB_FEATURES_KEY); } catch (e) {}
+                _libFeatures = null;
+                try { warmLibFeatures(); } catch (e) {}
+            }
+            return true;
+        } catch (e) {
+            console.warn('新纹样特征提取失败', e);
+            return false;
+        }
+    }
+
     // ===== 数据管理 =====
     function renderAdminTable(filter = {}) {
         const tbody = document.getElementById('adminTableBody');
@@ -1611,6 +1910,7 @@
         const dc = document.getElementById('dataCount'); if (dc) dc.textContent = patterns.length;
         tbody.innerHTML = data.map(p => `
             <tr>
+                <td>${p.imageUrl ? `<img src="${p.imageUrl}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;background:#252542;" alt="">` : '<span style="color:#4a4a6a;">—</span>'}</td>
                 <td>${p.code || '—'}</td>
                 <td>${p.name}</td>
                 <td>${p.ethnic || '—'}</td>
@@ -1650,7 +1950,7 @@
         await new Promise(res => { mv.oncomplete = () => res(); });
         patterns = newPatterns;
         // 重新预热库特征
-        try { localStorage.removeItem('libFeatures_v1'); localStorage.removeItem('libFeatures_v2'); localStorage.removeItem('libFeatures_v3'); } catch (e) {}
+        try { localStorage.removeItem('libFeatures_v1'); localStorage.removeItem('libFeatures_v2'); localStorage.removeItem('libFeatures_v3'); localStorage.removeItem(LIB_FEATURES_KEY); } catch (e) {}
         _libFeatures = null;
         warmLibFeatures();
         document.getElementById('dataCount').textContent = newPatterns.length;
@@ -1667,6 +1967,7 @@
         editingPatternId = null;
         document.getElementById('modalTitle').textContent = '添加纹样';
         ['editName', 'editCode', 'editLibrary', 'editEra', 'editCraft', 'editEthnic', 'editRegion', 'editDescription', 'editMeaning'].forEach(id => document.getElementById(id).value = '');
+        clearEditImage();
         document.getElementById('editModal').classList.add('show');
     }
 
@@ -1684,6 +1985,10 @@
         document.getElementById('editRegion').value = p.region || '';
         document.getElementById('editDescription').value = p.description || '';
         document.getElementById('editMeaning').value = p.meaning || '';
+        const _ed = document.getElementById('editImageData'); if (_ed) _ed.value = p.imageUrl || '';
+        renderEditImagePreview(p.imageUrl || '');
+        const _eh = document.getElementById('editImageHint');
+        if (_eh) _eh.textContent = p.imageUrl ? '已存图片，重新选择可替换（会重算特征）。' : IMG_HINT_DEFAULT;
         document.getElementById('editModal').classList.add('show');
     }
 
@@ -1695,9 +2000,11 @@
         const name = document.getElementById('editName').value.trim();
         const code = document.getElementById('editCode').value.trim();
         if (!name) { showToast('请填写纹样名称', 'error'); return; }
+        const imgEl = document.getElementById('editImageData');
+        const imageUrl = imgEl ? (imgEl.value || '') : '';
 
         const data = {
-            name, code,
+            name, code, imageUrl,
             library: document.getElementById('editLibrary').value.trim(),
             era: document.getElementById('editEra').value.trim(),
             craft: document.getElementById('editCraft').value.trim(),
@@ -1710,15 +2017,29 @@
         if (editingPatternId) {
             const idx = patterns.findIndex(p => p.id === editingPatternId);
             if (idx >= 0) {
+                const beforeImg = patterns[idx].imageUrl || '';
                 patterns[idx] = { ...patterns[idx], ...data };
                 await savePatternToDB(patterns[idx]);
-                showToast('纹样已更新', 'success');
+                if (imageUrl && imageUrl !== beforeImg) {
+                    showToast('纹样已更新，正在重算特征...', 'info');
+                    const ok = await indexPatternFeature(patterns[idx]);
+                    showToast(ok ? '纹样已更新，特征已入库' : '纹样已更新（特征未算成功，稍后会自动重算）', ok ? 'success' : 'error');
+                } else {
+                    showToast('纹样已更新', 'success');
+                }
             }
         } else {
             data.id = 'p' + Date.now();
+            if (!data.source) data.source = '用户新增';
             patterns.push(data);
             await savePatternToDB(data);
-            showToast('纹样已添加', 'success');
+            if (imageUrl) {
+                showToast('纹样已添加，正在计算特征...', 'info');
+                const ok = await indexPatternFeature(data);
+                showToast(ok ? '纹样已添加并入库，可被识别匹配' : '纹样已添加（特征计算失败，可在数据管理重新加载数据后重试）', ok ? 'success' : 'error');
+            } else {
+                showToast('纹样已添加（未上传图片，暂不参与识别匹配）', 'info');
+            }
         }
 
         closeModal();
@@ -1730,6 +2051,14 @@
     async function deletePattern(id) {
         if (!confirm('确定要删除这条纹样数据吗？')) return;
         await deletePatternFromDB(id);
+        try {
+            if (_libFeatures) {
+                delete _libFeatures[id];
+                localStorage.setItem(LIB_FEATURES_KEY, JSON.stringify(_libFeatures));
+            } else {
+                localStorage.removeItem(LIB_FEATURES_KEY);
+            }
+        } catch (e) {}
         showToast('纹样已删除', 'info');
         renderAdminTable();
         updateFilterOptions();
@@ -1750,7 +2079,7 @@
         );
         const tbody = document.getElementById('adminTableBody');
         if (filtered.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#6b6b8c;padding:40px;">未找到匹配结果</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#6b6b8c;padding:40px;">未找到匹配结果</td></tr>`;
         } else {
             renderAdminTable();
         }
@@ -1769,6 +2098,115 @@
         const name = title.textContent;
         const p = patterns.find(p => p.name === name);
         if (p) await generatePDF(p);
+    }
+
+    async function generateComplianceReport() {
+        showToast('正在生成商用合规检测报告...', 'info');
+        try {
+            const result = window.currentResult;
+            if (!result) { showToast('请先完成识别', 'error'); return; }
+            const risk = window.__cloudRisk || gradeCloudRisk(window.__cloudMatches || []);
+            const matches = window.__cloudMatches || [];
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const pageW = 210;
+            doc.setFillColor(56, 189, 248);
+            doc.rect(0, 0, pageW, 42, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.setFont('helvetica', 'bold');
+            doc.text('麓山绘梦·纹鉴 商用合规检测报告', pageW / 2, 18, { align: 'center' });
+            doc.setFontSize(9);
+            doc.text('生成时间: ' + new Date().toLocaleString('zh-CN'), pageW / 2, 30, { align: 'center' });
+            let y = 56;
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(15);
+            doc.setFont('helvetica', 'bold');
+            doc.text('纹样: ' + (result.name || '—'), 20, y);
+            y += 10;
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(90, 90, 90);
+            const info = [
+                ['编号', result.code || '—'],
+                ['纹样库', result.library || '—'],
+                ['民族', result.ethnic || '—'],
+                ['地域', result.region || '—'],
+                ['年代', result.era || '—'],
+                ['工艺', result.craft || '—']
+            ];
+            info.forEach(function (kv, i) {
+                doc.setFont('helvetica', 'bold'); doc.text(kv[0] + ':', 20, y + i * 6.5);
+                doc.setFont('helvetica', 'normal'); doc.text(String(kv[1]), 45, y + i * 6.5);
+            });
+            y += info.length * 6.5 + 8;
+            const c = hexToRgb(risk.color);
+            doc.setFillColor(c[0], c[1], c[2]);
+            doc.roundedRect(20, y, pageW - 40, 16, 2, 2, 'F');
+            doc.setTextColor(255, 255, 255); doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+            doc.text('侵权风险等级: ' + risk.level + '风险 (' + (risk.riskPct != null ? risk.riskPct + '%' : '待定') + ')', 24, y + 10);
+            y += 24;
+            doc.setTextColor(60, 60, 60); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+            const adv = doc.splitTextToSize('评估意见: ' + risk.advice, pageW - 40);
+            doc.text(adv, 20, y); y += adv.length * 5 + 8;
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(0, 0, 0);
+            doc.text('云端纹样库比对 (Top-5)', 20, y); y += 7;
+            doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+            doc.text('排名', 20, y); doc.text('编号', 32, y); doc.text('名称', 60, y); doc.text('民族/地域', 110, y); doc.text('相似度', 175, y);
+            y += 5;
+            doc.setFont('helvetica', 'normal');
+            if (matches.length) {
+                matches.forEach(function (m, i) {
+                    if (y > 270) { doc.addPage(); y = 20; }
+                    doc.text(String(i + 1), 20, y);
+                    doc.text(String(m.id || '—'), 32, y);
+                    doc.text(String(m.name || '—').slice(0, 22), 60, y);
+                    doc.text(((m.ethnic || '—') + '/' + (m.region || '—')).slice(0, 28), 110, y);
+                    doc.text(String(m.similarity || '—'), 175, y);
+                    y += 6;
+                });
+            } else {
+                doc.text('（无云端比对记录）', 20, y); y += 6;
+            }
+            y += 6;
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(0, 0, 0);
+            doc.text('合规建议', 20, y); y += 7; doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(60, 60, 60);
+            const recs = complianceAdvice(risk.level);
+            recs.forEach(function (t) {
+                const ls = doc.splitTextToSize('• ' + t, pageW - 40);
+                doc.text(ls, 20, y); y += ls.length * 5 + 2;
+            });
+            y += 6;
+            doc.setDrawColor(200, 200, 200); doc.line(20, y, pageW - 20, y); y += 7;
+            doc.setFontSize(8); doc.setTextColor(150, 150, 150);
+            const disc = doc.splitTextToSize('免责声明：本报告基于「麓山绘梦·纹鉴」公有纹样库的算法相似度比对生成，用于辅助判断纹样与已知公有传统纹样的近似程度，不构成法律意见。商用前的商标检索、著作权确权及法律风险评估应另行咨询专业机构。', pageW - 40);
+            doc.text(disc, 20, y);
+            doc.save('商用合规检测报告_' + (result.name || '纹样') + '_' + Date.now() + '.pdf');
+            showToast('合规报告已导出', 'success');
+        } catch (e) {
+            console.error(e); showToast('生成失败，请重试', 'error');
+        }
+    }
+
+    function hexToRgb(hex) {
+        const h = (hex || '#888888').replace('#', '');
+        return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+    }
+
+    function complianceAdvice(level) {
+        if (level === '低') return [
+            '该纹样与公有古纹样高度吻合，属公有领域传统纹样，可放心用于商业设计。',
+            '建议保留本报告及云端比对记录作为来源佐证。'
+        ];
+        if (level === '中') return [
+            '疑似已知纹样的衍生或变体，建议人工复核原始纹样来源与改编比例。',
+            '如用于量产商品，建议补充纹样授权或原创性说明。'
+        ];
+        return [
+            '与已知公有纹样差异显著，存在近似在册商标或他人原创作品的风险。',
+            '商用前务必进行商标检索（中国商标网等）并取得必要的授权或原创性声明。',
+            '建议在专业法务指导下完成权属确认后再行商用。'
+        ];
     }
 
     async function generatePDF(pattern) {
@@ -1959,11 +2397,13 @@
         return await sha256Hex(JSON.stringify(feats));
     }
 
-    async function anchorToChain(fingerprint, meta) {
+    async function anchorToChain(fingerprint, meta, provider) {
+        const payload = { fingerprint, meta: meta || {} };
+        if (provider) payload.provider = provider;   // 单次覆盖链通道（如区域链）
         const res = await fetch(`${CHAIN_CONFIG.proxyUrl}/api/anchor`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fingerprint, meta: meta || {} })
+            body: JSON.stringify(payload)
         });
         if (!res.ok) throw new Error('代理返回 ' + res.status);
         return await res.json();
@@ -1982,6 +2422,7 @@
         try {
             const fp = await computeFingerprintForResult();
             if (!fp) { showToast('无法生成指纹', 'error'); return; }
+            window.currentFingerprint = fp;
             const meta = {
                 name: (window.currentResult && window.currentResult.name) || '未命名纹样',
                 owner: CHAIN_CONFIG.owner,
@@ -2006,6 +2447,7 @@
         try {
             const fp = await computeFingerprintForResult();
             if (!fp) { showToast('无法生成指纹', 'error'); return; }
+            window.currentFingerprint = fp;
             const r = await verifyOnChain(fp);
             if (r.registered) {
                 window.__chainEvidence = Object.assign({ fingerprint: fp }, r.evidence);
@@ -2045,9 +2487,23 @@
             '</div>';
     }
 
+    // ===== 区域链确权入口 =====
+    async function openRegionChain() {
+        if (!CHAIN_CONFIG.enabled) { showToast('链上确权未启用', 'error'); return; }
+        if (!currentImage) { showToast('请先上传并识别一张图片', 'error'); return; }
+        if (!window.currentFingerprint) {
+            try { window.currentFingerprint = await computeFingerprintForResult(); }
+            catch (e) { window.currentFingerprint = null; }
+        }
+        if (!window.currentFingerprint) { showToast('无法生成指纹', 'error'); return; }
+        if (typeof initRegionChainUI !== 'function') { showToast('区域链模块未加载', 'error'); return; }
+        initRegionChainUI();
+    }
+
     // ===== 启动 =====
     loadData();
     </script>
+    <script src="region-chain-ui.js"></script>
     <!-- [SW disabled for Capacitor APK - uncomment if needed]
     <script src="mobile.js"></script>
     <script>
