@@ -1587,14 +1587,27 @@ async function segmentPattern(img) {
         if (!container) return;
         try {
             const url = `${CHAIN_CONFIG.proxyUrl}/api/search`;
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ features, top: 5 })
-            });
-            if (!res.ok) throw new Error('HTTP ' + res.status);
+            let res = null, lastErr = null;
+            for (let _try = 0; _try < 2; _try++) {
+                try {
+                    const r0 = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ features, top: 5 })
+                    });
+                    if (r0.ok || r0.status === 501 || r0.status < 500) { res = r0; break; }  // 只有 5xx 才重试(501=离线, 不重试)
+                    res = r0; lastErr = new Error('HTTP ' + r0.status);
+                } catch (e) { lastErr = e; }
+                await new Promise(r => setTimeout(r, 1500));
+            }
+            if (!res) throw lastErr || new Error('网络异常');
+            if (!res.ok && res.status !== 501) throw new Error('HTTP ' + res.status);
             const data = await res.json();
             if (loading) loading.style.display = 'none';
+            if (res.status === 501 || data.error === 'offline') {
+                container.innerHTML = '<div style="color:#9a9ab8;font-size:12px;padding:6px 0;">离线本地模式：云端纹样库检索不可用（云端比对需连接线上纹样库）</div>';
+                return;
+            }
             if (data.error) { container.innerHTML = '<div style="color:#ff8a8a;font-size:12px;padding:6px 0;">云端搜索失败：' + data.error + '</div>'; return; }
             if (!data.results || !data.results.length) {
                 const r0 = gradeCloudRisk([]);
