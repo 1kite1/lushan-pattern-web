@@ -677,11 +677,18 @@
         });
     }
 
+    // 收集"用户自建"条目：id 不在官方导入集合中的旧条目（数据管理-新增纹样产生）
+    function collectUserPatterns(existing) {
+        const _src = (window.IMPORTED_PATTERNS && window.IMPORTED_PATTERNS.length) ? window.IMPORTED_PATTERNS : (typeof defaultPatterns !== 'undefined' ? defaultPatterns : []);
+        const _ids = new Set(_src.map(x => x && x.id).filter(Boolean));
+        return (existing || []).filter(p => p && p.id && !_ids.has(p.id));
+    }
+
     async function loadData() {
         await initDB();
 
         // 检查 seed 版本 — 如果未写入或版本不对, 重新播种
-        const SEED_VERSION = 'imported-v4-51';  // 升级到 50 条真实纹样时改这个值
+        const SEED_VERSION = 'imported-v5-52';  // 升级到 50 条真实纹样时改这个值
         let currentVersion = null;
         try {
             const vReq = db.transaction('meta').objectStore('meta').get('seedVersion');
@@ -693,12 +700,15 @@
         const pReq = db.transaction('patterns').objectStore('patterns').getAll();
         patterns = await new Promise(res => pReq.onsuccess = () => res(pReq.result));
         if (needReseed || patterns.length === 0) {
+            // 全量播种前先摘出用户自建条目, 播种后回填(否则会被 clear 掉)
+            const _preserved = collectUserPatterns(patterns);
             // 清空旧数据
             const clearTx = db.transaction('patterns', 'readwrite');
             clearTx.objectStore('patterns').clear();
             await new Promise(res => { clearTx.oncomplete = () => res(); });
             // 重新播种
             patterns = (window.IMPORTED_PATTERNS && window.IMPORTED_PATTERNS.length) ? JSON.parse(JSON.stringify(window.IMPORTED_PATTERNS)) : [...defaultPatterns];
+            if (_preserved.length) patterns = patterns.concat(_preserved);
             const tx = db.transaction('patterns', 'readwrite');
             patterns.forEach(p => tx.objectStore('patterns').put(p));
             await new Promise(res => tx.oncomplete = () => res());
@@ -706,7 +716,7 @@
             const mv = db.transaction('meta', 'readwrite');
             mv.objectStore('meta').put({ key: 'seedVersion', value: SEED_VERSION });
             await new Promise(res => { mv.oncomplete = () => res(); });
-            console.log('数据已重新播种, 共 ' + patterns.length + ' 条纹样 (version=' + SEED_VERSION + ')');
+            console.log('数据已重新播种, 共 ' + patterns.length + ' 条纹样 (version=' + SEED_VERSION + ')' + (_preserved.length ? ', 其中保留用户自建 ' + _preserved.length + ' 条' : ''));
         }
 
         // 加载历史
@@ -1310,16 +1320,6 @@
     }
 
     // 库特征缓存（localStorage）
-    // 带超时的图片加载，避免单张图片加载失败导致预热永久卡死
-    function loadImageWithTimeout(src, ms) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            const timer = setTimeout(() => { img.src = ''; reject(new Error('load timeout: ' + src)); }, ms || 15000);
-            img.onload = () => { clearTimeout(timer); resolve(img); };
-            img.onerror = (e) => { clearTimeout(timer); reject(new Error('load error: ' + src)); };
-            img.src = src;
-        });
-    }
     const LIB_FEATURES_KEY = 'libFeatures_v7';  // v6: 5固定裁剪(抗裁剪偏移)+pHash归一化+改进autoCropRect
     var _libFeatures = null;
     async function getLibFeatures() {
@@ -1331,7 +1331,6 @@
             if (c) { _libFeatures = JSON.parse(c); if (_libFeatures && Object.keys(_libFeatures).length >= patterns.length) return _libFeatures; }
         } catch (e) {}
         _libFeatures = {};
-        let _done = 0, _total = patterns.length;
         for (const p of patterns) {
             if (!p.imageUrl) continue;
             const _urls = (Array.isArray(p.imageUrls) && p.imageUrls.length) ? p.imageUrls : [p.imageUrl];
@@ -1343,8 +1342,6 @@
                 } catch (e) { console.warn('特征提取失败/跳过', p.id, _u, e.message || e); }
             }
             if (_feats.length) _libFeatures[p.id] = _feats;
-            _done++;
-            try { window._warmProgress = Math.round(_done / _total * 100); } catch (e) {}
         }
         try { localStorage.setItem(LIB_FEATURES_KEY, JSON.stringify(_libFeatures)); } catch (e) {}
         return _libFeatures;
@@ -1961,12 +1958,15 @@ async function segmentPattern(img) {
 
     // 手动重新加载纹样数据 (会保留用户的采集/收藏/历史)
     async function reseedData() {
-        if (!confirm('确认重新加载纹样数据?\n\n将会重置为最新的50条真实纹样 (怀化博物馆/省研究所/汪为义收藏等藏品)。\n\n您手动添加的纹样、采集、收藏、历史记录会保留。')) return;
-        const SEED_VERSION = 'imported-v4-51';
+        const _officialCount = (window.IMPORTED_PATTERNS && window.IMPORTED_PATTERNS.length) ? window.IMPORTED_PATTERNS.length : defaultPatterns.length;
+        if (!confirm('确认重新加载纹样数据?\n\n将会重置为最新的 ' + _officialCount + ' 条官方纹样 (怀化博物馆/省研究所/汪为义收藏等藏品)。\n\n您手动添加的纹样(数据管理-新增纹样)、采集、收藏、历史记录会保留。')) return;
+        const SEED_VERSION = 'imported-v5-52';
+        const _preserved = collectUserPatterns(patterns);   // 用户自建条目, 播种后回填
         const clearTx = db.transaction('patterns', 'readwrite');
         clearTx.objectStore('patterns').clear();
         await new Promise(res => { clearTx.oncomplete = () => res(); });
         const newPatterns = (window.IMPORTED_PATTERNS && window.IMPORTED_PATTERNS.length) ? JSON.parse(JSON.stringify(window.IMPORTED_PATTERNS)) : [...defaultPatterns];
+        if (_preserved.length) newPatterns.push(..._preserved);
         const tx = db.transaction('patterns', 'readwrite');
         newPatterns.forEach(p => tx.objectStore('patterns').put(p));
         await new Promise(res => { tx.oncomplete = () => res(); });
@@ -1980,7 +1980,7 @@ async function segmentPattern(img) {
         warmLibFeatures();
         document.getElementById('dataCount').textContent = newPatterns.length;
         renderAdminTable({ search: '', ethnic: '', era: '', craft: '' });
-        showToast('✓ 纹样数据已重新加载, 共 ' + newPatterns.length + ' 条');
+        showToast('✓ 纹样数据已重新加载, 共 ' + newPatterns.length + ' 条' + (_preserved.length ? ' (含保留自建 ' + _preserved.length + ' 条)' : ''));
     }
 
     function openDetailInAdmin(id) {
