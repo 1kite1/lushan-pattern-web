@@ -688,7 +688,7 @@
         await initDB();
 
         // 检查 seed 版本 — 如果未写入或版本不对, 重新播种
-        const SEED_VERSION = 'imported-v6-52';  // 升级到 50 条真实纹样时改这个值
+        const SEED_VERSION = 'imported-v7-52';  // 升级到 50 条真实纹样时改这个值
         let currentVersion = null;
         try {
             const vReq = db.transaction('meta').objectStore('meta').get('seedVersion');
@@ -1960,7 +1960,7 @@ async function segmentPattern(img) {
     async function reseedData() {
         const _officialCount = (window.IMPORTED_PATTERNS && window.IMPORTED_PATTERNS.length) ? window.IMPORTED_PATTERNS.length : defaultPatterns.length;
         if (!confirm('确认重新加载纹样数据?\n\n将会重置为最新的 ' + _officialCount + ' 条官方纹样 (怀化博物馆/省研究所/汪为义收藏等藏品)。\n\n您手动添加的纹样(数据管理-新增纹样)、采集、收藏、历史记录会保留。')) return;
-        const SEED_VERSION = 'imported-v6-52';
+        const SEED_VERSION = 'imported-v7-52';
         const _preserved = collectUserPatterns(patterns);   // 用户自建条目, 播种后回填
         const clearTx = db.transaction('patterns', 'readwrite');
         clearTx.objectStore('patterns').clear();
