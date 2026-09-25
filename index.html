@@ -2149,6 +2149,22 @@ async function segmentPattern(img) {
     }
 
     // ===== PDF 导出（HTML 报告 -> html2canvas 截图 -> jsPDF 分页，原生支持中文） =====
+    // 结果列表「导出报告」按钮入口
+    async function exportSingleReport(patternId) {
+        const p = patterns.find(p => p.id === patternId);
+        if (!p) return;
+        await generatePDF(p);
+    }
+
+    // 详情面板「导出 PDF 报告」按钮入口
+    async function exportCurrentReport() {
+        const title = document.getElementById('detailPanel').querySelector('.detail-title');
+        if (!title) return;
+        const name = title.textContent;
+        const p = patterns.find(p => p.name === name);
+        if (p) await generatePDF(p);
+    }
+
     function __rpEsc(s) {
         return String(s == null ? '' : s)
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
