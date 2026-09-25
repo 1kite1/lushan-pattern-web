@@ -295,6 +295,180 @@
 #dbg{position:fixed;bottom:60px;left:4px;right:4px;z-index:99999;background:#111;border:1px solid #0f0;font-size:11px;color:#0f0;max-height:180px;overflow-y:auto;padding:6px;display:none;font-family:monospace;line-height:1.5}
 #dbg.show,#dbg:hover{display:block}
 </style>
+    <style>
+
+/* ===== 织绣纹样艺术资源库（国风浅色主题；样式全部限定在 #libraryView 内，不影响原有暗色界面） ===== */
+#libraryView{position:fixed;left:0;right:0;bottom:0;top:var(--lib-top,64px);z-index:1200;display:none;
+  overflow-y:auto;overflow-x:hidden;
+  background:#FDFBF7;color:#0F172A;text-align:left;
+  font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;}
+#libraryView.lib-open{display:block;}
+#libraryView *{box-sizing:border-box;}
+#libraryView input{font-family:inherit;}
+
+/* 顶栏 */
+#libraryView .lib-head{position:sticky;top:0;z-index:5;background:rgba(253,251,247,.92);
+  backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid #efe9dc;}
+#libraryView .lib-head-in{max-width:1400px;margin:0 auto;padding:14px 26px;display:flex;align-items:center;gap:18px;}
+#libraryView .lib-back{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 16px;border-radius:999px;
+  border:1px solid #e3dccb;background:#fff;color:#334155;font-size:13.5px;cursor:pointer;transition:.18s;white-space:nowrap;}
+#libraryView .lib-back:hover{background:#F5F1E6;border-color:#CA8A04;color:#A16207;}
+#libraryView .lib-brand{font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;font-size:17px;font-weight:700;
+  letter-spacing:.06em;color:#0F172A;white-space:nowrap;}
+#libraryView .lib-brand em{font-style:normal;color:#CA8A04;}
+#libraryView .lib-search{margin-left:auto;display:flex;align-items:center;gap:0;width:min(380px,42vw);
+  border:1px solid #e3dccb;border-radius:999px;background:#fff;overflow:hidden;transition:.18s;}
+#libraryView .lib-search:focus-within{border-color:#CA8A04;box-shadow:0 0 0 3px rgba(202,138,4,.12);}
+#libraryView .lib-search input{flex:1;min-width:0;height:38px;border:0;outline:0;background:transparent;
+  padding:0 4px 0 18px;font-size:13.5px;color:#0F172A;}
+#libraryView .lib-search input::placeholder{color:#a8a29e;}
+#libraryView .lib-search button{height:38px;padding:0 20px;border:0;background:#0F172A;color:#FDFBF7;
+  font-size:13.5px;cursor:pointer;transition:.18s;}
+#libraryView .lib-search button:hover{background:#7A2E2E;}
+
+/* 主体两栏 */
+#libraryView .lib-wrap{max-width:1400px;margin:0 auto;padding:26px;display:grid;
+  grid-template-columns:210px minmax(0,1fr);gap:30px;align-items:start;}
+
+/* 左侧分类 */
+#libraryView .lib-side{position:sticky;top:86px;}
+#libraryView .lib-side-h{font-size:12px;letter-spacing:.18em;color:#a8a29e;font-weight:600;margin:0 0 12px 12px;}
+#libraryView .lib-cat{display:flex;align-items:center;gap:9px;padding:10px 13px;border-radius:10px;cursor:pointer;
+  font-size:14px;color:#334155;transition:.16s;border-left:3px solid transparent;}
+#libraryView .lib-cat:hover{background:#F5F1E6;color:#0F172A;}
+#libraryView .lib-cat.on{background:#F5F1E6;color:#7A2E2E;font-weight:600;border-left-color:#CA8A04;}
+#libraryView .lib-cat .n{margin-left:auto;font-size:12px;color:#a8a29e;font-variant-numeric:tabular-nums;}
+#libraryView .lib-cat.on .n{color:#A16207;}
+#libraryView .lib-side-box{margin-top:22px;padding:16px;border:1px solid #efe9dc;border-radius:14px;background:#fff;}
+#libraryView .lib-side-box .k{font-size:12px;color:#a8a29e;}
+#libraryView .lib-side-box .v{font-size:20px;font-weight:700;color:#CA8A04;font-variant-numeric:tabular-nums;
+  font-family:"Noto Serif SC","Songti SC",serif;}
+
+/* Hero */
+#libraryView .lib-hero{position:relative;overflow:hidden;border:1px solid #efe9dc;border-radius:20px;
+  padding:34px 34px 30px;margin-bottom:26px;
+  background:
+    radial-gradient(120% 160% at 88% 12%,rgba(202,138,4,.14),transparent 58%),
+    radial-gradient(90% 130% at 4% 96%,rgba(122,46,46,.10),transparent 60%),
+    linear-gradient(135deg,#FFFDF9,#F5F1E6 62%,#F1E9D8);}
+#libraryView .lib-hero::after{content:"";position:absolute;right:-40px;bottom:-70px;width:320px;height:320px;
+  background-image:linear-gradient(45deg,rgba(202,138,4,.18) 25%,transparent 25%,transparent 75%,rgba(202,138,4,.18) 75%),
+                   linear-gradient(45deg,rgba(202,138,4,.18) 25%,transparent 25%,transparent 75%,rgba(202,138,4,.18) 75%);
+  background-size:26px 26px;background-position:0 0,13px 13px;transform:rotate(45deg);opacity:.5;
+  -webkit-mask-image:radial-gradient(closest-side,#000,transparent);mask-image:radial-gradient(closest-side,#000,transparent);}
+#libraryView .lib-eyebrow{display:inline-block;font-size:11.5px;letter-spacing:.22em;color:#A16207;
+  border:1px solid rgba(202,138,4,.4);border-radius:999px;padding:4px 12px;margin-bottom:16px;background:rgba(255,255,255,.6);}
+#libraryView .lib-hero h1{position:relative;margin:0;font-size:clamp(26px,3.6vw,40px);line-height:1.22;font-weight:700;
+  letter-spacing:.03em;color:#0F172A;font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;}
+#libraryView .lib-hero h1 span{color:#7A2E2E;}
+#libraryView .lib-hero p{position:relative;margin:14px 0 0;max-width:640px;font-size:14px;line-height:1.9;color:#334155;}
+#libraryView .lib-hero-stats{position:relative;display:flex;gap:34px;margin-top:24px;flex-wrap:wrap;}
+#libraryView .lib-hero-stats .s .n{font-size:26px;font-weight:700;color:#CA8A04;font-variant-numeric:tabular-nums;
+  font-family:"Noto Serif SC","Songti SC",serif;line-height:1.1;}
+#libraryView .lib-hero-stats .s .l{font-size:12px;color:#78716c;margin-top:4px;letter-spacing:.08em;}
+
+/* 结果栏 */
+#libraryView .lib-bar{display:flex;align-items:baseline;gap:12px;margin:0 0 16px;padding:0 2px;}
+#libraryView .lib-bar .t{font-size:16px;font-weight:700;color:#0F172A;
+  font-family:"Noto Serif SC","Songti SC",serif;letter-spacing:.04em;}
+#libraryView .lib-bar .c{font-size:12.5px;color:#a8a29e;}
+#libraryView .lib-bar .reset{margin-left:auto;font-size:12.5px;color:#A16207;cursor:pointer;border-bottom:1px dashed #CA8A04;}
+
+/* 卡片网格 */
+#libraryView .lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:22px;}
+#libraryView .lib-card{border:1px solid #efe9dc;border-radius:16px;background:#fff;overflow:hidden;cursor:pointer;
+  transition:transform .2s,box-shadow .2s,border-color .2s;display:flex;flex-direction:column;}
+#libraryView .lib-card:hover{transform:translateY(-4px);box-shadow:0 14px 30px -14px rgba(15,23,42,.24);border-color:#e6d9bd;}
+/* 原图为 1.9MB 级大图且服务端无缩略图，用骨架微光过渡加载过程 */
+#libraryView .lib-thumb{position:relative;aspect-ratio:4/3;overflow:hidden;
+  background:linear-gradient(100deg,#F5F1E6 28%,#EFE6D3 40%,#F5F1E6 54%);background-size:300% 100%;
+  animation:libshimmer 1.5s ease-in-out infinite;}
+#libraryView .lib-thumb.done{animation:none;background:#F5F1E6;}
+#libraryView .lib-thumb img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;
+  transition:opacity .45s ease,transform .45s ease;}
+#libraryView .lib-thumb img.on{opacity:1;}
+#libraryView .lib-card:hover .lib-thumb img{transform:scale(1.045);}
+@keyframes libshimmer{0%{background-position:120% 0;}100%{background-position:-20% 0;}}
+#libraryView .lib-thumb .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:#cbbfa4;font-size:12px;letter-spacing:.14em;}
+#libraryView .lib-cat-chip{position:absolute;left:10px;top:10px;padding:3px 10px;border-radius:999px;
+  font-size:11px;color:#7A2E2E;background:rgba(255,255,255,.92);border:1px solid rgba(202,138,4,.35);letter-spacing:.06em;}
+#libraryView .lib-card-b{padding:13px 15px 16px;display:flex;flex-direction:column;gap:7px;flex:1;}
+#libraryView .lib-card-t{font-size:14.5px;font-weight:600;color:#0F172A;line-height:1.45;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+#libraryView .lib-card-o{font-size:12px;color:#8a8378;}
+#libraryView .lib-card-d{font-size:12.5px;line-height:1.72;color:#57534e;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+/* 加载更多 / 状态 */
+#libraryView .lib-more{display:flex;justify-content:center;margin:34px 0 10px;}
+#libraryView .lib-more button{height:42px;padding:0 34px;border-radius:999px;border:1px solid #e3dccb;background:#fff;
+  color:#334155;font-size:13.5px;cursor:pointer;transition:.18s;}
+#libraryView .lib-more button:hover{border-color:#CA8A04;color:#A16207;background:#F5F1E6;}
+#libraryView .lib-state{grid-column:1/-1;padding:70px 20px;text-align:center;color:#a8a29e;font-size:13.5px;line-height:2.1;}
+#libraryView .lib-state b{display:block;font-size:15px;color:#57534e;margin-bottom:6px;font-weight:600;}
+#libraryView .lib-spin{width:26px;height:26px;margin:0 auto 14px;border:2.5px solid #efe9dc;border-top-color:#CA8A04;
+  border-radius:50%;animation:libspin .8s linear infinite;}
+@keyframes libspin{to{transform:rotate(360deg);}}
+#libraryView .lib-foot{border-top:1px solid #efe9dc;margin-top:20px;padding:24px 26px 40px;text-align:center;
+  font-size:12px;color:#a8a29e;line-height:2;}
+
+/* 详情弹层 */
+#libDetail{position:fixed;inset:0;z-index:1300;display:none;align-items:center;justify-content:center;padding:24px;
+  background:rgba(15,23,42,.55);backdrop-filter:blur(3px);}
+#libDetail.lib-open{display:flex;}
+#libDetail .d-box{position:relative;width:min(960px,100%);max-height:88vh;overflow:auto;background:#FDFBF7;
+  border-radius:20px;border:1px solid #efe9dc;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);}
+#libDetail .d-img{min-height:320px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(100deg,#F5F1E6 28%,#EFE6D3 40%,#F5F1E6 54%);background-size:300% 100%;
+  animation:libshimmer 1.5s ease-in-out infinite;}
+#libDetail .d-img.done{animation:none;background:#F5F1E6;}
+#libDetail .d-img img{width:100%;height:100%;max-height:88vh;object-fit:contain;display:block;}
+#libDetail .d-info{padding:34px 32px;font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;color:#0F172A;}
+#libDetail .d-chip{display:inline-block;font-size:11.5px;letter-spacing:.1em;color:#7A2E2E;background:rgba(202,138,4,.13);
+  border:1px solid rgba(202,138,4,.35);border-radius:999px;padding:3px 12px;margin-bottom:14px;}
+#libDetail h2{margin:0 0 18px;font-size:21px;line-height:1.45;font-weight:700;color:#0F172A;
+  font-family:"Noto Serif SC","Songti SC",serif;}
+#libDetail .d-row{display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px 14px;font-size:13.5px;
+  padding:11px 0;border-top:1px dashed #ece5d6;line-height:1.75;}
+#libDetail .d-row .k{color:#a8a29e;}
+#libDetail .d-row .v{color:#1f2937;}
+#libDetail .d-close{position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:50%;border:1px solid #e3dccb;
+  background:rgba(255,255,255,.94);color:#57534e;font-size:18px;line-height:1;cursor:pointer;z-index:2;}
+#libDetail .d-close:hover{background:#7A2E2E;color:#fff;border-color:#7A2E2E;}
+
+/* 顶部导航新增页签 */
+.lib-nav-tabs{display:flex;align-items:center;gap:4px;margin-left:8px;}
+.lib-nav-tab{padding:7px 16px;border-radius:999px;font-size:13.5px;color:#a0a0b8;cursor:pointer;transition:.18s;white-space:nowrap;}
+.lib-nav-tab:hover{color:#fff;background:rgba(255,255,255,.08);}
+.lib-nav-tab.on{color:#0b0b16;background:linear-gradient(135deg,#e8d9a8,#caa64a);font-weight:600;}
+
+/* 移动端 */
+@media (max-width:900px){
+  #libraryView .lib-head-in{padding:12px 14px;gap:10px;}
+  #libraryView .lib-brand{display:none;}
+  #libraryView .lib-search{width:auto;flex:1;}
+  #libraryView .lib-wrap{padding:16px;grid-template-columns:minmax(0,1fr);gap:18px;}
+  #libraryView .lib-side{position:static;}
+  #libraryView .lib-cats{display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch;}
+  #libraryView .lib-cat{flex:0 0 auto;border-left:0;border:1px solid #e3dccb;background:#fff;padding:8px 14px;border-radius:999px;}
+  #libraryView .lib-cat.on{border-color:#CA8A04;background:#F5F1E6;}
+  #libraryView .lib-cat .n{margin-left:6px;}
+  #libraryView .lib-side-box{display:none;}
+  #libraryView .lib-hero{padding:24px 20px;}
+  #libraryView .lib-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;}
+  #libraryView .lib-card-b{padding:10px 11px 13px;}
+  #libraryView .lib-card-t{font-size:13px;}
+  #libraryView .lib-card-d{display:none;}
+  #libDetail{padding:12px;}
+  #libDetail .d-box{grid-template-columns:minmax(0,1fr);max-height:92vh;}
+  #libDetail .d-img{min-height:200px;max-height:38vh;}
+  #libDetail .d-info{padding:22px 20px;}
+  .lib-nav-tabs{gap:0;margin-left:auto;}
+  .lib-nav-tab{padding:6px 10px;font-size:12.5px;}
+}
+    </style>
     <link rel="stylesheet" href="mobile.css">
     <link rel="stylesheet" href="region-chain-css.css">
 </head>
@@ -308,6 +482,10 @@
         <div class="search-bar">
             <span class="search-icon">🔍</span>
             <input type="text" id="globalSearch" placeholder="搜索纹样..." oninput="handleGlobalSearch(this.value)">
+        </div>
+        <div class="lib-nav-tabs">
+            <span class="lib-nav-tab on" data-lib="0" onclick="closeLibrary()">纹样识别</span>
+            <span class="lib-nav-tab" data-lib="1" onclick="openLibrary()">资源库</span>
         </div>
         <div class="top-right">
             <div class="lang-switch">
@@ -2507,5 +2685,387 @@ async function segmentPattern(img) {
     // }
     </script>
     -->
+
+<!-- ===== 织绣纹样艺术资源库（前台浏览视图，覆盖在主界面之上，默认隐藏） ===== -->
+<div id="libraryView">
+    <div class="lib-head">
+        <div class="lib-head-in">
+            <button class="lib-back" onclick="closeLibrary()">← 返回纹鉴</button>
+            <div class="lib-brand">织绣纹样<em>艺术资源库</em></div>
+            <div class="lib-search">
+                <input id="libSearchInput" type="text" placeholder="搜索纹样名称、收藏地或工艺…"
+                       onkeydown="if(event.key==='Enter'){libApplySearch();}">
+                <button onclick="libApplySearch()">搜索</button>
+            </div>
+        </div>
+    </div>
+    <div class="lib-wrap">
+        <aside class="lib-side">
+            <div class="lib-side-h">纹 样 分 类</div>
+            <div class="lib-cats" id="libCats"></div>
+            <div class="lib-side-box">
+                <div class="k">资源库收录</div>
+                <div class="v"><span id="libSideTotal">—</span><span style="font-size:13px;color:#a8a29e;font-weight:400;"> 件</span></div>
+            </div>
+        </aside>
+        <main>
+            <section class="lib-hero">
+                <span class="lib-eyebrow">非物质文化遗产 · 数字化保护</span>
+                <h1>中国织绣纹样<span>艺术资源库</span></h1>
+                <p>汇集侗锦、瑶锦、土家锦、苗锦等传统织绣纹样的高清图像与考据信息，逐件记录收藏来源、织造工艺与地域分布，让每一针一线都有据可查。</p>
+                <div class="lib-hero-stats">
+                    <div class="s"><div class="n" id="libStatTotal">—</div><div class="l">收录纹样</div></div>
+                    <div class="s"><div class="n" id="libStatCats">—</div><div class="l">纹样类别</div></div>
+                    <div class="s"><div class="n" id="libStatRegions">—</div><div class="l">涉及地域</div></div>
+                </div>
+            </section>
+            <div class="lib-bar">
+                <span class="t" id="libBarTitle">全部纹样</span>
+                <span class="c" id="libBarCount"></span>
+                <span class="reset" id="libReset" style="display:none;" onclick="libResetFilter()">清除筛选</span>
+            </div>
+            <div class="lib-grid" id="libGrid"></div>
+            <div class="lib-more" id="libMoreWrap" style="display:none;">
+                <button id="libMoreBtn" onclick="libLoadMore()">加载更多</button>
+            </div>
+            <div class="lib-foot">
+                数据来源：织绣纹样艺术资源库（joemanba.top）· 在线实时检索<br>
+                本资源库用于传统纹样的展示与研究参考，纹样版权归各收藏机构所有
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- 纹样详情 -->
+<div id="libDetail" onclick="if(event.target===this){libCloseDetail();}">
+    <div class="d-box">
+        <button class="d-close" onclick="libCloseDetail()">×</button>
+        <div class="d-img"><img id="libDetailImg" alt=""></div>
+        <div class="d-info">
+            <span class="d-chip" id="libDetailCat"></span>
+            <h2 id="libDetailTitle"></h2>
+            <div id="libDetailRows"></div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+
+/* ===== 织绣纹样艺术资源库（前台浏览；数据直连线上资源库 API，无本地数据副本） ===== */
+var LIB_BASE = 'https://joemanba.top:5175';
+var LIB_API = LIB_BASE + '/api/patterns';
+var LIB_FETCH_LIMIT = 50;   // 单次请求条数
+var LIB_MAX_PAGES = 4;      // 最多拉取页数，防止数据异常时无限请求
+var LIB_STEP = 12;          // 首屏展示条数（加载更多每次追加）
+
+var libState = { items: [], cat: '', q: '', shown: LIB_STEP, loaded: false, loading: false, error: '' };
+
+function libEsc(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function libImgUrl(u) {
+    if (!u) return '';
+    if (/^https?:\/\//i.test(u)) return u;
+    return LIB_BASE + (u.charAt(0) === '/' ? '' : '/') + u;
+}
+
+/* ---------- 开关 ---------- */
+function openLibrary() {
+    var v = document.getElementById('libraryView');
+    if (!v) return;
+    var tn = document.querySelector('.top-nav');
+    if (tn) v.style.top = Math.round(tn.getBoundingClientRect().height) + 'px';
+    v.classList.add('lib-open');
+    v.scrollTop = 0;
+    libSyncTabs(true);
+    if (!libState.loaded) libLoadAll();
+    else libRenderAll();
+}
+
+function closeLibrary() {
+    var v = document.getElementById('libraryView');
+    if (v) v.classList.remove('lib-open');
+    libCloseDetail();
+    libSyncTabs(false);
+}
+
+function libSyncTabs(isLib) {
+    var tabs = document.querySelectorAll('.lib-nav-tab');
+    for (var i = 0; i < tabs.length; i++) {
+        var mine = tabs[i].getAttribute('data-lib') === '1';
+        if (mine === !!isLib) tabs[i].classList.add('on');
+        else tabs[i].classList.remove('on');
+    }
+}
+
+/* ---------- 数据 ---------- */
+function libLoadAll() {
+    if (libState.loading) return;
+    libState.loading = true;
+    libState.error = '';
+    libRenderLoading();
+
+    var all = [];
+    var offset = 0;
+    var page = 0;
+
+    function step() {
+        var url = LIB_API + '?limit=' + LIB_FETCH_LIMIT + '&offset=' + offset + '&q=&field=all';
+        return fetch(url, { cache: 'no-store' })
+            .then(function (res) {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(function (js) {
+                var data = (js && js.data) || {};
+                var items = data.items || [];
+                for (var i = 0; i < items.length; i++) all.push(items[i]);
+                page++;
+                if (!items.length || data.nextOffset == null || page >= LIB_MAX_PAGES) return null;
+                offset = data.nextOffset;
+                return step();
+            });
+    }
+
+    step().then(function () {
+        libState.items = all;
+        libState.loaded = true;
+        libState.loading = false;
+        libRenderAll();
+    }).catch(function (e) {
+        libState.error = (e && e.message) ? e.message : String(e);
+        libState.loading = false;
+        libRenderError();
+    });
+}
+
+function libFiltered() {
+    var q = (libState.q || '').trim().toLowerCase();
+    return libState.items.filter(function (x) {
+        if (libState.cat && (x.category || '未分类') !== libState.cat) return false;
+        if (!q) return true;
+        var hay = [x.title, x.origin, x.technique, x.region, x.category, x.subtitle]
+            .filter(Boolean).join(' ').toLowerCase();
+        return hay.indexOf(q) >= 0;
+    });
+}
+
+/* ---------- 渲染 ---------- */
+function libRenderLoading() {
+    var g = document.getElementById('libGrid');
+    if (g) g.innerHTML = '<div class="lib-state"><div class="lib-spin"></div>正在从织绣纹样艺术资源库读取数据…</div>';
+    var w = document.getElementById('libMoreWrap');
+    if (w) w.style.display = 'none';
+}
+
+function libRenderError() {
+    var g = document.getElementById('libGrid');
+    var e = libEsc(libState.error || '');
+    if (g) {
+        g.innerHTML = '<div class="lib-state"><b>资源库暂时拿不到数据</b>'
+            + '需要联网访问织绣纹样艺术资源库（joemanba.top）' + (e ? '<br>错误：' + e : '')
+            + '<br><br><span style="color:#A16207;cursor:pointer;border-bottom:1px dashed #CA8A04;" '
+            + 'onclick="libRetry()">点此重试</span></div>';
+    }
+    var w = document.getElementById('libMoreWrap');
+    if (w) w.style.display = 'none';
+}
+
+function libRetry() {
+    libState.loaded = false;
+    libLoadAll();
+}
+
+function libRenderAll() {
+    if (libState.error) { libRenderError(); return; }
+
+    var counts = {}, regions = {};
+    libState.items.forEach(function (x) {
+        var c = x.category || '未分类';
+        counts[c] = (counts[c] || 0) + 1;
+        if (x.region) regions[x.region] = 1;
+    });
+    var cats = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+
+    /* 左侧分类 */
+    var html = '<div class="lib-cat' + (libState.cat === '' ? ' on' : '')
+        + '" data-cat="" onclick="libSelectCat(this.getAttribute(\'data-cat\'))">全部纹样'
+        + '<span class="n">' + libState.items.length + '</span></div>';
+    cats.forEach(function (c) {
+        html += '<div class="lib-cat' + (libState.cat === c ? ' on' : '')
+            + '" data-cat="' + libEsc(c) + '" onclick="libSelectCat(this.getAttribute(\'data-cat\'))">'
+            + libEsc(c) + '<span class="n">' + counts[c] + '</span></div>';
+    });
+    var catsBox = document.getElementById('libCats');
+    if (catsBox) catsBox.innerHTML = html;
+
+    /* 统计 */
+    var st = document.getElementById('libStatTotal'), sc = document.getElementById('libStatCats'),
+        sr = document.getElementById('libStatRegions'), ss = document.getElementById('libSideTotal');
+    if (st) st.textContent = libState.items.length;
+    if (sc) sc.textContent = cats.length;
+    if (sr) sr.textContent = Object.keys(regions).length;
+    if (ss) ss.textContent = libState.items.length;
+
+    libRenderGrid();
+}
+
+function libRenderGrid() {
+    var g = document.getElementById('libGrid');
+    if (!g) return;
+    var list = libFiltered();
+    var shown = Math.min(libState.shown, list.length);
+
+    var barT = document.getElementById('libBarTitle'), barC = document.getElementById('libBarCount'),
+        reset = document.getElementById('libReset');
+    if (barT) barT.textContent = libState.cat ? (libState.cat + ' 纹样') : '全部纹样';
+    if (barC) barC.textContent = libState.q
+        ? ('「' + libState.q + '」匹配 ' + list.length + ' 件')
+        : ('共 ' + list.length + ' 件');
+    if (reset) reset.style.display = (libState.cat || libState.q) ? 'inline' : 'none';
+
+    if (!list.length) {
+        g.innerHTML = '<div class="lib-state"><b>没有匹配的纹样</b>换个关键词，或点左侧「全部纹样」重新浏览</div>';
+    } else {
+        var html = '';
+        for (var i = 0; i < shown; i++) html += libCardHtml(list[i]);
+        g.innerHTML = html;
+    }
+
+    var wrap = document.getElementById('libMoreWrap');
+    var btn = document.getElementById('libMoreBtn');
+    if (wrap) wrap.style.display = list.length > shown ? 'flex' : 'none';
+    if (btn) btn.textContent = '加载更多（还有 ' + Math.max(0, list.length - shown) + ' 件）';
+
+    // 兜底：命中缓存的图片不会再触发 onload
+    setTimeout(function () {
+        var imgs = document.querySelectorAll('#libGrid .lib-thumb img');
+        for (var k = 0; k < imgs.length; k++) {
+            if (imgs[k].complete) {
+                if (imgs[k].naturalWidth > 0) imgs[k].classList.add('on');
+                var b = imgs[k].parentNode;
+                if (b && b.classList) b.classList.add('done');
+            }
+        }
+    }, 300);
+}
+
+function libCardHtml(x) {
+    var img = libImgUrl(x.imageUrl);
+    var cat = x.category || '';
+    return '<div class="lib-card" onclick="libOpenDetail(' + Number(x.id) + ')">'
+        + '<div class="lib-thumb">'
+        + (img ? '<img src="' + libEsc(img) + '" alt="' + libEsc(x.title)
+            + '" loading="lazy" decoding="async" onload="libImgOn(this)" onerror="libImgFail(this)">' : '')
+        + '<div class="ph"' + (img ? ' style="display:none;"' : '') + '>暂无图片</div>'
+        + (cat ? '<span class="lib-cat-chip">' + libEsc(cat) + '</span>' : '')
+        + '</div>'
+        + '<div class="lib-card-b">'
+        + '<div class="lib-card-t">' + libEsc(x.title || '未命名纹样') + '</div>'
+        + '<div class="lib-card-o">' + libEsc(x.origin || '来源未标注') + '</div>'
+        + (x.technique ? '<div class="lib-card-d">' + libEsc(x.technique) + '</div>' : '')
+        + '</div></div>';
+}
+
+function libImgOn(el) {
+    el.classList.add('on');
+    var box = el.parentNode;
+    if (box && box.classList) box.classList.add('done');
+}
+
+function libImgFail(el) {
+    el.style.display = 'none';
+    var box = el.parentNode;
+    if (box && box.classList) box.classList.add('done');
+    var ph = box && box.querySelector('.ph');
+    if (ph) ph.style.display = 'flex';
+}
+
+/* ---------- 交互 ---------- */
+function libSelectCat(cat) {
+    libState.cat = cat || '';
+    libState.shown = LIB_STEP;
+    libRenderAll();
+    var v = document.getElementById('libraryView');
+    if (v) v.scrollTop = 0;
+}
+
+function libApplySearch() {
+    var inp = document.getElementById('libSearchInput');
+    libState.q = inp ? inp.value.trim() : '';
+    libState.shown = LIB_STEP;
+    libRenderGrid();
+}
+
+function libResetFilter() {
+    libState.cat = '';
+    libState.q = '';
+    libState.shown = LIB_STEP;
+    var inp = document.getElementById('libSearchInput');
+    if (inp) inp.value = '';
+    libRenderAll();
+}
+
+function libLoadMore() {
+    libState.shown += LIB_STEP;
+    libRenderGrid();
+}
+
+/* ---------- 详情 ---------- */
+function libOpenDetail(id) {
+    var x = null;
+    for (var i = 0; i < libState.items.length; i++) {
+        if (Number(libState.items[i].id) === Number(id)) { x = libState.items[i]; break; }
+    }
+    if (!x) return;
+
+    var img = document.getElementById('libDetailImg');
+    var url = libImgUrl(x.imageUrl);
+    var box = img.parentNode;
+    if (box && box.classList) box.classList.remove('done');
+    img.onload = function () { if (box && box.classList) box.classList.add('done'); };
+    img.onerror = function () { this.style.display = 'none'; if (box && box.classList) box.classList.add('done'); };
+    img.style.display = url ? 'block' : 'none';
+    if (box && box.classList && !url) box.classList.add('done');
+    img.src = url || '';
+
+    document.getElementById('libDetailCat').textContent = x.category || '织绣纹样';
+    document.getElementById('libDetailTitle').textContent = x.title || '未命名纹样';
+
+    var rows = [
+        ['副标题', x.subtitle],
+        ['收藏来源', x.origin],
+        ['织造工艺', x.technique],
+        ['年代', x.era],
+        ['地域', x.region],
+        ['编号', x.id ? ('ZSWY-' + x.id) : '']
+    ];
+    var html = '';
+    for (var k = 0; k < rows.length; k++) {
+        var v = rows[k][1];
+        if (v == null || v === '') continue;
+        html += '<div class="d-row"><div class="k">' + rows[k][0] + '</div><div class="v">' + libEsc(v) + '</div></div>';
+    }
+    document.getElementById('libDetailRows').innerHTML = html;
+    document.getElementById('libDetail').classList.add('lib-open');
+}
+
+function libCloseDetail() {
+    var d = document.getElementById('libDetail');
+    if (d) d.classList.remove('lib-open');
+}
+
+document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var d = document.getElementById('libDetail');
+    if (d && d.classList.contains('lib-open')) { libCloseDetail(); return; }
+    var v = document.getElementById('libraryView');
+    if (v && v.classList.contains('lib-open')) closeLibrary();
+});
+</script>
 </body>
 </html>
