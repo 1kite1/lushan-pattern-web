@@ -2148,19 +2148,68 @@ async function segmentPattern(img) {
         }
     }
 
-    // ===== PDF 导出 =====
-    async function exportSingleReport(patternId) {
-        const p = patterns.find(p => p.id === patternId);
-        if (!p) return;
-        await generatePDF(p);
+    // ===== PDF 导出（HTML 报告 -> html2canvas 截图 -> jsPDF 分页，原生支持中文） =====
+    function __rpEsc(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
 
-    async function exportCurrentReport() {
-        const title = document.getElementById('detailPanel').querySelector('.detail-title');
-        if (!title) return;
-        const name = title.textContent;
-        const p = patterns.find(p => p.name === name);
-        if (p) await generatePDF(p);
+    function __rpStyles() {
+        return '<style>'
+            + '*{box-sizing:border-box;margin:0;padding:0;font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif;}'
+            + '.rp{width:794px;background:#fff;color:#1f2937;}'
+            + '.rp .head{padding:34px 40px;color:#fff;}'
+            + '.rp .head h1{font-size:26px;font-weight:700;}'
+            + '.rp .head .t{font-size:12px;margin-top:8px;opacity:.85;}'
+            + '.rp .body{padding:26px 40px 34px;}'
+            + '.rp h2{font-size:15px;color:#111827;margin:22px 0 10px;padding-left:10px;border-left:4px solid #a78bfa;}'
+            + '.rp table{width:100%;border-collapse:collapse;font-size:13px;}'
+            + '.rp td{padding:7px 10px;border-bottom:1px solid #e5e7eb;word-break:break-all;color:#1f2937;}'
+            + '.rp td.k{color:#6b7280;width:110px;font-weight:600;}'
+            + '.rp .sec{font-size:13px;line-height:1.9;color:#374151;white-space:pre-wrap;word-break:break-all;}'
+            + '.rp .badge{display:inline-block;padding:6px 14px;border-radius:6px;color:#fff;font-size:14px;font-weight:700;}'
+            + '.rp table.cmp td,.rp table.cmp th{border-bottom:1px solid #e5e7eb;padding:6px 8px;font-size:12px;text-align:left;color:#374151;}'
+            + '.rp table.cmp th{background:#f3f4f6;font-weight:600;color:#4b5563;}'
+            + '.rp .disc{margin-top:16px;color:#9ca3af;font-size:11px;line-height:1.7;}'
+            + '</style>';
+    }
+
+    async function __rpToPDF(innerHtml, headColor, title, subtitle, filename) {
+        const holder = document.createElement('div');
+        holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;';
+        holder.innerHTML = __rpStyles()
+            + '<div class="rp"><div class="head" style="background:' + headColor + '">'
+            + '<h1>' + __rpEsc(title) + '</h1><div class="t">' + __rpEsc(subtitle) + '</div></div>'
+            + '<div class="body">' + innerHtml + '</div></div>';
+        document.body.appendChild(holder);
+        try {
+            const canvas = await html2canvas(holder.querySelector('.rp'), { scale: 2, backgroundColor: '#ffffff', logging: false });
+            const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+            const pw = 210, ph = 297;
+            const pageHpx = Math.floor(ph * canvas.width / pw);
+            let done = 0, page = 0;
+            while (done < canvas.height) {
+                const sliceH = Math.min(pageHpx, canvas.height - done);
+                const pc = document.createElement('canvas');
+                pc.width = canvas.width; pc.height = pageHpx;
+                const ctx = pc.getContext('2d');
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, pc.width, pc.height);
+                ctx.drawImage(canvas, 0, done, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+                if (page > 0) pdf.addPage();
+                pdf.addImage(pc.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pw, ph);
+                done += sliceH; page++;
+            }
+            pdf.save(filename);
+        } finally {
+            if (holder.parentNode) holder.parentNode.removeChild(holder);
+        }
+    }
+
+    function __rpInfoTable(rows) {
+        return '<table>' + rows.map(function (kv) {
+            return '<tr><td class="k">' + __rpEsc(kv[0]) + '</td><td>' + __rpEsc(kv[1]) + '</td></tr>';
+        }).join('') + '</table>';
     }
 
     async function generateComplianceReport() {
@@ -2170,90 +2219,40 @@ async function segmentPattern(img) {
             if (!result) { showToast('请先完成识别', 'error'); return; }
             const risk = window.__cloudRisk || gradeCloudRisk(window.__cloudMatches || []);
             const matches = window.__cloudMatches || [];
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
-            const pageW = 210;
-            doc.setFillColor(56, 189, 248);
-            doc.rect(0, 0, pageW, 42, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(20);
-            doc.setFont('helvetica', 'bold');
-            doc.text('麓山绘梦·纹鉴 商用合规检测报告', pageW / 2, 18, { align: 'center' });
-            doc.setFontSize(9);
-            doc.text('生成时间: ' + new Date().toLocaleString('zh-CN'), pageW / 2, 30, { align: 'center' });
-            let y = 56;
-            doc.setTextColor(0, 0, 0);
-            doc.setFontSize(15);
-            doc.setFont('helvetica', 'bold');
-            doc.text('纹样: ' + (result.name || '—'), 20, y);
-            y += 10;
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(90, 90, 90);
-            const info = [
+            let html = '';
+            html += '<h2>纹样信息</h2>' + __rpInfoTable([
+                ['纹样', result.name || '—'],
                 ['编号', result.code || '—'],
                 ['纹样库', result.library || '—'],
                 ['民族', result.ethnic || '—'],
                 ['地域', result.region || '—'],
                 ['年代', result.era || '—'],
                 ['工艺', result.craft || '—']
-            ];
-            info.forEach(function (kv, i) {
-                doc.setFont('helvetica', 'bold'); doc.text(kv[0] + ':', 20, y + i * 6.5);
-                doc.setFont('helvetica', 'normal'); doc.text(String(kv[1]), 45, y + i * 6.5);
-            });
-            y += info.length * 6.5 + 8;
-            const c = hexToRgb(risk.color);
-            doc.setFillColor(c[0], c[1], c[2]);
-            doc.roundedRect(20, y, pageW - 40, 16, 2, 2, 'F');
-            doc.setTextColor(255, 255, 255); doc.setFontSize(12); doc.setFont('helvetica', 'bold');
-            doc.text('侵权风险等级: ' + risk.level + '风险 (' + (risk.riskPct != null ? risk.riskPct + '%' : '待定') + ')', 24, y + 10);
-            y += 24;
-            doc.setTextColor(60, 60, 60); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-            const adv = doc.splitTextToSize('评估意见: ' + risk.advice, pageW - 40);
-            doc.text(adv, 20, y); y += adv.length * 5 + 8;
-            doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(0, 0, 0);
-            doc.text('云端纹样库比对 (Top-5)', 20, y); y += 7;
-            doc.setFontSize(8); doc.setFont('helvetica', 'bold');
-            doc.text('排名', 20, y); doc.text('编号', 32, y); doc.text('名称', 60, y); doc.text('民族/地域', 110, y); doc.text('相似度', 175, y);
-            y += 5;
-            doc.setFont('helvetica', 'normal');
+            ]);
+            html += '<h2>侵权风险等级</h2><div><span class="badge" style="background:' + (risk.color || '#6b7280') + '">'
+                + __rpEsc((risk.level || '') + '风险') + (risk.riskPct != null ? '（' + risk.riskPct + '%）' : '（待定）') + '</span></div>'
+                + '<div class="sec" style="margin-top:10px;">评估意见: ' + __rpEsc(risk.advice || '—') + '</div>';
+            html += '<h2>云端纹样库比对 (Top-5)</h2>';
             if (matches.length) {
-                matches.forEach(function (m, i) {
-                    if (y > 270) { doc.addPage(); y = 20; }
-                    doc.text(String(i + 1), 20, y);
-                    doc.text(String(m.id || '—'), 32, y);
-                    doc.text(String(m.name || '—').slice(0, 22), 60, y);
-                    doc.text(((m.ethnic || '—') + '/' + (m.region || '—')).slice(0, 28), 110, y);
-                    doc.text(String(m.similarity || '—'), 175, y);
-                    y += 6;
-                });
+                html += '<table class="cmp"><tr><th>排名</th><th>编号</th><th>名称</th><th>民族/地域</th><th>相似度</th></tr>'
+                    + matches.map(function (m, i) {
+                        return '<tr><td>' + (i + 1) + '</td><td>' + __rpEsc(m.id || '—') + '</td><td>'
+                            + __rpEsc(String(m.name || '—').slice(0, 22)) + '</td><td>'
+                            + __rpEsc(((m.ethnic || '—') + '/' + (m.region || '—')).slice(0, 28)) + '</td><td>'
+                            + __rpEsc(m.similarity || '—') + '</td></tr>';
+                    }).join('') + '</table>';
             } else {
-                doc.text('（无云端比对记录）', 20, y); y += 6;
+                html += '<div class="sec">（无云端比对记录）</div>';
             }
-            y += 6;
-            doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(0, 0, 0);
-            doc.text('合规建议', 20, y); y += 7; doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(60, 60, 60);
-            const recs = complianceAdvice(risk.level);
-            recs.forEach(function (t) {
-                const ls = doc.splitTextToSize('• ' + t, pageW - 40);
-                doc.text(ls, 20, y); y += ls.length * 5 + 2;
-            });
-            y += 6;
-            doc.setDrawColor(200, 200, 200); doc.line(20, y, pageW - 20, y); y += 7;
-            doc.setFontSize(8); doc.setTextColor(150, 150, 150);
-            const disc = doc.splitTextToSize('免责声明：本报告基于「麓山绘梦·纹鉴」公有纹样库的算法相似度比对生成，用于辅助判断纹样与已知公有传统纹样的近似程度，不构成法律意见。商用前的商标检索、著作权确权及法律风险评估应另行咨询专业机构。', pageW - 40);
-            doc.text(disc, 20, y);
-            doc.save('商用合规检测报告_' + (result.name || '纹样') + '_' + Date.now() + '.pdf');
+            html += '<h2>合规建议</h2><div class="sec">'
+                + complianceAdvice(risk.level).map(function (t) { return '• ' + __rpEsc(t); }).join('<br>') + '</div>';
+            html += '<div class="disc">免责声明：本报告基于「麓山绘梦·纹鉴」公有纹样库的算法相似度比对生成，用于辅助判断纹样与已知公有传统纹样的近似程度，不构成法律意见。商用前的商标检索、著作权确权及法律风险评估应另行咨询专业机构。</div>';
+            await __rpToPDF(html, '#38bdf8', '麓山绘梦·纹鉴 商用合规检测报告', '生成时间: ' + new Date().toLocaleString('zh-CN'),
+                '商用合规检测报告_' + (result.name || '纹样') + '_' + Date.now() + '.pdf');
             showToast('合规报告已导出', 'success');
         } catch (e) {
             console.error(e); showToast('生成失败，请重试', 'error');
         }
-    }
-
-    function hexToRgb(hex) {
-        const h = (hex || '#888888').replace('#', '');
-        return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
     }
 
     function complianceAdvice(level) {
@@ -2275,117 +2274,32 @@ async function segmentPattern(img) {
     async function generatePDF(pattern) {
         showToast('正在生成报告...', 'info');
         try {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
-            const pageW = 210;
-
-            // 标题
-            doc.setFillColor(167, 139, 250);
-            doc.rect(0, 0, pageW, 40, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(22);
-            doc.setFont('helvetica', 'bold');
-            doc.text('麓山绘梦·纹鉴 纹样确权报告', pageW / 2, 18, { align: 'center' });
-            doc.setFontSize(10);
-            doc.text(`生成时间: ${new Date().toLocaleString('zh-CN')}`, pageW / 2, 28, { align: 'center' });
-
-            let y = 55;
-            doc.setTextColor(0, 0, 0);
-            doc.setFontSize(16);
-            doc.setFont('helvetica', 'bold');
-            doc.text(pattern.name, 20, y);
-            y += 12;
-
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(100, 100, 100);
-            const info = [
+            let html = '';
+            html += '<h2>基本信息</h2>' + __rpInfoTable([
                 ['所属纹样库', pattern.library || '—'],
                 ['编号', pattern.code || '—'],
                 ['年代', pattern.era || '—'],
                 ['工艺', pattern.craft || '—'],
                 ['民族', pattern.ethnic || '—'],
                 ['地域', pattern.region || '—']
-            ];
-            info.forEach(([label, val], i) => {
-                doc.setFont('helvetica', 'bold');
-                doc.text(label + ':', 20, y + i * 7);
-                doc.setFont('helvetica', 'normal');
-                doc.text(val, 55, y + i * 7);
-            });
-            y += info.length * 7 + 10;
-
-            if (pattern.description) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.text('纹样简介', 20, y);
-                y += 7;
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(9);
-                const lines = doc.splitTextToSize(pattern.description, pageW - 40);
-                doc.text(lines, 20, y);
-                y += lines.length * 5 + 8;
-            }
-
-            if (pattern.meaning) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.text('纹样寓意', 20, y);
-                y += 7;
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(9);
-                const lines = doc.splitTextToSize(pattern.meaning, pageW - 40);
-                doc.text(lines, 20, y);
-                y += lines.length * 5 + 8;
-            }
-
+            ]);
+            if (pattern.description) html += '<h2>纹样简介</h2><div class="sec">' + __rpEsc(pattern.description) + '</div>';
+            if (pattern.meaning) html += '<h2>纹样寓意</h2><div class="sec">' + __rpEsc(pattern.meaning) + '</div>';
             // 链上确权凭证（v1.x）：仅指纹哈希上链，原图不上链
             const ev = pattern.__chainEvidence || window.__chainEvidence;
             if (ev) {
-                if (y > 235) { doc.addPage(); y = 20; }
-                doc.setDrawColor(167, 139, 250);
-                doc.setLineWidth(0.5);
-                doc.line(20, y, pageW - 20, y);
-                y += 8;
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.setTextColor(16, 185, 129);
-                doc.text('链上确权凭证', 20, y);
-                y += 7;
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(9);
-                doc.setTextColor(60, 60, 60);
-                const evLines = [
+                html += '<h2 style="border-color:#10b981;">链上确权凭证</h2>' + __rpInfoTable([
                     ['指纹哈希', (ev.fingerprint || '').slice(0, 32) + '...'],
                     ['上链通道', ev.provider || CHAIN_CONFIG.provider],
                     ['交易哈希', (ev.chainTxHash || '—').slice(0, 32) + ((ev.chainTxHash && ev.chainTxHash.length > 32) ? '...' : '')],
                     ['区块时间', ev.blockTime ? new Date(ev.blockTime).toLocaleString('zh-CN') : '—'],
                     ['存证编号', ev.evidenceId || '—']
-                ];
-                evLines.forEach(([label, val], i) => {
-                    doc.setFont('helvetica', 'bold');
-                    doc.text(label + ':', 20, y + i * 6);
-                    doc.setFont('helvetica', 'normal');
-                    doc.text(String(val), 50, y + i * 6);
-                });
-                y += evLines.length * 6 + 3;
-                if (ev.explorerUrl) {
-                    doc.setTextColor(80, 80, 220);
-                    doc.text('链上查验: ' + ev.explorerUrl, 20, y);
-                    y += 6;
-                }
-                doc.setFontSize(8);
-                doc.setTextColor(150, 150, 150);
-                doc.text('本凭证由纹鉴系统将纹样指纹哈希锚定至区块链，原图不上链。', 20, y);
-                y += 6;
+                ]);
+                if (ev.explorerUrl) html += '<div class="sec" style="color:#5050dc;">链上查验: ' + __rpEsc(ev.explorerUrl) + '</div>';
+                html += '<div class="disc">本凭证由纹鉴系统将纹样指纹哈希锚定至区块链，原图不上链。</div>';
             }
-
-            // 页脚
-            doc.setFontSize(8);
-            doc.setTextColor(150, 150, 150);
-            doc.text('本报告由麓山绘梦·纹鉴系统自动生成', pageW / 2, 287, { align: 'center' });
-
-            doc.save(`${pattern.name}_确权报告_${Date.now()}.pdf`);
+            await __rpToPDF(html, '#a78bfa', '麓山绘梦·纹鉴 纹样确权报告', '生成时间: ' + new Date().toLocaleString('zh-CN'),
+                pattern.name + '_确权报告_' + Date.now() + '.pdf');
             showToast('报告已导出', 'success');
         } catch (e) {
             console.error(e);
