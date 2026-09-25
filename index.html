@@ -297,10 +297,12 @@
 </style>
     <style>
 
-/* ===== 织绣纹样艺术资源库（国风浅色主题；样式全部限定在 #libraryView 内，不影响原有暗色界面） ===== */
+/* ===== 织绣纹样艺术资源库（跟随系统暗色主题；样式全部限定在 #libraryView 内） =====
+   配色对齐主界面：底 #0f0f1e / 面板 #1a1a2e / 浮层 #252542 / 边框 #2a2a40·#3a3a5c
+   强调 紫 #a78bfa→#818cf8 / 正文 #fff / 次级 #a0a0b8 / 弱 #6b6b8c */
 #libraryView{position:fixed;left:0;right:0;bottom:0;top:var(--lib-top,64px);z-index:1200;display:none;
   overflow-y:auto;overflow-x:hidden;
-  background:#FDFBF7;color:#0F172A;text-align:left;
+  background:#0f0f1e;color:#fff;text-align:left;
   font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
   -webkit-font-smoothing:antialiased;}
 #libraryView.lib-open{display:block;}
@@ -308,24 +310,26 @@
 #libraryView input{font-family:inherit;}
 
 /* 顶栏 */
-#libraryView .lib-head{position:sticky;top:0;z-index:5;background:rgba(253,251,247,.92);
-  backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid #efe9dc;}
+#libraryView .lib-head{position:sticky;top:0;z-index:5;background:rgba(15,15,30,.92);
+  backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid #2a2a40;}
 #libraryView .lib-head-in{max-width:1400px;margin:0 auto;padding:14px 26px;display:flex;align-items:center;gap:18px;}
 #libraryView .lib-back{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 16px;border-radius:999px;
-  border:1px solid #e3dccb;background:#fff;color:#334155;font-size:13.5px;cursor:pointer;transition:.18s;white-space:nowrap;}
-#libraryView .lib-back:hover{background:#F5F1E6;border-color:#CA8A04;color:#A16207;}
+  border:1px solid #3a3a5c;background:#1a1a2e;color:#a0a0b8;font-size:13.5px;cursor:pointer;transition:.18s;white-space:nowrap;}
+#libraryView .lib-back:hover{background:#252542;border-color:#a78bfa;color:#c4b5fd;}
 #libraryView .lib-brand{font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;font-size:17px;font-weight:700;
-  letter-spacing:.06em;color:#0F172A;white-space:nowrap;}
-#libraryView .lib-brand em{font-style:normal;color:#CA8A04;}
+  letter-spacing:.06em;color:#fff;white-space:nowrap;}
+#libraryView .lib-brand em{font-style:normal;background:linear-gradient(135deg,#a78bfa,#818cf8);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
 #libraryView .lib-search{margin-left:auto;display:flex;align-items:center;gap:0;width:min(380px,42vw);
-  border:1px solid #e3dccb;border-radius:999px;background:#fff;overflow:hidden;transition:.18s;}
-#libraryView .lib-search:focus-within{border-color:#CA8A04;box-shadow:0 0 0 3px rgba(202,138,4,.12);}
+  border:1px solid #3a3a5c;border-radius:999px;background:#252542;overflow:hidden;transition:.18s;}
+#libraryView .lib-search:focus-within{border-color:#a78bfa;box-shadow:0 0 0 3px rgba(167,139,250,.18);}
 #libraryView .lib-search input{flex:1;min-width:0;height:38px;border:0;outline:0;background:transparent;
-  padding:0 4px 0 18px;font-size:13.5px;color:#0F172A;}
-#libraryView .lib-search input::placeholder{color:#a8a29e;}
-#libraryView .lib-search button{height:38px;padding:0 20px;border:0;background:#0F172A;color:#FDFBF7;
+  padding:0 4px 0 18px;font-size:13.5px;color:#fff;}
+#libraryView .lib-search input::placeholder{color:#6b6b8c;}
+#libraryView .lib-search button{height:38px;padding:0 20px;border:0;
+  background:linear-gradient(135deg,#a78bfa,#818cf8);color:#0f0f1e;
   font-size:13.5px;cursor:pointer;transition:.18s;}
-#libraryView .lib-search button:hover{background:#7A2E2E;}
+#libraryView .lib-search button:hover{filter:brightness(1.12);}
 
 /* 主体两栏 */
 #libraryView .lib-wrap{max-width:1400px;margin:0 auto;padding:26px;display:grid;
@@ -333,116 +337,117 @@
 
 /* 左侧分类 */
 #libraryView .lib-side{position:sticky;top:86px;}
-#libraryView .lib-side-h{font-size:12px;letter-spacing:.18em;color:#a8a29e;font-weight:600;margin:0 0 12px 12px;}
+#libraryView .lib-side-h{font-size:12px;letter-spacing:.18em;color:#6b6b8c;font-weight:600;margin:0 0 12px 12px;}
 #libraryView .lib-cat{display:flex;align-items:center;gap:9px;padding:10px 13px;border-radius:10px;cursor:pointer;
-  font-size:14px;color:#334155;transition:.16s;border-left:3px solid transparent;}
-#libraryView .lib-cat:hover{background:#F5F1E6;color:#0F172A;}
-#libraryView .lib-cat.on{background:#F5F1E6;color:#7A2E2E;font-weight:600;border-left-color:#CA8A04;}
-#libraryView .lib-cat .n{margin-left:auto;font-size:12px;color:#a8a29e;font-variant-numeric:tabular-nums;}
-#libraryView .lib-cat.on .n{color:#A16207;}
-#libraryView .lib-side-box{margin-top:22px;padding:16px;border:1px solid #efe9dc;border-radius:14px;background:#fff;}
-#libraryView .lib-side-box .k{font-size:12px;color:#a8a29e;}
-#libraryView .lib-side-box .v{font-size:20px;font-weight:700;color:#CA8A04;font-variant-numeric:tabular-nums;
+  font-size:14px;color:#a0a0b8;transition:.16s;border-left:3px solid transparent;}
+#libraryView .lib-cat:hover{background:#252542;color:#fff;}
+#libraryView .lib-cat.on{background:#252542;color:#c4b5fd;font-weight:600;border-left-color:#a78bfa;}
+#libraryView .lib-cat .n{margin-left:auto;font-size:12px;color:#6b6b8c;font-variant-numeric:tabular-nums;}
+#libraryView .lib-cat.on .n{color:#a78bfa;}
+#libraryView .lib-side-box{margin-top:22px;padding:16px;border:1px solid #2a2a40;border-radius:14px;background:#1a1a2e;}
+#libraryView .lib-side-box .k{font-size:12px;color:#6b6b8c;}
+#libraryView .lib-side-box .v{font-size:20px;font-weight:700;color:#a78bfa;font-variant-numeric:tabular-nums;
   font-family:"Noto Serif SC","Songti SC",serif;}
 
 /* Hero */
-#libraryView .lib-hero{position:relative;overflow:hidden;border:1px solid #efe9dc;border-radius:20px;
+#libraryView .lib-hero{position:relative;overflow:hidden;border:1px solid #2a2a40;border-radius:20px;
   padding:34px 34px 30px;margin-bottom:26px;
   background:
-    radial-gradient(120% 160% at 88% 12%,rgba(202,138,4,.14),transparent 58%),
-    radial-gradient(90% 130% at 4% 96%,rgba(122,46,46,.10),transparent 60%),
-    linear-gradient(135deg,#FFFDF9,#F5F1E6 62%,#F1E9D8);}
+    radial-gradient(120% 160% at 88% 12%,rgba(167,139,250,.22),transparent 58%),
+    radial-gradient(90% 130% at 4% 96%,rgba(129,140,248,.18),transparent 60%),
+    linear-gradient(135deg,#1a1a2e,#22223c 62%,#1d1d36);}
 #libraryView .lib-hero::after{content:"";position:absolute;right:-40px;bottom:-70px;width:320px;height:320px;
-  background-image:linear-gradient(45deg,rgba(202,138,4,.18) 25%,transparent 25%,transparent 75%,rgba(202,138,4,.18) 75%),
-                   linear-gradient(45deg,rgba(202,138,4,.18) 25%,transparent 25%,transparent 75%,rgba(202,138,4,.18) 75%);
+  background-image:linear-gradient(45deg,rgba(167,139,250,.20) 25%,transparent 25%,transparent 75%,rgba(167,139,250,.20) 75%),
+                   linear-gradient(45deg,rgba(167,139,250,.20) 25%,transparent 25%,transparent 75%,rgba(167,139,250,.20) 75%);
   background-size:26px 26px;background-position:0 0,13px 13px;transform:rotate(45deg);opacity:.5;
   -webkit-mask-image:radial-gradient(closest-side,#000,transparent);mask-image:radial-gradient(closest-side,#000,transparent);}
-#libraryView .lib-eyebrow{display:inline-block;font-size:11.5px;letter-spacing:.22em;color:#A16207;
-  border:1px solid rgba(202,138,4,.4);border-radius:999px;padding:4px 12px;margin-bottom:16px;background:rgba(255,255,255,.6);}
+#libraryView .lib-eyebrow{display:inline-block;font-size:11.5px;letter-spacing:.22em;color:#c4b5fd;
+  border:1px solid rgba(167,139,250,.4);border-radius:999px;padding:4px 12px;margin-bottom:16px;background:rgba(167,139,250,.12);}
 #libraryView .lib-hero h1{position:relative;margin:0;font-size:clamp(26px,3.6vw,40px);line-height:1.22;font-weight:700;
-  letter-spacing:.03em;color:#0F172A;font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;}
-#libraryView .lib-hero h1 span{color:#7A2E2E;}
-#libraryView .lib-hero p{position:relative;margin:14px 0 0;max-width:640px;font-size:14px;line-height:1.9;color:#334155;}
+  letter-spacing:.03em;color:#fff;font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;}
+#libraryView .lib-hero h1 span{background:linear-gradient(135deg,#a78bfa,#818cf8);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+#libraryView .lib-hero p{position:relative;margin:14px 0 0;max-width:640px;font-size:14px;line-height:1.9;color:#a0a0b8;}
 #libraryView .lib-hero-stats{position:relative;display:flex;gap:34px;margin-top:24px;flex-wrap:wrap;}
-#libraryView .lib-hero-stats .s .n{font-size:26px;font-weight:700;color:#CA8A04;font-variant-numeric:tabular-nums;
+#libraryView .lib-hero-stats .s .n{font-size:26px;font-weight:700;color:#a78bfa;font-variant-numeric:tabular-nums;
   font-family:"Noto Serif SC","Songti SC",serif;line-height:1.1;}
-#libraryView .lib-hero-stats .s .l{font-size:12px;color:#78716c;margin-top:4px;letter-spacing:.08em;}
+#libraryView .lib-hero-stats .s .l{font-size:12px;color:#a0a0b8;margin-top:4px;letter-spacing:.08em;}
 
 /* 结果栏 */
 #libraryView .lib-bar{display:flex;align-items:baseline;gap:12px;margin:0 0 16px;padding:0 2px;}
-#libraryView .lib-bar .t{font-size:16px;font-weight:700;color:#0F172A;
+#libraryView .lib-bar .t{font-size:16px;font-weight:700;color:#fff;
   font-family:"Noto Serif SC","Songti SC",serif;letter-spacing:.04em;}
-#libraryView .lib-bar .c{font-size:12.5px;color:#a8a29e;}
-#libraryView .lib-bar .reset{margin-left:auto;font-size:12.5px;color:#A16207;cursor:pointer;border-bottom:1px dashed #CA8A04;}
+#libraryView .lib-bar .c{font-size:12.5px;color:#6b6b8c;}
+#libraryView .lib-bar .reset{margin-left:auto;font-size:12.5px;color:#a78bfa;cursor:pointer;border-bottom:1px dashed #a78bfa;}
 
 /* 卡片网格 */
 #libraryView .lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:22px;}
-#libraryView .lib-card{border:1px solid #efe9dc;border-radius:16px;background:#fff;overflow:hidden;cursor:pointer;
+#libraryView .lib-card{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;overflow:hidden;cursor:pointer;
   transition:transform .2s,box-shadow .2s,border-color .2s;display:flex;flex-direction:column;}
-#libraryView .lib-card:hover{transform:translateY(-4px);box-shadow:0 14px 30px -14px rgba(15,23,42,.24);border-color:#e6d9bd;}
+#libraryView .lib-card:hover{transform:translateY(-4px);box-shadow:0 14px 30px -14px rgba(0,0,0,.65);border-color:#a78bfa;}
 /* 原图为 1.9MB 级大图且服务端无缩略图，用骨架微光过渡加载过程 */
 #libraryView .lib-thumb{position:relative;aspect-ratio:4/3;overflow:hidden;
-  background:linear-gradient(100deg,#F5F1E6 28%,#EFE6D3 40%,#F5F1E6 54%);background-size:300% 100%;
+  background:linear-gradient(100deg,#252542 28%,#2f2f52 40%,#252542 54%);background-size:300% 100%;
   animation:libshimmer 1.5s ease-in-out infinite;}
-#libraryView .lib-thumb.done{animation:none;background:#F5F1E6;}
+#libraryView .lib-thumb.done{animation:none;background:#252542;}
 #libraryView .lib-thumb img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;
   transition:opacity .45s ease,transform .45s ease;}
 #libraryView .lib-thumb img.on{opacity:1;}
 #libraryView .lib-card:hover .lib-thumb img{transform:scale(1.045);}
 @keyframes libshimmer{0%{background-position:120% 0;}100%{background-position:-20% 0;}}
 #libraryView .lib-thumb .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  color:#cbbfa4;font-size:12px;letter-spacing:.14em;}
+  color:#4a4a78;font-size:12px;letter-spacing:.14em;}
 #libraryView .lib-cat-chip{position:absolute;left:10px;top:10px;padding:3px 10px;border-radius:999px;
-  font-size:11px;color:#7A2E2E;background:rgba(255,255,255,.92);border:1px solid rgba(202,138,4,.35);letter-spacing:.06em;}
+  font-size:11px;color:#c4b5fd;background:rgba(15,15,30,.88);border:1px solid rgba(167,139,250,.4);letter-spacing:.06em;}
 #libraryView .lib-card-b{padding:13px 15px 16px;display:flex;flex-direction:column;gap:7px;flex:1;}
-#libraryView .lib-card-t{font-size:14.5px;font-weight:600;color:#0F172A;line-height:1.45;
+#libraryView .lib-card-t{font-size:14.5px;font-weight:600;color:#fff;line-height:1.45;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-#libraryView .lib-card-o{font-size:12px;color:#8a8378;}
-#libraryView .lib-card-d{font-size:12.5px;line-height:1.72;color:#57534e;
+#libraryView .lib-card-o{font-size:12px;color:#6b6b8c;}
+#libraryView .lib-card-d{font-size:12.5px;line-height:1.72;color:#a0a0b8;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 
 /* 加载更多 / 状态 */
 #libraryView .lib-more{display:flex;justify-content:center;margin:34px 0 10px;}
-#libraryView .lib-more button{height:42px;padding:0 34px;border-radius:999px;border:1px solid #e3dccb;background:#fff;
-  color:#334155;font-size:13.5px;cursor:pointer;transition:.18s;}
-#libraryView .lib-more button:hover{border-color:#CA8A04;color:#A16207;background:#F5F1E6;}
-#libraryView .lib-state{grid-column:1/-1;padding:70px 20px;text-align:center;color:#a8a29e;font-size:13.5px;line-height:2.1;}
-#libraryView .lib-state b{display:block;font-size:15px;color:#57534e;margin-bottom:6px;font-weight:600;}
-#libraryView .lib-spin{width:26px;height:26px;margin:0 auto 14px;border:2.5px solid #efe9dc;border-top-color:#CA8A04;
+#libraryView .lib-more button{height:42px;padding:0 34px;border-radius:999px;border:1px solid #3a3a5c;background:#1a1a2e;
+  color:#a0a0b8;font-size:13.5px;cursor:pointer;transition:.18s;}
+#libraryView .lib-more button:hover{border-color:#a78bfa;color:#c4b5fd;background:#252542;}
+#libraryView .lib-state{grid-column:1/-1;padding:70px 20px;text-align:center;color:#6b6b8c;font-size:13.5px;line-height:2.1;}
+#libraryView .lib-state b{display:block;font-size:15px;color:#a0a0b8;margin-bottom:6px;font-weight:600;}
+#libraryView .lib-spin{width:26px;height:26px;margin:0 auto 14px;border:2.5px solid #2a2a40;border-top-color:#a78bfa;
   border-radius:50%;animation:libspin .8s linear infinite;}
 @keyframes libspin{to{transform:rotate(360deg);}}
-#libraryView .lib-foot{border-top:1px solid #efe9dc;margin-top:20px;padding:24px 26px 40px;text-align:center;
-  font-size:12px;color:#a8a29e;line-height:2;}
+#libraryView .lib-foot{border-top:1px solid #2a2a40;margin-top:20px;padding:24px 26px 40px;text-align:center;
+  font-size:12px;color:#6b6b8c;line-height:2;}
 
-/* 详情弹层 */
+/* 详情弹层（底色对齐主界面 .modal： #1a1a2e + #2a2a40） */
 #libDetail{position:fixed;inset:0;z-index:1300;display:none;align-items:center;justify-content:center;padding:24px;
-  background:rgba(15,23,42,.55);backdrop-filter:blur(3px);}
+  background:rgba(0,0,0,.6);backdrop-filter:blur(3px);}
 #libDetail.lib-open{display:flex;}
-#libDetail .d-box{position:relative;width:min(960px,100%);max-height:88vh;overflow:auto;background:#FDFBF7;
-  border-radius:20px;border:1px solid #efe9dc;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);}
+#libDetail .d-box{position:relative;width:min(960px,100%);max-height:88vh;overflow:auto;background:#1a1a2e;
+  border-radius:20px;border:1px solid #2a2a40;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);}
 #libDetail .d-img{min-height:320px;display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(100deg,#F5F1E6 28%,#EFE6D3 40%,#F5F1E6 54%);background-size:300% 100%;
+  background:linear-gradient(100deg,#252542 28%,#2f2f52 40%,#252542 54%);background-size:300% 100%;
   animation:libshimmer 1.5s ease-in-out infinite;}
-#libDetail .d-img.done{animation:none;background:#F5F1E6;}
+#libDetail .d-img.done{animation:none;background:#252542;}
 #libDetail .d-img img{width:100%;height:100%;max-height:88vh;object-fit:contain;display:block;}
-#libDetail .d-info{padding:34px 32px;font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;color:#0F172A;}
-#libDetail .d-chip{display:inline-block;font-size:11.5px;letter-spacing:.1em;color:#7A2E2E;background:rgba(202,138,4,.13);
-  border:1px solid rgba(202,138,4,.35);border-radius:999px;padding:3px 12px;margin-bottom:14px;}
-#libDetail h2{margin:0 0 18px;font-size:21px;line-height:1.45;font-weight:700;color:#0F172A;
+#libDetail .d-info{padding:34px 32px;font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;color:#fff;}
+#libDetail .d-chip{display:inline-block;font-size:11.5px;letter-spacing:.1em;color:#c4b5fd;background:rgba(167,139,250,.16);
+  border:1px solid rgba(167,139,250,.4);border-radius:999px;padding:3px 12px;margin-bottom:14px;}
+#libDetail h2{margin:0 0 18px;font-size:21px;line-height:1.45;font-weight:700;color:#fff;
   font-family:"Noto Serif SC","Songti SC",serif;}
 #libDetail .d-row{display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px 14px;font-size:13.5px;
-  padding:11px 0;border-top:1px dashed #ece5d6;line-height:1.75;}
-#libDetail .d-row .k{color:#a8a29e;}
-#libDetail .d-row .v{color:#1f2937;}
-#libDetail .d-close{position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:50%;border:1px solid #e3dccb;
-  background:rgba(255,255,255,.94);color:#57534e;font-size:18px;line-height:1;cursor:pointer;z-index:2;}
-#libDetail .d-close:hover{background:#7A2E2E;color:#fff;border-color:#7A2E2E;}
+  padding:11px 0;border-top:1px dashed #2a2a40;line-height:1.75;}
+#libDetail .d-row .k{color:#6b6b8c;}
+#libDetail .d-row .v{color:#d0d0e8;}
+#libDetail .d-close{position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:50%;border:1px solid #3a3a5c;
+  background:rgba(15,15,30,.85);color:#a0a0b8;font-size:18px;line-height:1;cursor:pointer;z-index:2;}
+#libDetail .d-close:hover{background:#a78bfa;color:#0f0f1e;border-color:#a78bfa;}
 
-/* 顶部导航新增页签 */
+/* 顶部导航新增页签（选中态用主界面同款紫色渐变 .btn-primary / .logo） */
 .lib-nav-tabs{display:flex;align-items:center;gap:4px;margin-left:8px;}
 .lib-nav-tab{padding:7px 16px;border-radius:999px;font-size:13.5px;color:#a0a0b8;cursor:pointer;transition:.18s;white-space:nowrap;}
 .lib-nav-tab:hover{color:#fff;background:rgba(255,255,255,.08);}
-.lib-nav-tab.on{color:#0b0b16;background:linear-gradient(135deg,#e8d9a8,#caa64a);font-weight:600;}
+.lib-nav-tab.on{color:#0f0f1e;background:linear-gradient(135deg,#a78bfa,#818cf8);font-weight:600;}
 
 /* 移动端 */
 @media (max-width:900px){
@@ -452,8 +457,8 @@
   #libraryView .lib-wrap{padding:16px;grid-template-columns:minmax(0,1fr);gap:18px;}
   #libraryView .lib-side{position:static;}
   #libraryView .lib-cats{display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch;}
-  #libraryView .lib-cat{flex:0 0 auto;border-left:0;border:1px solid #e3dccb;background:#fff;padding:8px 14px;border-radius:999px;}
-  #libraryView .lib-cat.on{border-color:#CA8A04;background:#F5F1E6;}
+  #libraryView .lib-cat{flex:0 0 auto;border-left:0;border:1px solid #3a3a5c;background:#1a1a2e;padding:8px 14px;border-radius:999px;}
+  #libraryView .lib-cat.on{border-color:#a78bfa;background:#252542;}
   #libraryView .lib-cat .n{margin-left:6px;}
   #libraryView .lib-side-box{display:none;}
   #libraryView .lib-hero{padding:24px 20px;}
@@ -484,8 +489,8 @@
             <input type="text" id="globalSearch" placeholder="搜索纹样..." oninput="handleGlobalSearch(this.value)">
         </div>
         <div class="lib-nav-tabs">
-            <span class="lib-nav-tab on" data-lib="0" onclick="closeLibrary()">纹样识别</span>
-            <span class="lib-nav-tab" data-lib="1" onclick="openLibrary()">资源库</span>
+            <span class="lib-nav-tab on" data-lib="1" onclick="openLibrary()">资源库</span>
+            <span class="lib-nav-tab" data-lib="0" onclick="closeLibrary()">纹样识别</span>
         </div>
         <div class="top-right">
             <div class="lang-switch">
@@ -2705,7 +2710,7 @@ async function segmentPattern(img) {
             <div class="lib-cats" id="libCats"></div>
             <div class="lib-side-box">
                 <div class="k">资源库收录</div>
-                <div class="v"><span id="libSideTotal">—</span><span style="font-size:13px;color:#a8a29e;font-weight:400;"> 件</span></div>
+                <div class="v"><span id="libSideTotal">—</span><span style="font-size:13px;color:#6b6b8c;font-weight:400;"> 件</span></div>
             </div>
         </aside>
         <main>
@@ -2868,7 +2873,7 @@ function libRenderError() {
     if (g) {
         g.innerHTML = '<div class="lib-state"><b>资源库暂时拿不到数据</b>'
             + '需要联网访问织绣纹样艺术资源库（joemanba.top）' + (e ? '<br>错误：' + e : '')
-            + '<br><br><span style="color:#A16207;cursor:pointer;border-bottom:1px dashed #CA8A04;" '
+            + '<br><br><span style="color:#c4b5fd;cursor:pointer;border-bottom:1px dashed #a78bfa;" '
             + 'onclick="libRetry()">点此重试</span></div>';
     }
     var w = document.getElementById('libMoreWrap');
@@ -3066,6 +3071,34 @@ document.addEventListener('keydown', function (e) {
     var v = document.getElementById('libraryView');
     if (v && v.classList.contains('lib-open')) closeLibrary();
 });
+
+/* ===== 进入应用默认展示资源库（顶部页签仍可切回「纹样识别」） ===== */
+function libSyncTop() {
+    var v = document.getElementById('libraryView');
+    var tn = document.querySelector('.top-nav');
+    if (!v || !tn) return;
+    var h = Math.round(tn.getBoundingClientRect().height);
+    if (h > 0) v.style.top = h + 'px';
+}
+
+(function libAutoStart() {
+    function go() {
+        var v = document.getElementById('libraryView');
+        if (!v || v.classList.contains('lib-open')) return;
+        openLibrary();
+        libSyncTop();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go);
+    else go();
+    window.addEventListener('load', function () {
+        var v = document.getElementById('libraryView');
+        if (v && v.classList.contains('lib-open')) libSyncTop();
+    });
+    window.addEventListener('resize', function () {
+        var v = document.getElementById('libraryView');
+        if (v && v.classList.contains('lib-open')) libSyncTop();
+    });
+})();
 </script>
 </body>
 </html>
