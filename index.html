@@ -2354,6 +2354,20 @@ async function segmentPattern(img) {
             .replace(/"/g, '&quot;');
     }
 
+    // 等报告里的图片真正加载完再截图（否则 html2canvas 会画出空白）
+    function __rpWaitImages(root) {
+        const imgs = Array.prototype.slice.call(root.querySelectorAll('img'));
+        return Promise.all(imgs.map(function (im) {
+            if (im.complete && im.naturalWidth > 0) return null;
+            return new Promise(function (res) {
+                let done = false;
+                const fin = function () { if (!done) { done = true; res(); } };
+                im.onload = fin; im.onerror = fin;
+                setTimeout(fin, 10000);
+            });
+        }));
+    }
+
     function __rpStyles() {
         return '<style>'
             + '*{box-sizing:border-box;margin:0;padding:0;font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif;}'
@@ -2371,6 +2385,13 @@ async function segmentPattern(img) {
             + '.rp table.cmp td,.rp table.cmp th{border-bottom:1px solid #e5e7eb;padding:6px 8px;font-size:12px;text-align:left;color:#374151;}'
             + '.rp table.cmp th{background:#f3f4f6;font-weight:600;color:#4b5563;}'
             + '.rp .disc{margin-top:16px;color:#9ca3af;font-size:11px;line-height:1.7;}'
+            + '.rp table.figs{width:100%;table-layout:fixed;border-collapse:collapse;}'
+            + '.rp table.figs td{padding:0 6px;border:0;vertical-align:top;}'
+            + '.rp table.figs td:first-child{padding-left:0;}'
+            + '.rp table.figs td:last-child{padding-right:0;}'
+            + '.rp .fig{display:block;padding:10px 10px 6px;background:#f8f8fb;border:1px solid #e5e7eb;border-radius:8px;text-align:center;}'
+            + '.rp .fig img{display:block;margin:0 auto;max-width:100%;max-height:250px;width:auto;height:auto;border-radius:4px;}'
+            + '.rp .cap{margin:0 0 16px;text-align:center;color:#9ca3af;font-size:11px;}'
             + '</style>';
     }
 
@@ -2383,6 +2404,7 @@ async function segmentPattern(img) {
             + '<div class="body">' + innerHtml + '</div></div>';
         document.body.appendChild(holder);
         try {
+            await __rpWaitImages(holder);
             const canvas = await html2canvas(holder.querySelector('.rp'), { scale: 2, backgroundColor: '#ffffff', logging: false });
             const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
             const pw = 210, ph = 297;
@@ -2474,6 +2496,19 @@ async function segmentPattern(img) {
         showToast('正在生成报告...', 'info');
         try {
             let html = '';
+            // 纹样原图：确权报告的标的物，必须附图
+            const _urls = (Array.isArray(pattern.imageUrls) && pattern.imageUrls.length)
+                ? pattern.imageUrls : (pattern.imageUrl ? [pattern.imageUrl] : []);
+            const _figs = _urls.slice(0, 2);
+            if (_figs.length) {
+                html += '<h2>纹样原图</h2><table class="figs"><tr>';
+                for (let _i = 0; _i < _figs.length; _i++) {
+                    html += '<td><div class="fig"><img src="' + __rpEsc(_figs[_i]) + '" alt=""></div></td>';
+                }
+                html += '</tr></table>';
+                html += '<div class="cap">' + __rpEsc((pattern.name || '纹样') + '　编号 ' + (pattern.code || '—'))
+                    + (_urls.length > 2 ? '　（该纹样共 ' + _urls.length + ' 张图，报告展示前 2 张）' : '') + '</div>';
+            }
             html += '<h2>基本信息</h2>' + __rpInfoTable([
                 ['所属纹样库', pattern.library || '—'],
                 ['编号', pattern.code || '—'],
