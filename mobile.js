@@ -169,3 +169,21 @@
     }
   });
 })();
+
+/* __BACK_NAV_PATCH_2__ 安卓硬件返回键: @capacitor/app 插件 (2026-09-23)
+   Capacitor 6 默认对返回键不做任何处理(直接退出), 必须注册 backButton 监听。 */
+(function () {
+  var App = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) || null;
+  if (!App || typeof App.addListener !== 'function' || window.__backBtnPatched) return;
+  window.__backBtnPatched = true;
+  var lastBack = 0;
+  try {
+    App.addListener('backButton', function (data) {
+      if (data && data.canGoBack) { window.history.back(); return; }
+      var now = Date.now();
+      if (now - lastBack < 2000) { App.exitApp(); return; }
+      lastBack = now;
+      if (typeof window.showToast === 'function') window.showToast('再按一次退出应用', 'info');
+    });
+  } catch (e) { console.warn('[backButton] 注册失败', e); }
+})();
