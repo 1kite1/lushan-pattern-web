@@ -2520,6 +2520,20 @@ async function segmentPattern(img) {
             const risk = window.__cloudRisk || gradeCloudRisk(window.__cloudMatches || []);
             const matches = window.__cloudMatches || [];
             let html = '';
+            // 送检纹样：合规报告要判断的就是这张图，必须附图
+            const _cu = [];
+            if (typeof currentImage === 'string' && currentImage) _cu.push(['送检图片', currentImage]);
+            else if (typeof batchImages !== 'undefined' && batchImages[0] && batchImages[0].data) _cu.push(['送检图片', batchImages[0].data]);
+            if (result.imageUrl) _cu.push(['库内最相似纹样' + (result.code ? '（' + result.code + '）' : ''), result.imageUrl]);
+            const _cfigs = _cu.slice(0, 2);
+            if (_cfigs.length) {
+                html += '<h2>送检纹样</h2><table class="figs"><tr>';
+                for (let _ci = 0; _ci < _cfigs.length; _ci++) {
+                    html += '<td><div class="fig"><img src="' + __rpEsc(_cfigs[_ci][1]) + '" alt=""></div></td>';
+                }
+                html += '</tr></table>';
+                html += '<div class="cap">' + __rpEsc(_cfigs.map(function (f) { return f[0]; }).join('　|　')) + '</div>';
+            }
             html += '<h2>纹样信息</h2>' + __rpInfoTable([
                 ['纹样', result.name || '—'],
                 ['编号', result.code || '—'],
