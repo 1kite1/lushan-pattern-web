@@ -147,6 +147,23 @@
         /* 统计卡片 */
         .stats-row { display: flex; gap: 8px; margin-bottom: 16px; }
         .stat-card { flex: 1; background: #0f0f1e; padding: 12px; border-radius: 8px; text-align: center; }
+
+        /* ===== 纯算法民族特征判别卡片 ===== */
+        .algo-card { background: #0f0f1e; border: 1px solid #2a2a40; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
+        .algo-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .algo-label { font-size: 18px; font-weight: 600; color: #a78bfa; letter-spacing: 0.03em; }
+        .algo-conf { font-size: 11px; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+        .algo-conf.high { background: rgba(16,185,129,0.15); color: #10b981; }
+        .algo-conf.mid { background: rgba(245,158,11,0.15); color: #f59e0b; }
+        .algo-conf.low { background: rgba(244,67,54,0.15); color: #f44336; }
+        .algo-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .algo-name { width: 44px; font-size: 12px; color: #a0a0b8; flex-shrink: 0; }
+        .algo-track { flex: 1; height: 8px; background: #252542; border-radius: 4px; overflow: hidden; }
+        .algo-fill { display: block; height: 100%; background: #4a4a78; border-radius: 4px; transition: width 0.35s; }
+        .algo-fill.on { background: linear-gradient(90deg, #a78bfa, #818cf8); }
+        .algo-pct { width: 38px; text-align: right; font-size: 11px; color: #6b6b8c; font-variant-numeric: tabular-nums; }
+        .algo-note { font-size: 11px; color: #6b6b8c; line-height: 1.6; margin-top: 8px; }
+        .algo-foot { font-size: 10.5px; color: #4a4a78; margin-top: 6px; border-top: 1px solid #1f1f36; padding-top: 6px; }
         .stat-value { font-size: 18px; font-weight: 600; color: #a78bfa; }
         .stat-value.green { color: #10b981; }
         .stat-value.yellow { color: #f59e0b; }
@@ -569,7 +586,7 @@
                     <div class="batch-grid" id="batchGrid" style="display:none;"></div>
 
                     <div class="recognizing-overlay" id="recognizingOverlay">
-                        <div class="pulse-ring"><div class="core">🌸</div></div>
+                        <div class="pulse-ring"><div class="core"><svg viewBox="0 0 478 478" width="30" height="30" xmlns="http://www.w3.org/2000/svg" style="display:block;color:#fff" aria-hidden="true"><path d="M0,0 L14,0 L31,2 L52,8 L69,16 L84,26 L94,35 L99,40 L106,47 L115,60 L125,79 L128,87 L128,91 L138,94 L150,99 L166,109 L176,117 L190,131 L201,146 L209,162 L215,178 L219,196 L220,208 L220,218 L218,235 L213,254 L206,271 L198,284 L188,297 L175,310 L160,321 L143,330 L129,335 L123,351 L115,366 L106,378 L97,388 L89,396 L75,406 L61,414 L42,421 L23,425 L3,426 L-15,424 L-31,420 L-47,414 L-63,405 L-77,394 L-91,380 L-101,366 L-107,356 L-114,339 L-115,335 L-131,329 L-146,321 L-160,311 L-167,304 L-172,299 L-180,290 L-190,275 L-198,258 L-204,237 L-206,220 L-206,206 L-204,189 L-198,168 L-189,149 L-177,132 L-166,120 L-155,111 L-141,102 L-127,95 L-115,90 L-107,70 L-98,55 L-89,44 L-81,35 L-70,26 L-55,16 L-38,8 L-17,2 Z M-3,27 L-19,30 L-35,36 L-51,45 L-65,57 L-75,69 L-84,84 L-89,97 L-93,113 L-112,118 L-126,124 L-138,132 L-151,143 L-161,155 L-170,171 L-176,187 L-179,203 L-179,223 L-176,239 L-170,255 L-161,271 L-148,286 L-134,297 L-119,305 L-117,305 L-116,151 L-112,143 L-103,137 L-94,136 L-85,139 L-62,154 L-47,164 L-42,166 L-41,114 L-38,100 L-33,90 L-24,80 L-15,74 L-5,70 L-1,69 L17,69 L29,73 L40,80 L48,89 L55,103 L57,113 L57,143 L52,145 L38,154 L33,154 L32,153 L31,112 L26,102 L18,96 L10,94 L2,95 L-6,99 L-12,106 L-15,114 L-15,185 L18,207 L30,215 L31,215 L32,182 L37,180 L73,156 L100,138 L111,136 L119,138 L126,143 L130,152 L131,305 L136,304 L151,295 L164,284 L172,275 L181,261 L188,246 L192,230 L193,222 L193,204 L190,187 L184,171 L177,158 L166,144 L159,137 L145,127 L129,119 L116,115 L107,113 L102,94 L96,81 L89,69 L77,55 L65,45 L49,36 L33,30 L17,27 Z M-88,170 L-90,172 L-90,326 L-85,339 L-79,351 L-71,362 L-60,374 L-45,385 L-28,393 L-15,397 L-2,399 L16,399 L33,396 L47,391 L62,383 L72,375 L82,366 L91,354 L98,342 L104,326 L104,172 L102,170 L97,171 L70,189 L59,196 L58,198 L57,314 L54,326 L49,336 L40,346 L31,352 L21,356 L16,357 L0,357 L-10,354 L-21,348 L-31,338 L-38,325 L-41,310 L-41,228 L-35,228 L-18,239 L-16,239 L-15,313 L-11,322 L-3,329 L1,331 L9,332 L18,330 L25,325 L30,317 L31,313 L31,247 L20,239 L4,229 L-39,200 L-58,188 L-85,170 Z " fill="currentColor" transform="translate(232,26)"/></svg></div></div>
                         <div class="recognizing-text" id="recognizingText">正在识别...</div>
                     </div>
                 </div>
@@ -786,6 +803,8 @@
     <script src="libs/html2canvas.min.js"></script>
     <!-- 导入的真实纹样数据 -->
     <script src="patterns-data.js"></script>
+    <script src="algo_model.js"></script>
+    <script src="libs/pattern-algo.js"></script>
 
     <script>
     // ===== 数据初始化 =====
@@ -913,6 +932,10 @@
 
         updateUI();
         warmLibFeatures(); // 后台预热库特征缓存，提升首次识别速度
+        // 纯算法民族判别器：权重随包内置，零网络请求
+        if (window.PatternAlgo && window.ALGO_MODEL) {
+            try { PatternAlgo.loadModel(window.ALGO_MODEL); } catch (e) { console.warn('[算法判别] 模型初始化失败:', e && e.message); }
+        }
     }
 
     async function savePatternToDB(p) {
@@ -1144,7 +1167,7 @@
         overlay.classList.add('show');
         text.textContent = '正在分析图像特征...';
         setTimeout(async () => {
-            text.textContent = '正在匹配纹样库...';
+            text.textContent = '正在匹配纹样库并判别民族特征...';
             try {
                 const result = await runLocalMatch(currentImage);
                 overlay.classList.remove('show');
@@ -1732,6 +1755,16 @@ async function segmentPattern(img) {
                 stats: { similarity: '60%', risk: '1.5%', recommend: '92%', method: 'local-warming' }
             };
         }
+        // ---- 纯算法民族特征判别（本地、离线、零 API 成本）----
+        // 与上面的库检索是两件事：这里回答"更像哪个民族"，不回答"是哪一件"。
+        let algo = null;
+        try {
+            if (window.PatternAlgo && PatternAlgo.isReady()) {
+                const _t0 = performance.now();
+                algo = PatternAlgo.recognize(img);
+                algo.ms = Math.round(performance.now() - _t0);
+            }
+        } catch (e) { console.warn('[算法判别] 跳过:', e && e.message); }
         const top = ranked[0];
         const second = ranked[1] || top;
         // 相似度计算: 基础分 (1 - top.score) * 100, 加上 Top-1 与 Top-2 的间隔作可靠性加分
@@ -1744,6 +1777,7 @@ async function segmentPattern(img) {
             ...top.p,
             stats: {
                 similarity: sim + '%',
+                algo: algo,
                 risk: risk + '%',
                 recommend: Math.min(99, Math.max(85, Math.round(100 - risk * 10))) + '%',
                 method: 'local',
@@ -1871,6 +1905,35 @@ async function segmentPattern(img) {
         }
     }
 
+    // ===== 纯算法民族特征判别卡片 =====
+    // 指标口径：留一验证 72%（n=50，随机基线 25%）；margin 三档 47.1% / 75.0% / 94.1%
+    function renderAlgoCard(a) {
+        if (!a || !a.ranked) return '';
+        const cls = a.level === '高' ? 'high' : (a.level === '中' ? 'mid' : 'low');
+        const bars = a.ranked.map(r => {
+            const pct = Math.round((a.scores[r.label] || 0) * 100);
+            return `<div class="algo-row">
+                    <span class="algo-name">${r.label}</span>
+                    <span class="algo-track"><i class="algo-fill${r.label === a.label ? ' on' : ''}" style="width:${pct}%"></i></span>
+                    <span class="algo-pct">${pct}%</span>
+                </div>`;
+        }).join('');
+        const note = a.level === '低'
+            ? '特征不显著，该纹样可能不属于四大名锦，建议人工判别。'
+            : '纯本地纹理判别，回答的是「更接近哪个民族」，与上方「是哪一件」的库匹配是两套独立结论。';
+        return `
+            <div class="section-title">🧬 民族特征判别 <span style="color:#4a4a78;font-weight:400;">纯算法 · 本地</span></div>
+            <div class="algo-card">
+                <div class="algo-head">
+                    <span class="algo-label">${a.label}</span>
+                    <span class="algo-conf ${cls}">${a.level}置信 · ${Math.round(a.confidence * 100)}%</span>
+                </div>
+                <div class="algo-bars">${bars}</div>
+                <div class="algo-note">${note}</div>
+                <div class="algo-foot">66 维纹理特征（骨架 / Gabor / LBP / 色彩）· 留一验证 72%${a.ms ? ' · 耗时 ' + a.ms + 'ms' : ''}</div>
+            </div>`;
+    }
+
     function displayResult(result) {
         window.currentResult = result;
         const panel = document.getElementById('detailPanel');
@@ -1896,6 +1959,7 @@ async function segmentPattern(img) {
                 <span class="badge-ai local">🔍 本地深度特征比对</span>
                 ${result.stats.keywords ? '<span style="font-size:11px;color:#6b6b8c;margin-left:8px;">百度关键词: ' + result.stats.keywords.join('、') + '</span>' : ''}
             </div>
+            ${renderAlgoCard(result.stats && result.stats.algo)}
             ${result.stats.top3 ? `
             <div class="section-title">🎯 候选匹配 Top-3</div>
             <div class="top3-list">
