@@ -926,6 +926,21 @@
         history = await new Promise(res => hReq.onsuccess = () => res(hReq.result));
         history = history.sort((a, b) => b.timestamp - a.timestamp);
 
+        // 名称正名：历史是识别当时的快照，旧名会一直留在记录里。
+        // 这里只做内存层映射（不重写 DB），渲染 / 详情都用修正后的名字。
+        // 新增改名时往 PATTERN_RENAMES 里加一条即可。
+        const PATTERN_RENAMES = { '柿蒂纹·手捏花酥转译': '柿蒂纹' };
+        let _rn = 0;
+        history.forEach(h => {
+            if (h && h.patternName && PATTERN_RENAMES[h.patternName]) {
+                h.patternName = PATTERN_RENAMES[h.patternName]; _rn++;
+            }
+            if (h && h.matchedPattern && PATTERN_RENAMES[h.matchedPattern.name]) {
+                h.matchedPattern.name = PATTERN_RENAMES[h.matchedPattern.name];
+            }
+        });
+        if (_rn) console.log('历史记录名称已正名 ' + _rn + ' 条');
+
         // 加载收藏
         const fReq = db.transaction('favorites').objectStore('favorites').getAll();
         favorites = await new Promise(res => fReq.onsuccess = () => res(fReq.result));
