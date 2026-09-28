@@ -8,8 +8,60 @@
 html, body { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 img { max-width: 100%; }
 
+/* ---------- 数据管理筛选控件：任何宽度下都不得撑宽页面 ----------
+   同上的根因，这里管 >820px 区间（平板竖屏 / 窄窗口走桌面样式）。
+   典型中招尺寸：834px iPad 竖屏 → 内容区 834-200-420 = 214px，而 #filterCraft 要 592px。 */
+.admin-toolbar { min-width: 0; }
+.admin-toolbar input, .admin-toolbar select { min-width: 0; max-width: 100%; }
+
 /* 手机拍照按钮（仅移动端显示） */
 .mobile-camera-btn { display: none; }
+
+/* ---------- 中型屏（821–1199px）：三栏收窄 ----------
+   桌面三栏是 sidebar 200 + detail-panel 420 的固定宽，合计 620px；而本文件断点在 820px。
+   834px（iPad 竖屏）走桌面样式时，内容区只剩 834-620 = 214px（扣 48px padding 才 166px），
+   标题被挤成一竖列、表格挤成一条。这里不动断点、不动 mobile.js（它的 isMobile() 阈值
+   820px 管着详情全屏抽屉与返回键逻辑），只把侧栏折叠成图标条、详情栏收窄：
+   834px 内容区 214 → 446px，1200px 起回到原三栏。 */
+@media (min-width: 821px) and (max-width: 1199px) {
+
+    /* 侧栏 200 → 68：图标在上、文字在下，与手机端底部导航同一视觉语言 */
+    .sidebar { width: 68px; }
+    .sidebar-section { padding: 12px 6px 6px; }
+    .sidebar-title { display: none; }
+    .menu-item {
+        flex-direction: column; justify-content: center; align-items: center;
+        gap: 2px; padding: 9px 2px;
+    }
+    .menu-item .icon { font-size: 19px; width: auto; line-height: 1.1; }
+    .menu-item > span:not(.icon):not(.badge) {
+        font-size: 10px; line-height: 1.15; white-space: nowrap;
+        max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+    }
+    .menu-item.active::before { left: -6px; height: 22px; }
+    .menu-item .badge {
+        position: absolute; top: 2px; right: 2px;
+        margin-left: 0; padding: 1px 5px; font-size: 9px;
+    }
+
+    /* 「最近溯源」只留缩略图（68px 放不下名称/时间），空态一并收紧 */
+    .history-section { padding: 0 6px 10px; }
+    .history-item { justify-content: center; gap: 0; padding: 6px 4px; }
+    .history-info { display: none; }
+    .history-thumb { width: 40px; height: 40px; }
+    .history-section .empty-state { padding: 14px 0; }
+    .history-section .empty-state .icon { font-size: 22px; margin-bottom: 4px; }
+    .history-section .empty-state .text { font-size: 11px; }
+
+    /* 内容区：窄屏下标题行允许换行，别硬挤 */
+    .center-panel { padding: 18px; }
+    .page-header { flex-wrap: wrap; gap: 12px; }
+
+    /* 详情栏 420 → 320 */
+    .detail-panel { width: 320px; padding: 16px; }
+    .detail-hero { height: 170px; }
+    .detail-title { font-size: 18px; }
+}
 
 @media (max-width: 820px) {
 
@@ -128,8 +180,13 @@ img { max-width: 100%; }
 
     /* ---------- 表格（数据管理）横向滚动 ---------- */
     .admin-toolbar { flex-wrap: wrap; gap: 8px; }
-    .admin-toolbar input, .admin-toolbar select { flex: 1 1 140px; min-height: 40px; }
-    .admin-table { display: block; overflow-x: auto; white-space: nowrap; font-size: 12px; }
+    /* min-width:0 必须显式写！flex 项默认 min-width:auto（不小于 min-content），
+       而 <select> 的 min-content 宽度由最长 <option> 决定（本库「工艺」实测 592px），
+       不写就会把整页撑宽、导致左右能拖走。max-width:100% 再兜一层边界。 */
+    .admin-toolbar input, .admin-toolbar select {
+        flex: 1 1 140px; min-width: 0; max-width: 100%; min-height: 40px;
+    }
+    .admin-table { display: block; overflow-x: auto; white-space: nowrap; font-size: 12px; max-width: 100%; }
     .modal { width: 92%; max-height: 88vh; overflow-y: auto; }
     .form-row { flex-direction: column; gap: 0; }
     .form-input, .form-textarea { min-height: 42px; font-size: 15px; }
