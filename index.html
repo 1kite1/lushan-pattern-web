@@ -8,7 +8,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
-    <title>麓山绘梦·纹鉴 - 纹样确权识别系统</title>
+    <title>麓山绘梦·纹鉴 - 纹样确权溯源系统</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -313,7 +313,6 @@
 #dbg.show,#dbg:hover{display:block}
 </style>
     <style>
-
 /* ===== 织绣纹样艺术资源库（跟随系统暗色主题；样式全部限定在 #libraryView 内） =====
    配色对齐主界面：底 #0f0f1e / 面板 #1a1a2e / 浮层 #252542 / 边框 #2a2a40·#3a3a5c
    强调 紫 #a78bfa→#818cf8 / 正文 #fff / 次级 #a0a0b8 / 弱 #6b6b8c */
@@ -490,6 +489,203 @@
   .lib-nav-tabs{gap:0;margin-left:auto;}
   .lib-nav-tab{padding:6px 10px;font-size:12.5px;}
 }
+
+/* ===== 顶层视图：二次创作 / 特征提取 ===== */
+#createView,#featureView{position:fixed;left:0;right:0;bottom:0;top:var(--tv-top,64px);z-index:1200;
+  display:none;overflow-y:auto;overflow-x:hidden;background:#0f0f1e;color:#fff;text-align:left;
+  font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;}
+#createView.lib-open,#featureView.lib-open{display:block;}
+#createView *,#featureView *{box-sizing:border-box;}
+#createView input,#featureView input{font-family:inherit;}
+
+/* 共用骨架（与资源库同一套视觉语言） */
+.tv-head{position:sticky;top:0;z-index:5;background:rgba(15,15,30,.92);
+  backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid #2a2a40;}
+.tv-head-in{max-width:1400px;margin:0 auto;padding:14px 26px;display:flex;align-items:center;gap:18px;}
+.tv-back{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 16px;border-radius:999px;
+  border:1px solid #3a3a5c;background:#1a1a2e;color:#a0a0b8;font-size:13.5px;cursor:pointer;transition:.18s;white-space:nowrap;}
+.tv-back:hover{background:#252542;border-color:#a78bfa;color:#c4b5fd;}
+.tv-brand{font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;font-size:17px;font-weight:700;
+  letter-spacing:.06em;color:#fff;white-space:nowrap;}
+.tv-brand em{font-style:normal;background:linear-gradient(135deg,#a78bfa,#818cf8);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.tv-actions{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.tv-btn{height:36px;padding:0 18px;border-radius:999px;border:1px solid #3a3a5c;background:#1a1a2e;
+  color:#a0a0b8;font-size:13.5px;cursor:pointer;transition:.18s;white-space:nowrap;}
+.tv-btn:hover{background:#252542;border-color:#a78bfa;color:#c4b5fd;}
+.tv-btn.primary{border:0;background:linear-gradient(135deg,#a78bfa,#818cf8);color:#0f0f1e;font-weight:600;}
+.tv-btn.primary:hover{filter:brightness(1.12);color:#0f0f1e;}
+.tv-wrap{max-width:1400px;margin:0 auto;padding:26px;}
+.tv-hero{position:relative;overflow:hidden;border:1px solid #2a2a40;border-radius:20px;
+  padding:34px 34px 30px;margin-bottom:26px;
+  background:
+    radial-gradient(120% 160% at 88% 12%,rgba(167,139,250,.22),transparent 58%),
+    radial-gradient(90% 130% at 4% 96%,rgba(129,140,248,.18),transparent 60%),
+    linear-gradient(135deg,#1a1a2e,#22223c 62%,#1d1d36);}
+.tv-hero::after{content:"";position:absolute;right:-40px;bottom:-70px;width:320px;height:320px;
+  background-image:linear-gradient(45deg,rgba(167,139,250,.20) 25%,transparent 25%,transparent 75%,rgba(167,139,250,.20) 75%),
+                   linear-gradient(45deg,rgba(167,139,250,.20) 25%,transparent 25%,transparent 75%,rgba(167,139,250,.20) 75%);
+  background-size:26px 26px;background-position:0 0,13px 13px;transform:rotate(45deg);opacity:.5;
+  -webkit-mask-image:radial-gradient(closest-side,#000,transparent);mask-image:radial-gradient(closest-side,#000,transparent);}
+.tv-eyebrow{display:inline-block;font-size:11.5px;letter-spacing:.22em;color:#c4b5fd;
+  border:1px solid rgba(167,139,250,.4);border-radius:999px;padding:4px 12px;margin-bottom:16px;background:rgba(167,139,250,.12);}
+.tv-hero h1{position:relative;margin:0;font-size:clamp(26px,3.6vw,40px);line-height:1.22;font-weight:700;
+  letter-spacing:.03em;color:#fff;font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;}
+.tv-hero h1 span{background:linear-gradient(135deg,#a78bfa,#818cf8);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.tv-hero p{position:relative;margin:14px 0 0;max-width:660px;font-size:14px;line-height:1.9;color:#a0a0b8;}
+.tv-stats{position:relative;display:flex;gap:34px;margin-top:24px;flex-wrap:wrap;}
+.tv-stats .s .n{font-size:26px;font-weight:700;color:#a78bfa;font-variant-numeric:tabular-nums;
+  font-family:"Noto Serif SC","Songti SC",serif;line-height:1.1;}
+.tv-stats .s .l{font-size:12px;color:#a0a0b8;margin-top:4px;letter-spacing:.08em;}
+.tv-bar{display:flex;align-items:baseline;gap:12px;margin:0 0 16px;padding:0 2px;}
+.tv-bar .t{font-size:16px;font-weight:700;color:#fff;
+  font-family:"Noto Serif SC","Songti SC",serif;letter-spacing:.04em;}
+.tv-bar .c{font-size:12.5px;color:#6b6b8c;}
+.tv-panel-h{font-size:12px;letter-spacing:.18em;color:#6b6b8c;font-weight:600;margin:0 0 12px;}
+.tv-foot{border-top:1px solid #2a2a40;margin-top:26px;padding:24px 0 40px;text-align:center;
+  font-size:12px;color:#6b6b8c;line-height:2;}
+
+/* 纹样底纹：纯 CSS 生成，零图片依赖 */
+.tv-pat{background-color:#1b1b32;background-repeat:repeat;}
+.tv-pat.t1{background-image:
+  repeating-linear-gradient(45deg,rgba(167,139,250,.42) 0 1.5px,transparent 1.5px 13px),
+  repeating-linear-gradient(-45deg,rgba(129,140,248,.34) 0 1.5px,transparent 1.5px 13px),
+  radial-gradient(circle at 50% 50%,rgba(167,139,250,.30),transparent 60%);}
+.tv-pat.t2{background-image:
+  radial-gradient(circle at 50% 50%,rgba(167,139,250,.55) 0 2.5px,transparent 2.5px),
+  radial-gradient(circle at 0 0,rgba(129,140,248,.40) 0 2.5px,transparent 2.5px),
+  radial-gradient(circle at 100% 100%,rgba(129,140,248,.40) 0 2.5px,transparent 2.5px);
+  background-size:18px 18px,18px 18px,18px 18px;}
+.tv-pat.t3{background-image:
+  repeating-linear-gradient(90deg,rgba(167,139,250,.34) 0 2px,transparent 2px 9px),
+  repeating-linear-gradient(0deg,rgba(129,140,248,.26) 0 2px,transparent 2px 9px);}
+.tv-pat.t4{background-image:
+  repeating-linear-gradient(135deg,rgba(167,139,250,.30) 0 3px,transparent 3px 16px),
+  repeating-linear-gradient(45deg,rgba(129,140,248,.22) 0 3px,transparent 3px 16px);}
+
+/* ---- 二次创作 ---- */
+.cv-studio{display:grid;grid-template-columns:236px minmax(0,1fr) 250px;gap:18px;align-items:start;}
+.cv-src,.cv-ctrl,.cv-stage{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;padding:16px;}
+.cv-src-list{display:flex;flex-direction:column;gap:9px;}
+.cv-src-item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:11px;cursor:pointer;
+  border:1px solid transparent;transition:.16s;}
+.cv-src-item:hover{background:#252542;}
+.cv-src-item.on{background:#252542;border-color:#a78bfa;}
+.cv-src-thumb{width:44px;height:44px;border-radius:9px;flex-shrink:0;}
+.cv-src-meta{min-width:0;}
+.cv-src-meta b{display:block;font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cv-src-meta span{display:block;font-size:11.5px;color:#6b6b8c;margin-top:3px;}
+.cv-stage{display:flex;flex-direction:column;gap:14px;}
+.cv-canvas{position:relative;aspect-ratio:4/3;border-radius:13px;overflow:hidden;
+  border:1px dashed #3a3a5c;display:flex;align-items:center;justify-content:center;}
+.cv-canvas-pattern{position:absolute;inset:0;}
+.cv-canvas-tip{position:relative;font-size:12.5px;letter-spacing:.14em;color:rgba(255,255,255,.72);
+  background:rgba(15,15,30,.72);border:1px solid #3a3a5c;border-radius:999px;padding:5px 14px;}
+.cv-tools{display:flex;gap:8px;flex-wrap:wrap;}
+.cv-tool{height:36px;padding:0 16px;border-radius:999px;border:1px solid #3a3a5c;background:#1a1a2e;
+  color:#a0a0b8;font-size:13px;cursor:pointer;transition:.16s;}
+.cv-tool:hover{background:#252542;color:#fff;}
+.cv-tool.on{border-color:#a78bfa;background:rgba(167,139,250,.16);color:#c4b5fd;font-weight:600;}
+.cv-group{margin-bottom:20px;}
+.cv-group:last-child{margin-bottom:0;}
+.cv-label{font-size:12.5px;color:#a0a0b8;margin-bottom:9px;display:flex;align-items:baseline;gap:8px;}
+.cv-label .cv-val{margin-left:auto;color:#a78bfa;font-weight:600;font-size:12.5px;}
+.cv-swatches{display:flex;gap:8px;flex-wrap:wrap;}
+.cv-sw{width:30px;height:30px;border-radius:9px;cursor:pointer;border:2px solid transparent;transition:.16s;}
+.cv-sw.on{border-color:#fff;transform:scale(1.06);}
+.cv-chips{display:flex;flex-wrap:wrap;gap:7px;}
+.cv-chip{padding:6px 12px;border-radius:999px;border:1px solid #3a3a5c;background:#1a1a2e;
+  font-size:12.5px;color:#a0a0b8;cursor:pointer;transition:.16s;}
+.cv-chip:hover{background:#252542;color:#fff;}
+.cv-chip.on{border-color:#a78bfa;background:rgba(167,139,250,.16);color:#c4b5fd;font-weight:600;}
+.cv-slider{height:6px;border-radius:999px;background:#252542;overflow:hidden;}
+.cv-slider span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#818cf8,#a78bfa);}
+.cv-works{display:grid;grid-template-columns:repeat(auto-fill,minmax(214px,1fr));gap:20px;}
+.cv-work{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;overflow:hidden;
+  transition:transform .2s,box-shadow .2s,border-color .2s;}
+.cv-work:hover{transform:translateY(-4px);box-shadow:0 14px 30px -14px rgba(0,0,0,.65);border-color:#a78bfa;}
+.cv-work-thumb{position:relative;aspect-ratio:4/3;}
+.cv-work-b{padding:13px 15px 16px;}
+.cv-work-b b{display:block;font-size:14px;font-weight:600;color:#fff;}
+.cv-work-b span{display:block;font-size:11.5px;color:#6b6b8c;margin-top:6px;}
+
+/* ---- 特征提取 ---- */
+.fv-io{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;margin-bottom:26px;}
+.fv-drop{border:1.5px dashed #3a3a5c;border-radius:16px;background:#1a1a2e;
+  padding:38px 20px;text-align:center;transition:.18s;}
+.fv-drop:hover{border-color:#a78bfa;background:#1d1d36;}
+.fv-drop-icon{font-size:34px;opacity:.85;margin-bottom:12px;}
+.fv-drop-t{font-size:15px;font-weight:600;color:#fff;}
+.fv-drop-h{font-size:12.5px;color:#6b6b8c;margin-top:8px;}
+.fv-sample{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;padding:16px;}
+.fv-sample-h{font-size:12px;letter-spacing:.18em;color:#6b6b8c;font-weight:600;margin-bottom:12px;}
+.fv-sample-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fv-sample-thumb{aspect-ratio:1/1;border-radius:11px;cursor:pointer;border:2px solid transparent;transition:.16s;}
+.fv-sample-thumb:hover{transform:translateY(-2px);}
+.fv-sample-thumb.on{border-color:#a78bfa;}
+.fv-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:18px;margin-bottom:26px;}
+.fv-card{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;padding:17px 18px;}
+.fv-card-h{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:#fff;margin-bottom:14px;}
+.fv-card-h .fv-ico{color:#a78bfa;}
+.fv-card-h b{margin-left:auto;font-size:11.5px;font-weight:600;color:#c4b5fd;
+  border:1px solid rgba(167,139,250,.4);border-radius:999px;padding:2px 9px;background:rgba(167,139,250,.12);}
+.fv-bars{display:flex;align-items:flex-end;gap:3px;height:66px;margin-bottom:12px;}
+.fv-bars i{flex:1;background:linear-gradient(180deg,#a78bfa,#818cf8);border-radius:2px 2px 0 0;min-height:3px;}
+.fv-card-f{font-size:12px;color:#6b6b8c;line-height:1.7;}
+.fv-card-f b{color:#a0a0b8;font-variant-numeric:tabular-nums;}
+.fv-vector{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;padding:18px;margin-bottom:26px;}
+.fv-vector-code{font-family:"JetBrains Mono",Consolas,monospace;font-size:12.5px;color:#c4b5fd;
+  background:#15152a;border:1px solid #2a2a40;border-radius:11px;padding:13px 15px;line-height:1.85;
+  overflow-x:auto;white-space:pre;margin-bottom:16px;}
+.fv-vector-bars{display:flex;align-items:flex-end;gap:4px;height:86px;}
+.fv-vector-bars i{flex:1;background:linear-gradient(180deg,rgba(167,139,250,.95),rgba(129,140,248,.45));
+  border-radius:2px 2px 0 0;min-height:3px;}
+.fv-match{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;overflow:hidden;}
+.fv-match-row{display:grid;grid-template-columns:56px minmax(0,1fr) 132px;gap:14px;align-items:center;
+  padding:14px 18px;border-top:1px solid #2a2a40;}
+.fv-match-row:first-child{border-top:0;}
+.fv-match-thumb{width:56px;height:56px;border-radius:11px;}
+.fv-match-meta b{display:block;font-size:14px;font-weight:600;color:#fff;}
+.fv-match-meta span{display:block;font-size:11.5px;color:#6b6b8c;margin-top:4px;}
+.fv-match-score{text-align:right;}
+.fv-match-score b{font-size:15px;color:#a78bfa;font-variant-numeric:tabular-nums;
+  font-family:"Noto Serif SC","Songti SC",serif;}
+.fv-match-bar{height:5px;border-radius:999px;background:#252542;margin-top:7px;overflow:hidden;}
+.fv-match-bar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#818cf8,#a78bfa);}
+
+@media (max-width:1100px){
+  .cv-studio{grid-template-columns:210px minmax(0,1fr);}
+  .cv-ctrl{grid-column:1/-1;}
+}
+@media (max-width:900px){
+  .tv-head-in{padding:12px 14px;gap:10px;}
+  .tv-brand{display:none;}
+  .tv-btn{padding:0 13px;font-size:12.5px;}
+  .tv-wrap{padding:16px;}
+  .tv-hero{padding:24px 20px;}
+  .tv-stats{gap:22px;}
+  .cv-studio{grid-template-columns:minmax(0,1fr);}
+  .cv-stage{order:-1;}
+  .cv-works{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;}
+  .fv-io{grid-template-columns:minmax(0,1fr);}
+  .fv-cards{grid-template-columns:minmax(0,1fr);}
+  .fv-match-row{grid-template-columns:48px minmax(0,1fr);gap:12px;padding:12px 14px;}
+  .fv-match-thumb{width:48px;height:48px;}
+  .fv-match-score{grid-column:1/-1;text-align:left;}
+  .fv-vector-code{font-size:11.5px;}
+}
+/* 窄屏：收起品牌文字，把顶栏空间让给 4 个页签（此前 2 页签时够用，加到 4 个就溢出 40px）；
+   仍保留 overflow-x 兜底，极端窄屏可横向滑动 */
+@media (max-width:600px){
+  .top-nav .logo{gap:0;}
+  .top-nav .logo span{display:none;}
+  .lib-nav-tabs{flex:1;min-width:0;overflow-x:auto;justify-content:flex-start;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;margin-left:0;}
+  .lib-nav-tabs::-webkit-scrollbar{display:none;}
+  .lib-nav-tab{flex:0 0 auto;padding:5px 9px;font-size:12px;}
+}
     </style>
     <link rel="stylesheet" href="mobile.css">
     <link rel="stylesheet" href="region-chain-css.css">
@@ -506,8 +702,10 @@
             <input type="text" id="globalSearch" placeholder="搜索纹样..." oninput="handleGlobalSearch(this.value)">
         </div>
         <div class="lib-nav-tabs">
-            <span class="lib-nav-tab on" data-lib="1" onclick="openLibrary()">资源库</span>
-            <span class="lib-nav-tab" data-lib="0" onclick="closeLibrary()">纹样识别</span>
+            <span class="lib-nav-tab on" data-view="library" onclick="setTopView('library')">资源库</span>
+            <span class="lib-nav-tab" data-view="trace" onclick="setTopView('trace')">纹样溯源</span>
+            <span class="lib-nav-tab" data-view="create" onclick="setTopView('create')">二次创作</span>
+            <span class="lib-nav-tab" data-view="feature" onclick="setTopView('feature')">特征提取</span>
         </div>
         <div class="top-right">
             <div class="lang-switch">
@@ -527,7 +725,7 @@
                 <div class="sidebar-title">功能</div>
                 <div class="menu-item active" data-panel="recognize" onclick="switchPanel('recognize')">
                     <span class="icon">🔍</span>
-                    <span>智能识别</span>
+                    <span>智能溯源</span>
                     <span class="badge" id="batchBadge" style="display:none">0</span>
                 </div>
                 <div class="menu-item" data-panel="history" onclick="switchPanel('history')">
@@ -547,7 +745,7 @@
             </div>
             
             <div class="sidebar-section" style="padding-top: 8px;">
-                <div class="sidebar-title">最近识别</div>
+                <div class="sidebar-title">最近溯源</div>
             </div>
             <div class="history-section" id="historyList">
                 <div class="empty-state" style="padding: 20px 0;">
@@ -559,16 +757,16 @@
 
         <!-- 中间内容区 -->
         <div class="center-panel">
-            <!-- ===== 识别面板 ===== -->
+            <!-- ===== 溯源面板 ===== -->
             <div class="panel active" id="panel-recognize">
                 <div class="page-header">
                     <div>
-                        <div class="page-title">🔍 智能识别</div>
-                        <div class="page-subtitle">上传纹样图片，自动识别并匹配数据库</div>
+                        <div class="page-title">🔍 智能溯源</div>
+                        <div class="page-subtitle">上传纹样图片，自动溯源并匹配数据库</div>
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-secondary" onclick="toggleBatchMode()">
-                            <span>📦</span> 批量识别
+                            <span>📦</span> 批量溯源
                         </button>
                     </div>
                 </div>
@@ -587,7 +785,7 @@
 
                     <div class="recognizing-overlay" id="recognizingOverlay">
                         <div class="pulse-ring"><div class="core"><svg viewBox="0 0 478 478" width="30" height="30" xmlns="http://www.w3.org/2000/svg" style="display:block;color:#fff" aria-hidden="true"><path d="M0,0 L14,0 L31,2 L52,8 L69,16 L84,26 L94,35 L99,40 L106,47 L115,60 L125,79 L128,87 L128,91 L138,94 L150,99 L166,109 L176,117 L190,131 L201,146 L209,162 L215,178 L219,196 L220,208 L220,218 L218,235 L213,254 L206,271 L198,284 L188,297 L175,310 L160,321 L143,330 L129,335 L123,351 L115,366 L106,378 L97,388 L89,396 L75,406 L61,414 L42,421 L23,425 L3,426 L-15,424 L-31,420 L-47,414 L-63,405 L-77,394 L-91,380 L-101,366 L-107,356 L-114,339 L-115,335 L-131,329 L-146,321 L-160,311 L-167,304 L-172,299 L-180,290 L-190,275 L-198,258 L-204,237 L-206,220 L-206,206 L-204,189 L-198,168 L-189,149 L-177,132 L-166,120 L-155,111 L-141,102 L-127,95 L-115,90 L-107,70 L-98,55 L-89,44 L-81,35 L-70,26 L-55,16 L-38,8 L-17,2 Z M-3,27 L-19,30 L-35,36 L-51,45 L-65,57 L-75,69 L-84,84 L-89,97 L-93,113 L-112,118 L-126,124 L-138,132 L-151,143 L-161,155 L-170,171 L-176,187 L-179,203 L-179,223 L-176,239 L-170,255 L-161,271 L-148,286 L-134,297 L-119,305 L-117,305 L-116,151 L-112,143 L-103,137 L-94,136 L-85,139 L-62,154 L-47,164 L-42,166 L-41,114 L-38,100 L-33,90 L-24,80 L-15,74 L-5,70 L-1,69 L17,69 L29,73 L40,80 L48,89 L55,103 L57,113 L57,143 L52,145 L38,154 L33,154 L32,153 L31,112 L26,102 L18,96 L10,94 L2,95 L-6,99 L-12,106 L-15,114 L-15,185 L18,207 L30,215 L31,215 L32,182 L37,180 L73,156 L100,138 L111,136 L119,138 L126,143 L130,152 L131,305 L136,304 L151,295 L164,284 L172,275 L181,261 L188,246 L192,230 L193,222 L193,204 L190,187 L184,171 L177,158 L166,144 L159,137 L145,127 L129,119 L116,115 L107,113 L102,94 L96,81 L89,69 L77,55 L65,45 L49,36 L33,30 L17,27 Z M-88,170 L-90,172 L-90,326 L-85,339 L-79,351 L-71,362 L-60,374 L-45,385 L-28,393 L-15,397 L-2,399 L16,399 L33,396 L47,391 L62,383 L72,375 L82,366 L91,354 L98,342 L104,326 L104,172 L102,170 L97,171 L70,189 L59,196 L58,198 L57,314 L54,326 L49,336 L40,346 L31,352 L21,356 L16,357 L0,357 L-10,354 L-21,348 L-31,338 L-38,325 L-41,310 L-41,228 L-35,228 L-18,239 L-16,239 L-15,313 L-11,322 L-3,329 L1,331 L9,332 L18,330 L25,325 L30,317 L31,313 L31,247 L20,239 L4,229 L-39,200 L-58,188 L-85,170 Z " fill="currentColor" transform="translate(232,26)"/></svg></div></div>
-                        <div class="recognizing-text" id="recognizingText">正在识别...</div>
+                        <div class="recognizing-text" id="recognizingText">正在溯源...</div>
                     </div>
                 </div>
                 <input type="file" id="fileInput" accept="image/*" multiple onchange="handleFileSelect(event)">
@@ -597,10 +795,10 @@
                         <span>🔄</span> 重新上传
                     </button>
                     <button class="btn btn-primary" id="recognizeBtn" onclick="startRecognition()" disabled>
-                        <span>✨</span> 开始识别
+                        <span>✨</span> 开始溯源
                     </button>
                     <button class="btn btn-secondary" id="batchRecognizeBtn" style="display:none;" onclick="startBatchRecognition()">
-                        <span>✨</span> 批量识别全部
+                        <span>✨</span> 批量溯源全部
                     </button>
                     <button class="btn btn-secondary" id="exportPdfBtn" style="display:none;" onclick="exportCurrentReport()">
                         <span>📄</span> 导出报告
@@ -613,7 +811,7 @@
                 <div class="page-header">
                     <div>
                         <div class="page-title">📜 历史记录</div>
-                        <div class="page-subtitle">查看所有识别历史</div>
+                        <div class="page-subtitle">查看所有溯源历史</div>
                     </div>
                     <button class="btn btn-danger" onclick="clearAllHistory()">
                         <span>🗑</span> 清空全部
@@ -683,7 +881,7 @@
         <div class="detail-panel" id="detailPanel">
             <div class="no-selection">
                 <div class="icon">👈</div>
-                <div class="text">上传图片并识别<br>或从左侧选择一个纹样</div>
+                <div class="text">上传图片并溯源<br>或从左侧选择一个纹样</div>
             </div>
         </div>
     </div>
@@ -699,7 +897,7 @@
                 <input type="hidden" id="editId">
                 <input type="hidden" id="editImageData">
                 <div class="form-group">
-                    <label class="form-label">纹样图片（上传后自动计算特征，即可被识别匹配）</label>
+                    <label class="form-label">纹样图片（上传后自动计算特征，即可被溯源匹配）</label>
                     <div class="img-upload">
                         <div class="img-preview" id="editImagePreview">🖼️</div>
                         <div class="img-upload-actions">
@@ -1121,7 +1319,7 @@
             </div>
         `).join('');
         document.getElementById('batchRecognizeBtn').style.display = batchImages.some(b => !b.recognized) ? 'inline-flex' : 'none';
-        document.getElementById('batchRecognizeBtn').textContent = `✨ 批量识别 (${batchImages.filter(b => !b.recognized).length})`;
+        document.getElementById('batchRecognizeBtn').textContent = `✨ 批量溯源 (${batchImages.filter(b => !b.recognized).length})`;
     }
 
     function removeBatchImage(idx) {
@@ -1207,7 +1405,7 @@
                 document.getElementById('exportPdfBtn').style.display = 'inline-flex';
             } catch (e) {
                 overlay.classList.remove('show');
-                showToast('识别失败：' + e.message, 'error');
+                showToast('溯源失败：' + e.message, 'error');
             }
         }, 600);
     }
@@ -1218,7 +1416,7 @@
             const img = pending[i];
             const overlay = document.getElementById('recognizingOverlay');
             overlay.classList.add('show');
-            document.getElementById('recognizingText').textContent = `正在识别 (${i + 1}/${pending.length})...`;
+            document.getElementById('recognizingText').textContent = `正在溯源 (${i + 1}/${pending.length})...`;
             
             await new Promise(res => setTimeout(res, 800));
             img.result = await runLocalMatch(img.data);
@@ -1242,7 +1440,7 @@
             updateBatchGrid();
             updateUI();
         }
-        showToast(`批量识别完成！共 ${pending.length} 张图片`, 'success');
+        showToast(`批量溯源完成！共 ${pending.length} 张图片`, 'success');
         document.getElementById('batchRecognizeBtn').style.display = 'none';
     }
 
@@ -1763,7 +1961,7 @@ async function segmentPattern(img) {
                 craft: '—',
                 ethnic: '—',
                 region: '—',
-                description: '首次识别需要预热 50 张纹样特征，请稍候 5-10 秒后再次点击「开始识别」。',
+                description: '首次溯源需要预热 50 张纹样特征，请稍候 5-10 秒后再次点击「开始溯源」。',
                 meaning: '系统正在后台计算库特征向量。',
                 library: '麓山绘梦·纹鉴',
                 imageUrl: '',
@@ -2057,7 +2255,7 @@ async function segmentPattern(img) {
     function renderHistoryPage() {
         const grid = document.getElementById('historyPageGrid');
         if (history.length === 0) {
-            grid.innerHTML = '<div class="empty-state"><div class="icon">📜</div><div class="text">暂无识别历史</div></div>';
+            grid.innerHTML = '<div class="empty-state"><div class="icon">📜</div><div class="text">暂无溯源历史</div></div>';
             return;
         }
         grid.innerHTML = history.map(h => `
@@ -2361,9 +2559,9 @@ async function segmentPattern(img) {
             if (imageUrl) {
                 showToast('纹样已添加，正在计算特征...', 'info');
                 const ok = await indexPatternFeature(data);
-                showToast(ok ? '纹样已添加并入库，可被识别匹配' : '纹样已添加（特征计算失败，可在数据管理重新加载数据后重试）', ok ? 'success' : 'error');
+                showToast(ok ? '纹样已添加并入库，可被溯源匹配' : '纹样已添加（特征计算失败，可在数据管理重新加载数据后重试）', ok ? 'success' : 'error');
             } else {
-                showToast('纹样已添加（未上传图片，暂不参与识别匹配）', 'info');
+                showToast('纹样已添加（未上传图片，暂不参与溯源匹配）', 'info');
             }
         }
 
@@ -2516,7 +2714,7 @@ async function segmentPattern(img) {
         showToast('正在生成商用合规检测报告...', 'info');
         try {
             const result = window.currentResult;
-            if (!result) { showToast('请先完成识别', 'error'); return; }
+            if (!result) { showToast('请先完成溯源', 'error'); return; }
             const risk = window.__cloudRisk || gradeCloudRisk(window.__cloudMatches || []);
             const matches = window.__cloudMatches || [];
             let html = '';
@@ -2721,7 +2919,7 @@ async function segmentPattern(img) {
 
     async function registerCurrentOnChain() {
         if (!CHAIN_CONFIG.enabled) { showToast('链上确权未启用', 'error'); return; }
-        if (!currentImage) { showToast('请先上传并识别一张图片', 'error'); return; }
+        if (!currentImage) { showToast('请先上传并溯源一张图片', 'error'); return; }
         showToast('正在计算指纹并上链确权...', 'info');
         try {
             const fp = await computeFingerprintForResult();
@@ -2746,7 +2944,7 @@ async function segmentPattern(img) {
 
     async function verifyCurrentOnChain() {
         if (!CHAIN_CONFIG.enabled) { showToast('链上确权未启用', 'error'); return; }
-        if (!currentImage) { showToast('请先上传并识别一张图片', 'error'); return; }
+        if (!currentImage) { showToast('请先上传并溯源一张图片', 'error'); return; }
         showToast('正在链上验真...', 'info');
         try {
             const fp = await computeFingerprintForResult();
@@ -2794,7 +2992,7 @@ async function segmentPattern(img) {
     // ===== 区域链确权入口 =====
     async function openRegionChain() {
         if (!CHAIN_CONFIG.enabled) { showToast('链上确权未启用', 'error'); return; }
-        if (!currentImage) { showToast('请先上传并识别一张图片', 'error'); return; }
+        if (!currentImage) { showToast('请先上传并溯源一张图片', 'error'); return; }
         if (!window.currentFingerprint) {
             try { window.currentFingerprint = await computeFingerprintForResult(); }
             catch (e) { window.currentFingerprint = null; }
@@ -2869,6 +3067,281 @@ async function segmentPattern(img) {
     </div>
 </div>
 
+<!-- ===== 顶层视图：二次创作 / 特征提取 ===== -->
+<div id="createView">
+    <div class="tv-head">
+        <div class="tv-head-in">
+            <button class="tv-back" onclick="setTopView('trace')">← 返回纹鉴</button>
+            <div class="tv-brand">纹样<em>二次创作</em></div>
+            <div class="tv-actions">
+                <button class="tv-btn">📁 导入源纹样</button>
+                <button class="tv-btn primary">⬇ 导出设计稿</button>
+            </div>
+        </div>
+    </div>
+    <div class="tv-wrap">
+        <section class="tv-hero">
+            <span class="tv-eyebrow">数字文创 · 纹样再造</span>
+            <h1>让传统纹样<span>长出新枝</span></h1>
+            <p>从馆藏织绣纹样中提取母题、配色与构图规律，叠加现代设计语言重新演绎，生成可落地到织物、包装与数字界面的文创方案。</p>
+            <div class="tv-stats">
+                <div class="s"><div class="n">128</div><div class="l">可用母题</div></div>
+                <div class="s"><div class="n">36</div><div class="l">预设配色</div></div>
+                <div class="s"><div class="n">9</div><div class="l">构图范式</div></div>
+            </div>
+        </section>
+
+        <div class="tv-bar">
+            <span class="t">创作工作台</span>
+            <span class="c">静态演示 · 未接入生成引擎</span>
+        </div>
+
+        <div class="cv-studio">
+            <aside class="cv-src">
+                <div class="tv-panel-h">源 纹 样</div>
+                <div class="cv-src-list">
+                    <div class="cv-src-item on">
+                        <div class="cv-src-thumb tv-pat t1"></div>
+                        <div class="cv-src-meta"><b>侗锦 · 八角花</b><span>湖南通道 · 清代</span></div>
+                    </div>
+                    <div class="cv-src-item">
+                        <div class="cv-src-thumb tv-pat t2"></div>
+                        <div class="cv-src-meta"><b>瑶锦 · 盘王印</b><span>广西金秀 · 民国</span></div>
+                    </div>
+                    <div class="cv-src-item">
+                        <div class="cv-src-thumb tv-pat t3"></div>
+                        <div class="cv-src-meta"><b>土家锦 · 四十八勾</b><span>湖南龙山 · 近代</span></div>
+                    </div>
+                    <div class="cv-src-item">
+                        <div class="cv-src-thumb tv-pat t4"></div>
+                        <div class="cv-src-meta"><b>苗锦 · 蝴蝶妈妈</b><span>贵州台江 · 清代</span></div>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="cv-stage">
+                <div class="cv-canvas">
+                    <div class="cv-canvas-pattern tv-pat t1"></div>
+                    <div class="cv-canvas-tip">画布预览区</div>
+                </div>
+                <div class="cv-tools">
+                    <button class="cv-tool on">🎨 配色</button>
+                    <button class="cv-tool">▦ 构图</button>
+                    <button class="cv-tool">✎ 笔触</button>
+                    <button class="cv-tool">🖼 底纹</button>
+                </div>
+            </div>
+
+            <aside class="cv-ctrl">
+                <div class="tv-panel-h">参 数</div>
+                <div class="cv-group">
+                    <div class="cv-label">配色方案</div>
+                    <div class="cv-swatches">
+                        <span class="cv-sw on" style="background:linear-gradient(135deg,#a78bfa,#818cf8)"></span>
+                        <span class="cv-sw" style="background:linear-gradient(135deg,#f0abfc,#c084fc)"></span>
+                        <span class="cv-sw" style="background:linear-gradient(135deg,#67e8f9,#38bdf8)"></span>
+                        <span class="cv-sw" style="background:linear-gradient(135deg,#fcd34d,#fb923c)"></span>
+                        <span class="cv-sw" style="background:linear-gradient(135deg,#6ee7b7,#34d399)"></span>
+                    </div>
+                </div>
+                <div class="cv-group">
+                    <div class="cv-label">构图范式</div>
+                    <div class="cv-chips">
+                        <span class="cv-chip on">四方连续</span>
+                        <span class="cv-chip">二方连续</span>
+                        <span class="cv-chip">中心对称</span>
+                        <span class="cv-chip">自由散点</span>
+                    </div>
+                </div>
+                <div class="cv-group">
+                    <div class="cv-label">纹样密度 <b class="cv-val">62%</b></div>
+                    <div class="cv-slider"><span style="width:62%"></span></div>
+                </div>
+                <div class="cv-group">
+                    <div class="cv-label">线条权重 <b class="cv-val">中等</b></div>
+                    <div class="cv-slider"><span style="width:45%"></span></div>
+                </div>
+                <div class="cv-group">
+                    <div class="cv-label">色彩饱和度 <b class="cv-val">78%</b></div>
+                    <div class="cv-slider"><span style="width:78%"></span></div>
+                </div>
+            </aside>
+        </div>
+
+        <div class="tv-bar" style="margin-top:34px;">
+            <span class="t">最近创作</span>
+            <span class="c">6 个方案 · 按修改时间排序</span>
+        </div>
+        <div class="cv-works">
+            <div class="cv-work">
+                <div class="cv-work-thumb tv-pat t1"></div>
+                <div class="cv-work-b"><b>八角花 · 靛蓝新解</b><span>2 小时前 · 四方连续</span></div>
+            </div>
+            <div class="cv-work">
+                <div class="cv-work-thumb tv-pat t4"></div>
+                <div class="cv-work-b"><b>盘王印 · 几何重构</b><span>昨天 · 中心对称</span></div>
+            </div>
+            <div class="cv-work">
+                <div class="cv-work-thumb tv-pat t2"></div>
+                <div class="cv-work-b"><b>四十八勾 · 圆点阵列</b><span>3 天前 · 二方连续</span></div>
+            </div>
+            <div class="cv-work">
+                <div class="cv-work-thumb tv-pat t3"></div>
+                <div class="cv-work-b"><b>蝴蝶妈妈 · 织格底</b><span>5 天前 · 自由散点</span></div>
+            </div>
+            <div class="cv-work">
+                <div class="cv-work-thumb tv-pat t2"></div>
+                <div class="cv-work-b"><b>侗锦 · 夜紫变奏</b><span>上周 · 四方连续</span></div>
+            </div>
+            <div class="cv-work">
+                <div class="cv-work-thumb tv-pat t1"></div>
+                <div class="cv-work-b"><b>苗锦 · 暖橙套色</b><span>上周 · 中心对称</span></div>
+            </div>
+        </div>
+
+        <div class="tv-foot">
+            二次创作成果仅作设计研究参考 · 商用前请核实纹样来源与版权归属
+        </div>
+    </div>
+</div>
+
+<div id="featureView">
+    <div class="tv-head">
+        <div class="tv-head-in">
+            <button class="tv-back" onclick="setTopView('trace')">← 返回纹鉴</button>
+            <div class="tv-brand">纹样<em>特征提取</em></div>
+            <div class="tv-actions">
+                <button class="tv-btn">🔄 重置</button>
+                <button class="tv-btn primary">⚡ 开始提取</button>
+            </div>
+        </div>
+    </div>
+    <div class="tv-wrap">
+        <section class="tv-hero">
+            <span class="tv-eyebrow">图像特征 · 量化比对</span>
+            <h1>把纹样<span>拆成数据</span></h1>
+            <p>对纹样图像做多尺度特征分解，输出纹理、色彩、形状与周期结构四组量化指标，作为检索与相似度比对的依据。</p>
+            <div class="tv-stats">
+                <div class="s"><div class="n">128</div><div class="l">特征维度</div></div>
+                <div class="s"><div class="n">4</div><div class="l">特征族</div></div>
+                <div class="s"><div class="n">1.8s</div><div class="l">平均提取耗时</div></div>
+            </div>
+        </section>
+
+        <div class="fv-io">
+            <div class="fv-drop">
+                <div class="fv-drop-icon">🖼</div>
+                <div class="fv-drop-t">拖入纹样图片</div>
+                <div class="fv-drop-h">支持 JPG / PNG，单张不超过 10MB</div>
+            </div>
+            <div class="fv-sample">
+                <div class="fv-sample-h">示 例 纹 样</div>
+                <div class="fv-sample-row">
+                    <div class="fv-sample-thumb tv-pat t1 on"></div>
+                    <div class="fv-sample-thumb tv-pat t2"></div>
+                    <div class="fv-sample-thumb tv-pat t3"></div>
+                    <div class="fv-sample-thumb tv-pat t4"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tv-bar">
+            <span class="t">特征族</span>
+            <span class="c">示例数值 · 接入算法后自动更新</span>
+        </div>
+        <div class="fv-cards">
+            <div class="fv-card">
+                <div class="fv-card-h"><span class="fv-ico">▦</span>纹理特征 <b>LBP</b></div>
+                <div class="fv-bars">
+                    <i style="height:34%"></i><i style="height:58%"></i><i style="height:82%"></i>
+                    <i style="height:66%"></i><i style="height:91%"></i><i style="height:47%"></i>
+                    <i style="height:72%"></i><i style="height:55%"></i><i style="height:38%"></i>
+                    <i style="height:63%"></i><i style="height:79%"></i><i style="height:44%"></i>
+                </div>
+                <div class="fv-card-f">对比度 <b>0.42</b> · 一致性 <b>0.77</b></div>
+            </div>
+            <div class="fv-card">
+                <div class="fv-card-h"><span class="fv-ico">◐</span>色彩特征 <b>HSV</b></div>
+                <div class="fv-bars">
+                    <i style="height:88%"></i><i style="height:72%"></i><i style="height:41%"></i>
+                    <i style="height:29%"></i><i style="height:56%"></i><i style="height:68%"></i>
+                    <i style="height:35%"></i><i style="height:22%"></i><i style="height:49%"></i>
+                    <i style="height:61%"></i><i style="height:27%"></i><i style="height:18%"></i>
+                </div>
+                <div class="fv-card-f">主色 <b>#4a5fa8</b> · 色相熵 <b>1.36</b></div>
+            </div>
+            <div class="fv-card">
+                <div class="fv-card-h"><span class="fv-ico">⬡</span>形状特征 <b>Hu 矩</b></div>
+                <div class="fv-bars">
+                    <i style="height:26%"></i><i style="height:44%"></i><i style="height:61%"></i>
+                    <i style="height:85%"></i><i style="height:58%"></i><i style="height:39%"></i>
+                    <i style="height:30%"></i><i style="height:53%"></i><i style="height:70%"></i>
+                    <i style="height:46%"></i><i style="height:33%"></i><i style="height:24%"></i>
+                </div>
+                <div class="fv-card-f">对称性 <b>0.81</b> · 紧致度 <b>0.64</b></div>
+            </div>
+            <div class="fv-card">
+                <div class="fv-card-h"><span class="fv-ico">∿</span>周期结构 <b>FFT</b></div>
+                <div class="fv-bars">
+                    <i style="height:19%"></i><i style="height:31%"></i><i style="height:95%"></i>
+                    <i style="height:24%"></i><i style="height:16%"></i><i style="height:67%"></i>
+                    <i style="height:21%"></i><i style="height:13%"></i><i style="height:42%"></i>
+                    <i style="height:18%"></i><i style="height:28%"></i><i style="height:11%"></i>
+                </div>
+                <div class="fv-card-f">主频 <b>13.4 cyc</b> · 方向性 <b>0.58</b></div>
+            </div>
+        </div>
+
+        <div class="tv-bar">
+            <span class="t">特征向量</span>
+            <span class="c">归一化后前 24 维</span>
+        </div>
+        <div class="fv-vector">
+            <div class="fv-vector-code">[ 0.82, 0.14, 0.63, 0.91, 0.07, 0.45, 0.72, 0.38,
+  0.55, 0.88, 0.21, 0.34, 0.66, 0.12, 0.79, 0.43,
+  0.27, 0.94, 0.51, 0.18, 0.62, 0.36, 0.71, 0.09 ]</div>
+            <div class="fv-vector-bars">
+                <i style="height:82%"></i><i style="height:14%"></i><i style="height:63%"></i>
+                <i style="height:91%"></i><i style="height:7%"></i><i style="height:45%"></i>
+                <i style="height:72%"></i><i style="height:38%"></i><i style="height:55%"></i>
+                <i style="height:88%"></i><i style="height:21%"></i><i style="height:34%"></i>
+                <i style="height:66%"></i><i style="height:12%"></i><i style="height:79%"></i>
+                <i style="height:43%"></i><i style="height:27%"></i><i style="height:94%"></i>
+                <i style="height:51%"></i><i style="height:18%"></i><i style="height:62%"></i>
+                <i style="height:36%"></i><i style="height:71%"></i><i style="height:9%"></i>
+            </div>
+        </div>
+
+        <div class="tv-bar">
+            <span class="t">相似纹样匹配</span>
+            <span class="c">按余弦相似度排序</span>
+        </div>
+        <div class="fv-match">
+            <div class="fv-match-row">
+                <div class="fv-match-thumb tv-pat t1"></div>
+                <div class="fv-match-meta"><b>侗锦 · 八角花</b><span>湖南通道 · 清代 · 织锦</span></div>
+                <div class="fv-match-score"><b>96.2%</b><div class="fv-match-bar"><span style="width:96%"></span></div></div>
+            </div>
+            <div class="fv-match-row">
+                <div class="fv-match-thumb tv-pat t2"></div>
+                <div class="fv-match-meta"><b>瑶锦 · 盘王印</b><span>广西金秀 · 民国 · 织锦</span></div>
+                <div class="fv-match-score"><b>88.7%</b><div class="fv-match-bar"><span style="width:89%"></span></div></div>
+            </div>
+            <div class="fv-match-row">
+                <div class="fv-match-thumb tv-pat t3"></div>
+                <div class="fv-match-meta"><b>土家锦 · 四十八勾</b><span>湖南龙山 · 近代 · 织锦</span></div>
+                <div class="fv-match-score"><b>73.5%</b><div class="fv-match-bar"><span style="width:74%"></span></div></div>
+            </div>
+        </div>
+
+        <div class="tv-foot">
+            特征提取结果为图像量化指标 · 不构成纹样版权判定依据
+        </div>
+    </div>
+</div>
+
+<!-- ===== 顶层视图：二次创作 / 特征提取 ===== -->
+
 <!-- 纹样详情 -->
 <div id="libDetail" onclick="if(event.target===this){libCloseDetail();}">
     <div class="d-box">
@@ -2906,34 +3379,48 @@ function libImgUrl(u) {
     return LIB_BASE + (u.charAt(0) === '/' ? '' : '/') + u;
 }
 
-/* ---------- 开关 ---------- */
-function openLibrary() {
-    var v = document.getElementById('libraryView');
-    if (!v) return;
+/* ---------- 顶层视图开关（资源库 / 纹样溯源 / 二次创作 / 特征提取） ---------- */
+var TOP_VIEWS = { library: 'libraryView', create: 'createView', feature: 'featureView' };
+
+function tvSyncTop(el) {
     var tn = document.querySelector('.top-nav');
-    if (tn) v.style.top = Math.round(tn.getBoundingClientRect().height) + 'px';
-    v.classList.add('lib-open');
-    v.scrollTop = 0;
-    libSyncTabs(true);
-    if (!libState.loaded) libLoadAll();
-    else libRenderAll();
+    if (!el || !tn) return;
+    var h = Math.round(tn.getBoundingClientRect().height);
+    if (h > 0) el.style.top = h + 'px';
 }
 
-function closeLibrary() {
-    var v = document.getElementById('libraryView');
-    if (v) v.classList.remove('lib-open');
-    libCloseDetail();
-    libSyncTabs(false);
-}
-
-function libSyncTabs(isLib) {
+function setTopView(name) {
+    // 1. 覆盖层显隐（'trace' 即主界面本体，不涉及任何覆盖层）
+    for (var k in TOP_VIEWS) {
+        var el = document.getElementById(TOP_VIEWS[k]);
+        if (!el) continue;
+        if (k === name) {
+            el.classList.add('lib-open');
+            el.scrollTop = 0;
+            tvSyncTop(el);
+        } else {
+            el.classList.remove('lib-open');
+        }
+    }
+    // 2. 离开资源库时收起详情浮层
+    if (name !== 'library') libCloseDetail();
+    // 3. 页签高亮
     var tabs = document.querySelectorAll('.lib-nav-tab');
     for (var i = 0; i < tabs.length; i++) {
-        var mine = tabs[i].getAttribute('data-lib') === '1';
-        if (mine === !!isLib) tabs[i].classList.add('on');
+        if (tabs[i].getAttribute('data-view') === name) tabs[i].classList.add('on');
         else tabs[i].classList.remove('on');
     }
+    // 4. 资源库首次进入才拉数据
+    if (name === 'library') {
+        if (!libState.loaded) libLoadAll();
+        else libRenderAll();
+    }
 }
+
+/* 兼容旧调用名：「← 返回纹鉴」按钮 / Esc / 启动段仍用 openLibrary、closeLibrary */
+function openLibrary() { setTopView('library'); }
+
+function closeLibrary() { setTopView('trace'); }
 
 /* ---------- 数据 ---------- */
 function libLoadAll() {
@@ -3196,17 +3683,23 @@ document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     var d = document.getElementById('libDetail');
     if (d && d.classList.contains('lib-open')) { libCloseDetail(); return; }
-    var v = document.getElementById('libraryView');
-    if (v && v.classList.contains('lib-open')) closeLibrary();
+    // 任一顶层覆盖层打开 -> 回到「纹样溯源」（主界面本体）
+    for (var k in TOP_VIEWS) {
+        var el = document.getElementById(TOP_VIEWS[k]);
+        if (el && el.classList.contains('lib-open')) { setTopView('trace'); return; }
+    }
 });
 
-/* ===== 进入应用默认展示资源库（顶部页签仍可切回「纹样识别」） ===== */
+/* ===== 进入应用默认展示资源库（顶部页签仍可切回「纹样溯源」） ===== */
 function libSyncTop() {
-    var v = document.getElementById('libraryView');
     var tn = document.querySelector('.top-nav');
-    if (!v || !tn) return;
+    if (!tn) return;
     var h = Math.round(tn.getBoundingClientRect().height);
-    if (h > 0) v.style.top = h + 'px';
+    if (h <= 0) return;
+    for (var k in TOP_VIEWS) {
+        var el = document.getElementById(TOP_VIEWS[k]);
+        if (el && el.classList.contains('lib-open')) el.style.top = h + 'px';
+    }
 }
 
 (function libAutoStart() {
