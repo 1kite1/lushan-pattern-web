@@ -56,7 +56,7 @@
         const cb = document.createElement('button');
         cb.type = 'button';
         cb.className = 'mobile-camera-btn';
-        cb.innerHTML = '  拍照识别';
+        cb.innerHTML = '  拍照溯源';
         cb.addEventListener('click', (ev) => { ev.stopPropagation(); cam.click(); });
         uz.appendChild(cb);
       }
