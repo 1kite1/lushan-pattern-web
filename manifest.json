@@ -1,7 +1,7 @@
 {
-  "name": "麓山绘梦·纹鉴 - 纹样确权识别系统",
+  "name": "麓山绘梦·纹鉴 - 纹样确权溯源系统",
   "short_name": "纹样纹鉴",
-  "description": "传统纹样智能识别与确权系统",
+  "description": "传统纹样智能溯源与确权系统",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
