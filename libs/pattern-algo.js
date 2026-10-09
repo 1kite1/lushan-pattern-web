@@ -1,16 +1,24 @@
 /*!
  * pattern-algo.js — 麓山绘梦·纹鉴 纯算法民族归属判别器（浏览器端）
  *
- * 零网络、零 API、零额度。全部在本地浏览器内完成：
- *   画布 → 256x256 → 灰度标准化 → 4 组特征(66 维) → 标准化 + LDA 线性判别
+ * v2.0（2026-10-08 特征提取完善）：
+ *   画布 → 256x256 → 灰度标准化 → 2 组特征(34 维) → 标准化 + LDA 线性判别
  *
- * 特征组（共 66 维，与 _aigc-eval/algo_v2_probe.py 同源）:
- *   skel   4 维   全局骨架：梯度方向比 / 各向异性 / 行·列投影周期性
- *   gabor 24 维   Gabor 滤波器组 4 方向 x 3 尺度，响应均值与标准差
- *   lbp   10 维   旋转不变均匀 LBP 直方图
- *   color 28 维   HSV：全局色相 8bin + 2x2 分块色相 4bin + S/V 统计
+ * 特征组（共 34 维）:
+ *   gabor8log 24 维  8 方向 x 3 尺度 Gabor，取 log1p(|响应| 均值)
+ *   lbp       10 维  旋转不变均匀 LBP 直方图
  *
- * 参考指标（n=50，留一验证）：74.0%，随机基线 25%。详见 _aigc-eval/RESULTS_*.md
+ * 为什么是这两组（完整证据见 _aigc-eval/REPORT_V3_FEATURES.md）:
+ *   · 8 方向单组 76.0% > 4 方向 72.0%；再加密到 16 方向不再涨（78.0%），故停在 8。
+ *   · log1p 是方差稳定变换（|Gabor 响应| 重尾正偏），在 4/8/16 三种方向密度下
+ *     **一致增益** +2/+4/+4pt —— 比"某组合恰好更高"可信得多。
+ *   · 原 skel(4)/color(28) 单组仅 58%，拼进来会把准确率从 76% 拉回 70~72%。
+ *   · 保留 lbp 不只图准确率：它让 margin 置信度分档重新单调
+ *     （低 52.9% / 中 81.2% / 高 94.1%，LDA 后验口径下高档为 100.0%）。
+ *     **单独用 gabor8log 时 5 种置信度统计量全部非单调**（margin 高档反而最低
+ *     70.6%），UI 上会变成"说高置信、其实最不准"——所以 lbp 是必须的。
+ *
+ * 参考指标（n=50，留一验证）：76.0%，随机基线 25%。n=50 时标准误 ±6.1pt。
  *
  * 用法:
  *   await PatternAlgo.load('algo_model.json');       // 一次性
@@ -27,8 +35,9 @@
   var EPS = 1e-9;
   var MODEL = null;
 
-  // 置信度分档阈值（由 JS 特征重新标定，load() 时若模型带 bands 则覆盖）
-  var DEFAULT_BANDS = [4.98, 11.20];
+  // 置信度分档阈值（用留一 margin 三分位重新标定；load() 时若模型带 bands 则覆盖）
+  // v2.0: [2.9304, 6.5289] —— 对应 低 52.9% / 中 81.2% / 高 94.1%
+  var DEFAULT_BANDS = [2.9304, 6.5289];
 
   /* ================================================================
    * 1. FFT（radix-2，就地，实数用复数表示）
@@ -135,7 +144,7 @@
    * 3. 四组特征
    * ================================================================ */
 
-  // ---- 3.1 skel: 全局骨架 4 维 -----------------------------------
+  // ---- 3.1 skel: 全局骨架 4 维（v2.0 起不再进入 extract，保留供研发期对拍）----
   function periodicity(profile) {
     var n = profile.length, i, sum = 0, v;
     for (i = 0; i < n; i++) sum += profile[i];
@@ -183,7 +192,16 @@
       periodicity(colMean), periodicity(rowMean)];
   }
 
-  // ---- 3.2 gabor: 24 维（FFT 卷积，等价 scipy.fftconvolve valid）----
+  // ---- 3.2 gabor8log: 24 维（v2.0 起为唯一 Gabor 组）-------------
+  // 8 方向 x 3 尺度，每个核只取 log1p(|响应| 均值)。
+  //
+  // 与下面保留的 featsGabor（4 方向、取 mean|r| 与 std）的两点差别，都是实测出来的：
+  //   · 方向 4 -> 8：单组 72.0% -> 76.0%。方向采样加密后尺度耦合被剥离。
+  //   · 加 log1p：8 方向 76.0% -> 80.0%，且在 4/16 方向下同样各 +2~4pt。
+  //   · 丢掉 std：mean+std 的 24 维（featsGabor）不如只取 mean 的 24 维。
+  // 16 方向实测回退到 78.0%，所以不继续加密——这个函数里的核数量由模型决定，
+  // 换核就会换维度，务必与模型里 scaler/lda 的维度一致。
+
   var _kfft = null;          // { P, items:[{ks, re, im}] }
 
   function buildKernelFFT(P) {
@@ -203,6 +221,49 @@
     return _kfft;
   }
 
+  function featsGabor8Log(a, w, h) {
+    var maxKs = 0, kernels = MODEL.gabor.kernels;
+    for (var q = 0; q < kernels.length; q++) maxKs = Math.max(maxKs, kernels[q].size);
+
+    var P = 1;
+    while (P < w + maxKs - 1) P <<= 1;
+
+    // 图像补零 → FFT（只做一次，所有核复用）
+    var are = new Float64Array(P * P), aim = new Float64Array(P * P);
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) are[y * P + x] = a[y * w + x];
+    }
+    fft2d(are, aim, P, P, false);
+
+    var kf = buildKernelFFT(P), out = [];
+    var cre = new Float64Array(P * P), cim = new Float64Array(P * P);
+    var i, n;
+
+    for (var idx = 0; idx < kf.items.length; idx++) {
+      var ks = kf.items[idx].ks, kr = kf.items[idx].re, ki = kf.items[idx].im;
+      for (i = 0; i < P * P; i++) {
+        cre[i] = are[i] * kr[i] - aim[i] * ki[i];
+        cim[i] = are[i] * ki[i] + aim[i] * kr[i];
+      }
+      fft2d(cre, cim, P, P, true);
+
+      // valid 区域：行/列 ks-1 .. w-1（含），与 numpy fftconvolve(mode='valid') 同口径
+      var sumAbs = 0; n = 0;
+      for (y = ks - 1; y < h; y++) {
+        var base = y * P;
+        for (x = ks - 1; x < w; x++) {
+          var v = cre[base + x];
+          sumAbs += (v < 0 ? -v : v); n++;
+        }
+      }
+      out.push(Math.log1p(sumAbs / n));
+    }
+    return out;
+  }
+
+  // ---- 3.2b gabor: 24 维（保留，研发期对拍用；v2.0 起不再进入 extract）----
+  // 4 方向 x 3 尺度的响应均值与标准差。_aigc-eval/pattern-algo-v3*.js 依赖它，
+  // 三端运行期不会调用（只占代码体积）。核数量同样由模型决定。
   function featsGabor(a, w, h) {
     var maxKs = 0, kernels = MODEL.gabor.kernels;
     for (var q = 0; q < kernels.length; q++) maxKs = Math.max(maxKs, kernels[q].size);
@@ -290,7 +351,7 @@
     return Array.prototype.slice.call(hist);
   }
 
-  // ---- 3.4 color: HSV 28 维 --------------------------------------
+  // ---- 3.4 color: HSV 28 维（v2.0 起不再进入 extract，保留供研发期对拍）----
   function featsColor(rgba, w, h) {
     var n = w * h, H = new Float64Array(n), S = new Float64Array(n), V = new Float64Array(n);
     var i, p;
@@ -355,11 +416,11 @@
    * ================================================================ */
 
   function extract(gray, rgba, w, h) {
+    // v2.0：只剩两组。skel / color 已下线（单组仅 58%，且拼进来会拉低准确率），
+    // 函数本体保留在文件里供研发期对拍，见下面 3.1 / 3.4 的注释。
     var f = [];
-    f = f.concat(featsSkel(gray, w, h));
-    f = f.concat(featsGabor(gray, w, h));
+    f = f.concat(featsGabor8Log(gray, w, h));
     f = f.concat(featsLbp(gray, w, h));
-    f = f.concat(featsColor(rgba, w, h));
     return f;
   }
 
@@ -413,7 +474,7 @@
 
   var api = {};
 
-  api.VERSION = '1.1.0';
+  api.VERSION = '2.0.0';
 
   api.load = function (url) {
     return fetch(url).then(function (r) {
@@ -457,7 +518,7 @@
 
   api._internal = {
     drawToCanvas: drawToCanvas, grayNormalized: grayNormalized,
-    featsSkel: featsSkel, featsGabor: featsGabor,
+    featsSkel: featsSkel, featsGabor: featsGabor, featsGabor8Log: featsGabor8Log,
     featsLbp: featsLbp, featsColor: featsColor, extract: extract,
     fft2d: fft2d, SIZE: SIZE
   };
