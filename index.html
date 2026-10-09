@@ -1088,7 +1088,7 @@
         await initDB();
 
         // 检查 seed 版本 — 如果未写入或版本不对, 重新播种
-        const SEED_VERSION = 'imported-v8-52';  // 升级到 50 条真实纹样时改这个值
+        const SEED_VERSION = 'imported-v9-52';  // 升级到 50 条真实纹样时改这个值
         let currentVersion = null;
         try {
             const vReq = db.transaction('meta').objectStore('meta').get('seedVersion');
@@ -2143,7 +2143,7 @@ async function segmentPattern(img) {
                 </div>
                 <div class="algo-bars">${bars}</div>
                 <div class="algo-note">${note}</div>
-                <div class="algo-foot">66 维纹理特征（骨架 / Gabor / LBP / 色彩）· 留一验证 72%${a.ms ? ' · 耗时 ' + a.ms + 'ms' : ''}</div>
+                <div class="algo-foot">${a.dims || 34} 维纹理特征（8 方向 Gabor / LBP）· 留一验证 76%${a.ms ? ' · 耗时 ' + a.ms + 'ms' : ''}</div>
             </div>`;
     }
 
@@ -2458,7 +2458,7 @@ async function segmentPattern(img) {
     async function reseedData() {
         const _officialCount = (window.IMPORTED_PATTERNS && window.IMPORTED_PATTERNS.length) ? window.IMPORTED_PATTERNS.length : defaultPatterns.length;
         if (!confirm('确认重新加载纹样数据?\n\n将会重置为最新的 ' + _officialCount + ' 条官方纹样 (怀化博物馆/省研究所/汪为义收藏等藏品)。\n\n您手动添加的纹样(数据管理-新增纹样)、采集、收藏、历史记录会保留。')) return;
-        const SEED_VERSION = 'imported-v8-52';
+        const SEED_VERSION = 'imported-v9-52';
         const _preserved = collectUserPatterns(patterns);   // 用户自建条目, 播种后回填
         const clearTx = db.transaction('patterns', 'readwrite');
         clearTx.objectStore('patterns').clear();
@@ -3074,8 +3074,11 @@ async function segmentPattern(img) {
             <button class="tv-back" onclick="setTopView('trace')">← 返回纹鉴</button>
             <div class="tv-brand">纹样<em>二次创作</em></div>
             <div class="tv-actions">
-                <button class="tv-btn">📁 导入源纹样</button>
-                <button class="tv-btn primary">⬇ 导出设计稿</button>
+                <button class="tv-btn" id="cvImportBtn" title="用本地图片当母题">📁 导入源纹样</button>
+                <input type="file" id="cvImportFile" accept="image/*" style="display:none">
+                <button class="tv-btn" id="cvRandomBtn" title="随机换一套参数">🎲 随机灵感</button>
+                <button class="tv-btn" id="cvSaveBtn" title="存进浏览器本地">💾 保存到最近创作</button>
+                <button class="tv-btn primary" id="cvExportBtn" title="导出 PNG 设计稿">⬇ 导出设计稿</button>
             </div>
         </div>
     </div>
@@ -3083,121 +3086,166 @@ async function segmentPattern(img) {
         <section class="tv-hero">
             <span class="tv-eyebrow">数字文创 · 纹样再造</span>
             <h1>让传统纹样<span>长出新枝</span></h1>
-            <p>从馆藏织绣纹样中提取母题、配色与构图规律，叠加现代设计语言重新演绎，生成可落地到织物、包装与数字界面的文创方案。</p>
+            <p>点选源纹样，调配色、换构图、拖密度——画布即时重绘，满意了就存稿或导出成设计稿。全程本地渲染，不联网、不上传。</p>
             <div class="tv-stats">
-                <div class="s"><div class="n">128</div><div class="l">可用母题</div></div>
-                <div class="s"><div class="n">36</div><div class="l">预设配色</div></div>
-                <div class="s"><div class="n">9</div><div class="l">构图范式</div></div>
+                <div class="s"><div class="n">4</div><div class="l">示例母题</div></div>
+                <div class="s"><div class="n">5</div><div class="l">预设配色</div></div>
+                <div class="s"><div class="n">4</div><div class="l">构图范式</div></div>
+                <div class="s"><div class="n" id="cvStatWorks">0</div><div class="l">已存创作</div></div>
             </div>
         </section>
 
+        <div class="cv-modes" id="cvModes">
+            <button class="cv-mode on" type="button" data-mode="studio">🧰 工具箱</button>
+            <button class="cv-mode" type="button" data-mode="ai">✨ AI创作</button>
+            <span class="cv-mode-hint" id="cvModeHint">工具箱里自己调参数；切到 AI创作，写一句描述让本地引擎给你出几稿。</span>
+        </div>
+
+        <div class="cv-pane" data-pane="studio">
         <div class="tv-bar">
             <span class="t">创作工作台</span>
-            <span class="c">静态演示 · 未接入生成引擎</span>
+            <span class="c" id="cvStateLine">本地 canvas 渲染 · 示例母题，未接入云端纹样库</span>
         </div>
 
         <div class="cv-studio">
             <aside class="cv-src">
                 <div class="tv-panel-h">源 纹 样</div>
-                <div class="cv-src-list">
-                    <div class="cv-src-item on">
-                        <div class="cv-src-thumb tv-pat t1"></div>
-                        <div class="cv-src-meta"><b>侗锦 · 八角花</b><span>湖南通道 · 清代</span></div>
-                    </div>
-                    <div class="cv-src-item">
-                        <div class="cv-src-thumb tv-pat t2"></div>
-                        <div class="cv-src-meta"><b>瑶锦 · 盘王印</b><span>广西金秀 · 民国</span></div>
-                    </div>
-                    <div class="cv-src-item">
-                        <div class="cv-src-thumb tv-pat t3"></div>
-                        <div class="cv-src-meta"><b>土家锦 · 四十八勾</b><span>湖南龙山 · 近代</span></div>
-                    </div>
-                    <div class="cv-src-item">
-                        <div class="cv-src-thumb tv-pat t4"></div>
-                        <div class="cv-src-meta"><b>苗锦 · 蝴蝶妈妈</b><span>贵州台江 · 清代</span></div>
-                    </div>
-                </div>
+                <div class="cv-src-list" id="cvSrcList"></div>
+                <button class="cv-src-reset" id="cvSrcReset">↺ 换回内置母题</button>
+                <div class="cv-src-note">四个母题为演示用几何提取，非馆藏原件；导入本地图片后以它为母题重复排布。</div>
             </aside>
 
             <div class="cv-stage">
                 <div class="cv-canvas">
-                    <div class="cv-canvas-pattern tv-pat t1"></div>
-                    <div class="cv-canvas-tip">画布预览区</div>
+                    <canvas id="cvCanvas" width="960" height="720"></canvas>
                 </div>
-                <div class="cv-tools">
-                    <button class="cv-tool on">🎨 配色</button>
-                    <button class="cv-tool">▦ 构图</button>
-                    <button class="cv-tool">✎ 笔触</button>
-                    <button class="cv-tool">🖼 底纹</button>
+                <div class="cv-tools" id="cvTools">
+                    <button class="cv-tool on" data-group="color">🎨 配色</button>
+                    <button class="cv-tool" data-group="layout">▦ 构图</button>
+                    <button class="cv-tool" data-group="stroke">✎ 笔触</button>
+                    <button class="cv-tool" data-group="ground">🖼 底纹</button>
+                    <button class="cv-tool ghost" id="cvResetBtn">↺ 重置</button>
                 </div>
             </div>
 
             <aside class="cv-ctrl">
                 <div class="tv-panel-h">参 数</div>
-                <div class="cv-group">
-                    <div class="cv-label">配色方案</div>
-                    <div class="cv-swatches">
-                        <span class="cv-sw on" style="background:linear-gradient(135deg,#a78bfa,#818cf8)"></span>
-                        <span class="cv-sw" style="background:linear-gradient(135deg,#f0abfc,#c084fc)"></span>
-                        <span class="cv-sw" style="background:linear-gradient(135deg,#67e8f9,#38bdf8)"></span>
-                        <span class="cv-sw" style="background:linear-gradient(135deg,#fcd34d,#fb923c)"></span>
-                        <span class="cv-sw" style="background:linear-gradient(135deg,#6ee7b7,#34d399)"></span>
-                    </div>
+                <div class="cv-group cv-hot" data-group="color">
+                    <div class="cv-label">配色方案 <b class="cv-val" id="cvColorName">靛蓝新解</b></div>
+                    <div class="cv-swatches" id="cvSwatches"></div>
                 </div>
-                <div class="cv-group">
+                <div class="cv-group" data-group="layout">
                     <div class="cv-label">构图范式</div>
-                    <div class="cv-chips">
-                        <span class="cv-chip on">四方连续</span>
-                        <span class="cv-chip">二方连续</span>
-                        <span class="cv-chip">中心对称</span>
-                        <span class="cv-chip">自由散点</span>
-                    </div>
+                    <div class="cv-chips" id="cvComps"></div>
                 </div>
-                <div class="cv-group">
-                    <div class="cv-label">纹样密度 <b class="cv-val">62%</b></div>
-                    <div class="cv-slider"><span style="width:62%"></span></div>
+                <div class="cv-group" data-group="layout">
+                    <div class="cv-label">纹样密度 <b class="cv-val" id="cvDensityVal">62%</b></div>
+                    <input class="cv-range" type="range" id="cvDensity" min="20" max="100" step="1" value="62">
                 </div>
-                <div class="cv-group">
-                    <div class="cv-label">线条权重 <b class="cv-val">中等</b></div>
-                    <div class="cv-slider"><span style="width:45%"></span></div>
+                <div class="cv-group" data-group="stroke">
+                    <div class="cv-label">线条权重 <b class="cv-val" id="cvWeightVal">中等</b></div>
+                    <input class="cv-range" type="range" id="cvWeight" min="10" max="100" step="1" value="45">
                 </div>
-                <div class="cv-group">
-                    <div class="cv-label">色彩饱和度 <b class="cv-val">78%</b></div>
-                    <div class="cv-slider"><span style="width:78%"></span></div>
+                <div class="cv-group" data-group="stroke">
+                    <div class="cv-label">笔法</div>
+                    <div class="cv-chips" id="cvStrokes"></div>
+                </div>
+                <div class="cv-group" data-group="ground">
+                    <div class="cv-label">底纹</div>
+                    <div class="cv-chips" id="cvGrounds"></div>
+                </div>
+                <div class="cv-group" data-group="color">
+                    <div class="cv-label">色彩饱和度 <b class="cv-val" id="cvSatVal">78%</b></div>
+                    <input class="cv-range" type="range" id="cvSat" min="20" max="100" step="1" value="78">
                 </div>
             </aside>
         </div>
 
+        </div>
+
+<div class="cv-pane cv-pane-off" data-pane="ai">
+    <div class="tv-bar">
+        <span class="t">AI 创作台</span>
+        <span class="c" id="cvAiChanLine">通道：本地引擎 · 离线运行，不上传、无调用费用</span>
+    </div>
+
+    <div class="cv-ai-prompt">
+        <textarea class="cv-ai-ta" id="cvAiPrompt" rows="3" placeholder="描述你想要的纹样… 例如：靛蓝底、八角团花、密布、古朴双钩"></textarea>
+        <div class="cv-ai-prow">
+            <div class="cv-chips" id="cvAiChips"></div>
+            <span class="cv-ai-cnt" id="cvAiCount">0 字</span>
+        </div>
+        <div class="cv-ai-tools">
+            <span class="lbl">变体数量</span>
+            <div class="cv-chips" id="cvAiNums"></div>
+            <span class="lbl" style="margin-left:6px;">创意自由度</span>
+            <div class="cv-chips" id="cvAiFrees"></div>
+            <span class="sp"></span>
+            <button class="tv-btn" type="button" id="cvAiExample">🎲 来点灵感</button>
+            <button class="cv-ai-gen" type="button" id="cvAiGen">✨ 生成纹样</button>
+        </div>
+    </div>
+
+    <div class="cv-studio cv-ai-body">
+        <aside class="cv-src">
+            <div class="tv-panel-h">候 选 稿</div>
+            <div class="cv-ai-cands" id="cvAiCands"></div>
+            <div class="cv-ai-note" id="cvAiCandNote">点右上「✨ 生成纹样」后，这里会出现多稿候选；点一下即可放大预览。</div>
+        </aside>
+
+        <div class="cv-stage">
+            <div class="cv-canvas cv-ai-canvas">
+                <canvas id="cvAiCanvas" width="960" height="720"></canvas>
+            </div>
+            <div class="cv-ai-opts">
+                <button class="cv-tool" type="button" id="cvAiAdopt">✓ 采用到工具箱</button>
+                <button class="cv-tool" type="button" id="cvAiSave">💾 存稿</button>
+                <button class="cv-tool" type="button" id="cvAiExport">⬇ 导出 PNG</button>
+                <button class="cv-tool ghost" type="button" id="cvAiAgain">🎲 换个种子</button>
+            </div>
+            <div class="cv-ai-read">
+                <div class="cv-ai-read-h">描述解析 · 本地词典逐词匹配，不发任何网络请求</div>
+                <div class="cv-ai-read-i" id="cvAiRead"></div>
+            </div>
+            <div class="cv-ai-read cv-pane-off" id="cvAiImgsWrap">
+                <div class="cv-ai-read-h">云端通道返回 · 点图可下载（本轮未绑定厂商，需自填端点）</div>
+                <div class="cv-ai-cloud-imgs" id="cvAiImgs"></div>
+            </div>
+        </div>
+
+        <aside class="cv-ctrl">
+            <div class="tv-panel-h">通 道 与 说 明</div>
+            <div class="cv-ai-chan-line" id="cvAiChanBox">当前通道：<b>本地引擎</b>（离线）</div>
+            <div class="cv-group">
+                <div class="cv-label">生成通道</div>
+                <div class="cv-chips" id="cvAiChans"></div>
+            </div>
+            <div class="cv-ai-cloud" id="cvAiCloud">
+                <div class="cv-label" style="margin-bottom:7px;">云端通道配置（预留，未绑定厂商）</div>
+                <input class="cv-ai-in" id="cvAiEp" placeholder="端点 URL，如 https://…/v1/images/generations">
+                <input class="cv-ai-in" id="cvAiKey" placeholder="API Key（Bearer）" autocomplete="off">
+                <input class="cv-ai-in" id="cvAiModel" placeholder="模型名，如 cogview-3">
+                <button class="tv-btn" type="button" id="cvAiCloudSave" style="width:100%;">保存云端配置</button>
+                <div class="tip">
+                    本轮<b>未绑定任何具体厂商</b>：只按 OpenAI 图像接口的通用格式发请求（POST 到你填的端点，body 带 model / prompt / n / size / response_format），
+                    并识别返回里的 data[].b64_json 与 data[].url。<br>
+                    未填端点或 Key、网络不通、跨域被拦、返回异常，任一情况都会自动回落到本地引擎，并在上方标注原因。<br>
+                    Key 只存在本机浏览器里，除了你填的那个端点，不会发往任何其他地方。
+                </div>
+            </div>
+            <div class="cv-ai-note">
+                <b>本地引擎</b>：把描述解析成参数意图，再用带种子的伪随机算法推演多稿变体，最后由工作台同一套 canvas 引擎绘制。<br>
+                采用后的方案会以普通作品存进下方「最近创作」，可随时载回工具箱继续微调。
+            </div>
+        </aside>
+    </div>
+</div>
+
         <div class="tv-bar" style="margin-top:34px;">
             <span class="t">最近创作</span>
-            <span class="c">6 个方案 · 按修改时间排序</span>
+            <span class="c" id="cvWorksMeta">还没有作品</span>
         </div>
-        <div class="cv-works">
-            <div class="cv-work">
-                <div class="cv-work-thumb tv-pat t1"></div>
-                <div class="cv-work-b"><b>八角花 · 靛蓝新解</b><span>2 小时前 · 四方连续</span></div>
-            </div>
-            <div class="cv-work">
-                <div class="cv-work-thumb tv-pat t4"></div>
-                <div class="cv-work-b"><b>盘王印 · 几何重构</b><span>昨天 · 中心对称</span></div>
-            </div>
-            <div class="cv-work">
-                <div class="cv-work-thumb tv-pat t2"></div>
-                <div class="cv-work-b"><b>四十八勾 · 圆点阵列</b><span>3 天前 · 二方连续</span></div>
-            </div>
-            <div class="cv-work">
-                <div class="cv-work-thumb tv-pat t3"></div>
-                <div class="cv-work-b"><b>蝴蝶妈妈 · 织格底</b><span>5 天前 · 自由散点</span></div>
-            </div>
-            <div class="cv-work">
-                <div class="cv-work-thumb tv-pat t2"></div>
-                <div class="cv-work-b"><b>侗锦 · 夜紫变奏</b><span>上周 · 四方连续</span></div>
-            </div>
-            <div class="cv-work">
-                <div class="cv-work-thumb tv-pat t1"></div>
-                <div class="cv-work-b"><b>苗锦 · 暖橙套色</b><span>上周 · 中心对称</span></div>
-            </div>
-        </div>
+        <div class="cv-works" id="cvWorks"></div>
 
         <div class="tv-foot">
             二次创作成果仅作设计研究参考 · 商用前请核实纹样来源与版权归属
@@ -3211,8 +3259,8 @@ async function segmentPattern(img) {
             <button class="tv-back" onclick="setTopView('trace')">← 返回纹鉴</button>
             <div class="tv-brand">纹样<em>特征提取</em></div>
             <div class="tv-actions">
-                <button class="tv-btn">🔄 重置</button>
-                <button class="tv-btn primary">⚡ 开始提取</button>
+                <button class="tv-btn" id="fvResetBtn">🔄 重置</button>
+                <button class="tv-btn primary" id="fvRunBtn">⚡ 开始提取</button>
             </div>
         </div>
     </div>
@@ -3222,116 +3270,73 @@ async function segmentPattern(img) {
             <h1>把纹样<span>拆成数据</span></h1>
             <p>对纹样图像做多尺度特征分解，输出纹理、色彩、形状与周期结构四组量化指标，作为检索与相似度比对的依据。</p>
             <div class="tv-stats">
-                <div class="s"><div class="n">128</div><div class="l">特征维度</div></div>
+                <div class="s"><div class="n" id="fvStatDims">—</div><div class="l">特征维度</div></div>
                 <div class="s"><div class="n">4</div><div class="l">特征族</div></div>
-                <div class="s"><div class="n">1.8s</div><div class="l">平均提取耗时</div></div>
+                <div class="s"><div class="n" id="fvStatMs">—</div><div class="l">本次提取耗时</div></div>
             </div>
         </section>
 
         <div class="fv-io">
-            <div class="fv-drop">
-                <div class="fv-drop-icon">🖼</div>
-                <div class="fv-drop-t">拖入纹样图片</div>
-                <div class="fv-drop-h">支持 JPG / PNG，单张不超过 10MB</div>
+            <div class="fv-drop" id="fvDrop" role="button" tabindex="0" aria-label="选择或拖入纹样图片">
+                <div class="fv-drop-idle" id="fvDropIdle">
+                    <div class="fv-drop-icon">🖼</div>
+                    <div class="fv-drop-t">拖入纹样图片</div>
+                    <div class="fv-drop-h">支持 JPG / PNG，单张不超过 10MB · 也可以点这里选择文件</div>
+                </div>
+                <div class="fv-drop-busy" id="fvDropBusy">正在分析特征…</div>
+                <img class="fv-preview" id="fvPreview" alt="">
+                <div class="fv-drop-meta" id="fvDropMeta"></div>
             </div>
             <div class="fv-sample">
                 <div class="fv-sample-h">示 例 纹 样</div>
-                <div class="fv-sample-row">
-                    <div class="fv-sample-thumb tv-pat t1 on"></div>
-                    <div class="fv-sample-thumb tv-pat t2"></div>
-                    <div class="fv-sample-thumb tv-pat t3"></div>
-                    <div class="fv-sample-thumb tv-pat t4"></div>
-                </div>
+                <div class="fv-sample-row" id="fvSamples"></div>
+                <div class="fv-sample-tip" id="fvSampleTip">点一张，直接跑一遍真实特征</div>
             </div>
+            <input type="file" id="fvFile" accept="image/*" hidden>
         </div>
 
         <div class="tv-bar">
             <span class="t">特征族</span>
-            <span class="c">示例数值 · 接入算法后自动更新</span>
+            <span class="c" id="fvCardsNote">等待提取 · 选图后自动计算</span>
         </div>
-        <div class="fv-cards">
-            <div class="fv-card">
+        <div class="fv-cards" id="fvCards">
+            <div class="fv-card" data-fv="lbp">
                 <div class="fv-card-h"><span class="fv-ico">▦</span>纹理特征 <b>LBP</b></div>
-                <div class="fv-bars">
-                    <i style="height:34%"></i><i style="height:58%"></i><i style="height:82%"></i>
-                    <i style="height:66%"></i><i style="height:91%"></i><i style="height:47%"></i>
-                    <i style="height:72%"></i><i style="height:55%"></i><i style="height:38%"></i>
-                    <i style="height:63%"></i><i style="height:79%"></i><i style="height:44%"></i>
-                </div>
-                <div class="fv-card-f">对比度 <b>0.42</b> · 一致性 <b>0.77</b></div>
+                <div class="fv-bars"></div>
+                <div class="fv-card-f"></div>
             </div>
-            <div class="fv-card">
+            <div class="fv-card" data-fv="hsv">
                 <div class="fv-card-h"><span class="fv-ico">◐</span>色彩特征 <b>HSV</b></div>
-                <div class="fv-bars">
-                    <i style="height:88%"></i><i style="height:72%"></i><i style="height:41%"></i>
-                    <i style="height:29%"></i><i style="height:56%"></i><i style="height:68%"></i>
-                    <i style="height:35%"></i><i style="height:22%"></i><i style="height:49%"></i>
-                    <i style="height:61%"></i><i style="height:27%"></i><i style="height:18%"></i>
-                </div>
-                <div class="fv-card-f">主色 <b>#4a5fa8</b> · 色相熵 <b>1.36</b></div>
+                <div class="fv-bars"></div>
+                <div class="fv-card-f"></div>
             </div>
-            <div class="fv-card">
+            <div class="fv-card" data-fv="hu">
                 <div class="fv-card-h"><span class="fv-ico">⬡</span>形状特征 <b>Hu 矩</b></div>
-                <div class="fv-bars">
-                    <i style="height:26%"></i><i style="height:44%"></i><i style="height:61%"></i>
-                    <i style="height:85%"></i><i style="height:58%"></i><i style="height:39%"></i>
-                    <i style="height:30%"></i><i style="height:53%"></i><i style="height:70%"></i>
-                    <i style="height:46%"></i><i style="height:33%"></i><i style="height:24%"></i>
-                </div>
-                <div class="fv-card-f">对称性 <b>0.81</b> · 紧致度 <b>0.64</b></div>
+                <div class="fv-bars"></div>
+                <div class="fv-card-f"></div>
             </div>
-            <div class="fv-card">
+            <div class="fv-card" data-fv="fft">
                 <div class="fv-card-h"><span class="fv-ico">∿</span>周期结构 <b>FFT</b></div>
-                <div class="fv-bars">
-                    <i style="height:19%"></i><i style="height:31%"></i><i style="height:95%"></i>
-                    <i style="height:24%"></i><i style="height:16%"></i><i style="height:67%"></i>
-                    <i style="height:21%"></i><i style="height:13%"></i><i style="height:42%"></i>
-                    <i style="height:18%"></i><i style="height:28%"></i><i style="height:11%"></i>
-                </div>
-                <div class="fv-card-f">主频 <b>13.4 cyc</b> · 方向性 <b>0.58</b></div>
+                <div class="fv-bars"></div>
+                <div class="fv-card-f"></div>
             </div>
         </div>
 
         <div class="tv-bar">
             <span class="t">特征向量</span>
-            <span class="c">归一化后前 24 维</span>
+            <span class="c" id="fvVecNote">归一化后前 24 维</span>
         </div>
         <div class="fv-vector">
-            <div class="fv-vector-code">[ 0.82, 0.14, 0.63, 0.91, 0.07, 0.45, 0.72, 0.38,
-  0.55, 0.88, 0.21, 0.34, 0.66, 0.12, 0.79, 0.43,
-  0.27, 0.94, 0.51, 0.18, 0.62, 0.36, 0.71, 0.09 ]</div>
-            <div class="fv-vector-bars">
-                <i style="height:82%"></i><i style="height:14%"></i><i style="height:63%"></i>
-                <i style="height:91%"></i><i style="height:7%"></i><i style="height:45%"></i>
-                <i style="height:72%"></i><i style="height:38%"></i><i style="height:55%"></i>
-                <i style="height:88%"></i><i style="height:21%"></i><i style="height:34%"></i>
-                <i style="height:66%"></i><i style="height:12%"></i><i style="height:79%"></i>
-                <i style="height:43%"></i><i style="height:27%"></i><i style="height:94%"></i>
-                <i style="height:51%"></i><i style="height:18%"></i><i style="height:62%"></i>
-                <i style="height:36%"></i><i style="height:71%"></i><i style="height:9%"></i>
-            </div>
+            <div class="fv-vector-code" id="fvVecCode">[ 等待提取 ]</div>
+            <div class="fv-vector-bars" id="fvVecBars"></div>
         </div>
 
         <div class="tv-bar">
             <span class="t">相似纹样匹配</span>
-            <span class="c">按余弦相似度排序</span>
+            <span class="c">需接入纹样库检索</span>
         </div>
-        <div class="fv-match">
-            <div class="fv-match-row">
-                <div class="fv-match-thumb tv-pat t1"></div>
-                <div class="fv-match-meta"><b>侗锦 · 八角花</b><span>湖南通道 · 清代 · 织锦</span></div>
-                <div class="fv-match-score"><b>96.2%</b><div class="fv-match-bar"><span style="width:96%"></span></div></div>
-            </div>
-            <div class="fv-match-row">
-                <div class="fv-match-thumb tv-pat t2"></div>
-                <div class="fv-match-meta"><b>瑶锦 · 盘王印</b><span>广西金秀 · 民国 · 织锦</span></div>
-                <div class="fv-match-score"><b>88.7%</b><div class="fv-match-bar"><span style="width:89%"></span></div></div>
-            </div>
-            <div class="fv-match-row">
-                <div class="fv-match-thumb tv-pat t3"></div>
-                <div class="fv-match-meta"><b>土家锦 · 四十八勾</b><span>湖南龙山 · 近代 · 织锦</span></div>
-                <div class="fv-match-score"><b>73.5%</b><div class="fv-match-bar"><span style="width:74%"></span></div></div>
-            </div>
+        <div class="fv-note" id="fvNote">
+            本页只做特征提取 —— 上面这几组数值就是检索比对真正吃的输入。接上纹样库检索后，这里会显示按余弦相似度排序的匹配结果。
         </div>
 
         <div class="tv-foot">
@@ -3341,6 +3346,2595 @@ async function segmentPattern(img) {
 </div>
 
 <!-- ===== 顶层视图：二次创作 / 特征提取 ===== -->
+
+<!-- ===== 二次创作工作台：交互层（样式 + 引擎）===== -->
+<style>
+/* ===== 二次创作工作台（交互版）——2026-10-08 由静态展示页升级 =====
+   自成一块，不并入「资源库样式块」，避免被 patch_library_dark.py 的真相源（lib_css.txt）回滚。 */
+
+/* 画布 */
+#createView .cv-canvas{display:block;padding:0;border-style:solid;background:#101024;}
+#cvCanvas{display:block;width:100%;height:100%;border-radius:12px;}
+
+/* 源纹样：缩略图画布 + 复位按钮 */
+.cv-src-thumb{background:none!important;}
+button.cv-src-reset{margin-top:12px;width:100%;height:34px;border-radius:10px;border:1px dashed #3a3a5c;
+  background:transparent;color:#7d7da0;font-size:12.5px;cursor:pointer;transition:.16s;font-family:inherit;}
+button.cv-src-reset:hover{border-color:#a78bfa;color:#c4b5fd;background:rgba(167,139,250,.08);}
+.cv-src-note{font-size:11.5px;color:#6b6b8c;line-height:1.7;margin-top:10px;}
+
+/* 工具条：幽灵按钮（重置） */
+.cv-tool.ghost{border-style:dashed;color:#7d7da0;}
+.cv-tool.ghost:hover{color:#c4b5fd;border-color:#a78bfa;}
+
+/* 参数组：被工具条选中时高亮 */
+#createView .cv-group{padding:11px 12px 13px;border:1px solid transparent;border-radius:13px;
+  margin-bottom:12px;transition:border-color .2s,background .2s;}
+#createView .cv-group.cv-hot{border-color:rgba(167,139,250,.45);background:rgba(167,139,250,.07);}
+
+/* 滑杆 */
+.cv-range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:20px;margin:2px 0 0;
+  background:transparent;cursor:pointer;}
+.cv-range::-webkit-slider-runnable-track{height:6px;border-radius:999px;
+  background:linear-gradient(90deg,#818cf8 0 var(--p,50%),#252542 var(--p,50%) 100%);}
+.cv-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;margin-top:-5px;
+  border-radius:50%;border:2px solid #0f0f1e;background:#c4b5fd;
+  box-shadow:0 0 0 1px rgba(167,139,250,.6);}
+.cv-range:active::-webkit-slider-thumb{background:#fff;}
+.cv-range:focus{outline:none;}
+
+/* 最近创作 */
+.cv-works-empty{grid-column:1/-1;border:1.5px dashed #3a3a5c;border-radius:16px;padding:30px 20px;
+  text-align:center;font-size:13px;color:#6b6b8c;line-height:1.9;}
+.cv-work-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.cv-work-del{position:absolute;top:8px;right:8px;width:24px;height:24px;padding:0;border:0;border-radius:50%;
+  background:rgba(15,15,30,.78);color:#ffb4b4;font-size:12px;line-height:1;cursor:pointer;z-index:2;
+  opacity:0;transition:opacity .16s;}
+.cv-work:hover .cv-work-del{opacity:1;}
+.cv-work-del:hover{background:#4a1f2a;color:#fff;}
+.cv-work.on{border-color:#a78bfa;box-shadow:0 0 0 1px rgba(167,139,250,.5);}
+
+@media (max-width:900px){
+  .cv-work-del{opacity:1;}
+  #createView .cv-group{padding:10px;}
+}
+</style>
+<script>
+/* ===== 二次创作工作台：本地 canvas 渲染引擎（无需联网、不接后端） =====
+   2026-10-08：把「二次创作」从静态展示页升级为可交互工作台 ——
+   点选母题 / 换配色 / 切构图 / 换底纹 / 换笔法 / 拖密度·权重·饱和度，
+   画布即时重绘；支持导入本地图片当母题、导出 PNG 设计稿、localStorage 存稿。
+
+   ⚠️ 整块独立（自带 <style> + <script>），刻意不并入「库样式块 / 库 JS 块」，
+      以免被 patch_library_dark.py / patch_library_nav.py 的真相源（lib_css.txt / lib_js.txt）静默回滚。 */
+(function () {
+    'use strict';
+
+    // ---------------------------------------------------------------- 素材表
+
+    var PALETTES = [
+        { name: '靛蓝新解', bg: '#14142a', ink: '#e2e6ff', a: '#a78bfa', b: '#818cf8', c: '#4a5fa8' },
+        { name: '藕荷春信', bg: '#241530', ink: '#ffe6fb', a: '#f0abfc', b: '#c084fc', c: '#8b5fa8' },
+        { name: '青碧织雨', bg: '#0f2328', ink: '#dffbff', a: '#67e8f9', b: '#38bdf8', c: '#2b7c94' },
+        { name: '暖棕旧锦', bg: '#2b1e10', ink: '#ffeacb', a: '#fcd34d', b: '#fb923c', c: '#a1561f' },
+        { name: '苔绿山间', bg: '#132119', ink: '#e3ffe9', a: '#6ee7b7', b: '#34d399', c: '#2f7a52' }
+    ];
+
+    var MOTIFS = [
+        { key: 'octagon', short: '八角花', name: '侗锦 · 八角花', meta: '湖南通道 · 清代' },
+        { key: 'seal', short: '盘王印', name: '瑶锦 · 盘王印', meta: '广西金秀 · 民国' },
+        { key: 'hook', short: '四十八勾', name: '土家锦 · 四十八勾', meta: '湖南龙山 · 近代' },
+        { key: 'butterfly', short: '蝴蝶妈妈', name: '苗锦 · 蝴蝶妈妈', meta: '贵州台江 · 清代' }
+    ];
+
+    var COMPS = [
+        { id: 'grid', name: '四方连续' },
+        { id: 'band', name: '二方连续' },
+        { id: 'radial', name: '中心对称' },
+        { id: 'scatter', name: '自由散点' }
+    ];
+
+    var GROUNDS = [
+        { id: 'none', name: '纯色' },
+        { id: 'grid45', name: '斜网格' },
+        { id: 'dots', name: '圆点阵列' },
+        { id: 'weave', name: '织格' },
+        { id: 'twill', name: '斜纹' }
+    ];
+
+    var STROKES = [
+        { id: 'solid', name: '实线' },
+        { id: 'double', name: '双钩' },
+        { id: 'dotted', name: '点线' },
+        { id: 'filled', name: '填彩' }
+    ];
+
+    var DEFAULTS = {
+        motif: 0, palette: 0, comp: 'grid', ground: 'grid45', stroke: 'solid',
+        density: 62, weight: 45, sat: 78
+    };
+
+    var LS_KEY = 'lushan_cv_works_v1';
+    var MAX_WORKS = 12;
+
+    // ---------------------------------------------------------------- 状态
+
+    var state = mix(DEFAULTS);
+
+    function mix(o) {
+        var r = {}, k;
+        for (k in DEFAULTS) r[k] = (o && o[k] !== undefined) ? o[k] : DEFAULTS[k];
+        return r;
+    }
+
+    var cv = null, ctx = null, pending = 0, tileCanvas = null, importedName = '';
+
+    // ---------------------------------------------------------------- 颜色工具
+
+    function clamp01(v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
+
+    function hex2hsl(hex) {
+        var h = String(hex).replace('#', '');
+        if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+        var r = parseInt(h.substr(0, 2), 16) / 255,
+            g = parseInt(h.substr(2, 2), 16) / 255,
+            b = parseInt(h.substr(4, 2), 16) / 255;
+        var mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+        var l = (mx + mn) / 2, s = 0, hue = 0;
+        if (d) {
+            s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+            if (mx === r) hue = (g - b) / d + (g < b ? 6 : 0);
+            else if (mx === g) hue = (b - r) / d + 2;
+            else hue = (r - g) / d + 4;
+            hue /= 6;
+        }
+        return { h: hue, s: s, l: l };
+    }
+
+    function hsl2hex(c) {
+        function f(p, q, t) {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1 / 6) return p + (q - p) * 6 * t;
+            if (t < 1 / 2) return q;
+            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+            return p;
+        }
+        function to(x) { var v = Math.round(clamp01(x) * 255).toString(16); return v.length < 2 ? '0' + v : v; }
+        var r, g, b;
+        if (!c.s) { r = g = b = c.l; }
+        else {
+            var q = c.l < 0.5 ? c.l * (1 + c.s) : c.l + c.s - c.l * c.s;
+            var p = 2 * c.l - q;
+            r = f(p, q, c.h + 1 / 3); g = f(p, q, c.h); b = f(p, q, c.h - 1 / 3);
+        }
+        return '#' + to(r) + to(g) + to(b);
+    }
+
+    function satur(hex, m) {
+        var c = hex2hsl(hex);
+        c.s = clamp01(c.s * m);
+        return hsl2hex(c);
+    }
+
+    function rgba(hex, al) {
+        var h = String(hex).replace('#', '');
+        if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+        return 'rgba(' + parseInt(h.substr(0, 2), 16) + ',' + parseInt(h.substr(2, 2), 16) +
+            ',' + parseInt(h.substr(4, 2), 16) + ',' + al + ')';
+    }
+
+    function resolveColors(pal, sat) {
+        var m = sat / 78;
+        return {
+            bg: satur(pal.bg, m), ink: satur(pal.ink, m),
+            a: satur(pal.a, m), b: satur(pal.b, m), c: satur(pal.c, m)
+        };
+    }
+
+    function rng(seed) {
+        var s = (seed >>> 0) || 1;
+        return function () {
+            s = (s * 1664525 + 1013904223) >>> 0;
+            return s / 4294967296;
+        };
+    }
+
+    function byId(list, key, val) {
+        for (var i = 0; i < list.length; i++) if (list[i][key] === val) return list[i];
+        return list[0];
+    }
+
+    function compName(id) { return byId(COMPS, 'id', id).name; }
+    function palName(i) { return PALETTES[i] ? PALETTES[i].name : PALETTES[0].name; }
+
+    // ---------------------------------------------------------------- 母题绘制（归一化在 size×size 方框内）
+
+    function motifPath(g, kind, size, col, lw, stroke) {
+        var r = size / 2, i, a;
+        g.save();
+        g.lineJoin = 'round';
+        g.lineCap = 'round';
+        g.lineWidth = lw;
+
+        if (kind === 'octagon') {
+            for (i = 0; i < 8; i++) {
+                g.save();
+                g.rotate(i * Math.PI / 4);
+                g.beginPath();
+                g.ellipse(0, -r * 0.6, r * 0.17, r * 0.33, 0, 0, Math.PI * 2);
+                g.strokeStyle = i % 2 ? col.a : col.b;
+                g.stroke();
+                g.restore();
+            }
+            g.beginPath(); g.arc(0, 0, r * 0.31, 0, Math.PI * 2);
+            g.strokeStyle = col.ink; g.stroke();
+            g.beginPath();
+            for (i = 0; i < 8; i++) {
+                a = i * Math.PI / 4 - Math.PI / 2;
+                var rr = (i % 2 ? r * 0.26 : r * 0.14);
+                var x = Math.cos(a) * rr, y = Math.sin(a) * rr;
+                if (i) g.lineTo(x, y); else g.moveTo(x, y);
+            }
+            g.closePath(); g.fillStyle = col.ink; g.fill();
+            g.beginPath(); g.arc(0, 0, r * 0.07, 0, Math.PI * 2);
+            g.fillStyle = col.a; g.fill();
+
+        } else if (kind === 'seal') {
+            var sq = [[1.02, 0], [0.74, Math.PI / 4], [0.48, 0], [0.26, Math.PI / 4]];
+            for (i = 0; i < sq.length; i++) {
+                g.save();
+                g.rotate(sq[i][1]);
+                var s2 = r * sq[i][0];
+                g.beginPath(); g.rect(-s2 / 2, -s2 / 2, s2, s2);
+                g.strokeStyle = i % 2 ? col.b : col.ink;
+                g.lineWidth = lw * (i === 0 ? 1.6 : 1);
+                g.stroke();
+                g.restore();
+            }
+            g.beginPath();
+            g.moveTo(-r * 0.34, 0); g.lineTo(r * 0.34, 0);
+            g.moveTo(0, -r * 0.34); g.lineTo(0, r * 0.34);
+            g.strokeStyle = col.a; g.lineWidth = lw * 1.1; g.stroke();
+            g.beginPath(); g.arc(0, 0, r * 0.1, 0, Math.PI * 2);
+            g.fillStyle = col.a; g.fill();
+            for (i = 0; i < 4; i++) {
+                g.save(); g.rotate(i * Math.PI / 2 + Math.PI / 4);
+                g.beginPath(); g.arc(0, -r * 0.86, r * 0.07, 0, Math.PI * 2);
+                g.fillStyle = col.b; g.fill();
+                g.restore();
+            }
+
+        } else if (kind === 'hook') {
+            for (i = 0; i < 4; i++) {
+                g.save();
+                g.rotate(i * Math.PI / 2);
+                g.beginPath();
+                g.moveTo(r * 0.12, -r * 0.14);
+                g.lineTo(r * 0.8, -r * 0.14);
+                g.lineTo(r * 0.8, r * 0.52);
+                g.lineTo(r * 0.42, r * 0.52);
+                g.strokeStyle = i % 2 ? col.a : col.b;
+                g.lineWidth = lw * 1.15;
+                g.stroke();
+                g.beginPath();
+                g.arc(r * 0.5, r * 0.34, r * 0.13, 0.25 * Math.PI, 1.95 * Math.PI);
+                g.strokeStyle = col.ink; g.lineWidth = lw * 0.85; g.stroke();
+                g.restore();
+            }
+            g.beginPath(); g.rect(-r * 0.14, -r * 0.14, r * 0.28, r * 0.28);
+            g.fillStyle = col.ink; g.fill();
+
+        } else { // butterfly
+            var wing = function (sign) {
+                g.save();
+                g.scale(sign, 1);
+                g.beginPath();
+                g.moveTo(r * 0.06, -r * 0.12);
+                g.bezierCurveTo(r * 0.42, -r * 0.92, r * 1.02, -r * 0.86, r * 0.94, -r * 0.28);
+                g.bezierCurveTo(r * 0.88, r * 0.02, r * 0.46, -r * 0.02, r * 0.06, -r * 0.12);
+                g.closePath();
+                g.strokeStyle = col.a; g.stroke();
+                g.fillStyle = rgba(col.a, 0.16); g.fill();
+                g.beginPath();
+                g.moveTo(r * 0.06, r * 0.04);
+                g.bezierCurveTo(r * 0.56, r * 0.12, r * 0.86, r * 0.5, r * 0.58, r * 0.86);
+                g.bezierCurveTo(r * 0.38, r * 1.0, r * 0.16, r * 0.5, r * 0.06, r * 0.04);
+                g.closePath();
+                g.strokeStyle = col.b; g.stroke();
+                g.fillStyle = rgba(col.b, 0.16); g.fill();
+                g.beginPath(); g.arc(r * 0.5, -r * 0.44, r * 0.12, 0, Math.PI * 2);
+                g.fillStyle = col.ink; g.fill();
+                g.beginPath(); g.arc(r * 0.42, r * 0.56, r * 0.085, 0, Math.PI * 2);
+                g.fillStyle = col.ink; g.fill();
+                g.restore();
+            };
+            wing(1); wing(-1);
+            g.beginPath(); g.ellipse(0, r * 0.05, r * 0.07, r * 0.44, 0, 0, Math.PI * 2);
+            g.fillStyle = col.ink; g.fill();
+            g.beginPath(); g.arc(0, -r * 0.46, r * 0.11, 0, Math.PI * 2);
+            g.fillStyle = col.ink; g.fill();
+            g.beginPath();
+            g.moveTo(-r * 0.05, -r * 0.54);
+            g.quadraticCurveTo(-r * 0.3, -r * 0.9, -r * 0.42, -r * 0.84);
+            g.moveTo(r * 0.05, -r * 0.54);
+            g.quadraticCurveTo(r * 0.3, -r * 0.9, r * 0.42, -r * 0.84);
+            g.strokeStyle = col.ink; g.lineWidth = lw * 0.8; g.stroke();
+        }
+
+        g.restore();
+    }
+
+    // 笔法：单次描边 vs 双钩 / 点线 / 填彩
+    function motifStroke(g, kind, size, col, lw, stroke) {
+        if (stroke === 'double') {
+            var u = Math.max(1.4, lw * 0.55);
+            g.save(); g.translate(-u, -u); motifPath(g, kind, size * 0.985, col, lw * 0.7, stroke); g.restore();
+            g.save(); g.translate(u, u); motifPath(g, kind, size * 0.985, col, lw * 0.7, stroke); g.restore();
+            motifPath(g, kind, size, col, lw * 0.5, stroke);
+        } else if (stroke === 'dotted') {
+            g.save();
+            g.setLineDash([Math.max(2, lw * 1.6), Math.max(2.4, lw * 2.1)]);
+            motifPath(g, kind, size, col, lw * 1.25, stroke);
+            g.restore();
+        } else if (stroke === 'filled') {
+            g.save();
+            g.shadowColor = rgba(col.a, 0.5);
+            g.shadowBlur = Math.max(4, size * 0.05);
+            motifPath(g, kind, size, col, lw * 1.5, stroke);
+            g.restore();
+        } else {
+            motifPath(g, kind, size, col, lw, stroke);
+        }
+    }
+
+    function drawTile(g, cx, cy, size, ang, col, lw) {
+        g.save();
+        g.translate(cx, cy);
+        if (ang) g.rotate(ang);
+        if (tileCanvas) {
+            g.globalAlpha = 0.9;
+            g.drawImage(tileCanvas, -size / 2, -size / 2, size, size);
+            g.globalAlpha = 1;
+        } else {
+            motifStroke(g, MOTIFS[state.motif].key, size, col, lw, state.stroke);
+        }
+        g.restore();
+    }
+
+    // ---------------------------------------------------------------- 底纹 / 构图 / 画框 / 落款
+
+    function drawGround(g, W, H, col) {
+        var t = state.ground;
+        if (t === 'none') return;
+        var step = Math.max(16, W / 40), u = W / 960, x, y, d;
+        g.save();
+        g.strokeStyle = col.b; g.fillStyle = col.a;
+        if (t === 'grid45') {
+            g.globalAlpha = 0.3; g.lineWidth = Math.max(1, 1.4 * u);
+            g.beginPath();
+            for (d = -H; d < W + H; d += step) {
+                g.moveTo(d, 0); g.lineTo(d + H, H);
+                g.moveTo(d, 0); g.lineTo(d - H, H);
+            }
+            g.stroke();
+        } else if (t === 'dots') {
+            g.globalAlpha = 0.42;
+            var rr = Math.max(1.3, 2.4 * u);
+            for (y = step / 2; y < H; y += step) {
+                for (x = step / 2; x < W; x += step) {
+                    g.beginPath(); g.moveTo(x + rr, y); g.arc(x, y, rr, 0, Math.PI * 2); g.fill();
+                }
+            }
+        } else if (t === 'weave') {
+            g.globalAlpha = 0.28; g.lineWidth = Math.max(1, 2 * u);
+            g.beginPath();
+            for (x = 0; x < W; x += step) { g.moveTo(x, 0); g.lineTo(x, H); }
+            for (y = 0; y < H; y += step) { g.moveTo(0, y); g.lineTo(W, y); }
+            g.stroke();
+        } else { // twill
+            g.globalAlpha = 0.32; g.lineWidth = Math.max(1, 3 * u);
+            g.beginPath();
+            for (d = -H; d < W + H; d += step) { g.moveTo(d, 0); g.lineTo(d + H, H); }
+            g.stroke();
+        }
+        g.restore();
+    }
+
+    function drawField(g, W, H, col, lw) {
+        var dens = state.density / 100, i, j, k, cx, cy, a, rad, cnt, rnd;
+        g.save();
+        if (state.comp === 'grid') {
+            var n = Math.round(2 + dens * 5);
+            var cols = n, rows = Math.max(2, Math.round(n * H / W));
+            var cw = W / cols, ch = H / rows;
+            for (i = 0; i < rows; i++) {
+                for (j = 0; j < cols; j++) {
+                    drawTile(g, cw * (j + 0.5), ch * (i + 0.5), Math.min(cw, ch) * 0.84,
+                        ((i + j) % 2) * Math.PI / 4, col, lw);
+                }
+            }
+        } else if (state.comp === 'band') {
+            var reps = Math.round(3 + dens * 7);
+            var bw = W / reps, bh = Math.min(H * 0.44, bw * 0.9);
+            for (i = 0; i < reps; i++) {
+                cx = bw * (i + 0.5);
+                drawTile(g, cx, H / 2 - bh * 0.5, bh * 0.92, 0, col, lw);
+                g.save();
+                g.translate(cx, H / 2 + bh * 0.5); g.scale(1, -1);
+                drawTile(g, 0, 0, bh * 0.92, 0, col, lw);
+                g.restore();
+            }
+            g.strokeStyle = col.b; g.globalAlpha = 0.7; g.lineWidth = Math.max(1, lw * 0.8);
+            g.beginPath();
+            g.moveTo(0, H / 2 - bh * 0.98); g.lineTo(W, H / 2 - bh * 0.98);
+            g.moveTo(0, H / 2 + bh * 0.98); g.lineTo(W, H / 2 + bh * 0.98);
+            g.stroke();
+            g.globalAlpha = 1;
+        } else if (state.comp === 'radial') {
+            var rings = Math.round(1 + dens * 2);
+            var base = Math.min(W, H) * 0.27;
+            drawTile(g, W / 2, H / 2, base, 0, col, lw * 1.25);
+            for (k = 1; k <= rings; k++) {
+                rad = base * (0.62 + k * 0.36);
+                cnt = 6 + k * 2;
+                for (j = 0; j < cnt; j++) {
+                    a = j * 2 * Math.PI / cnt + (k % 2 ? Math.PI / cnt : 0);
+                    drawTile(g, W / 2 + Math.cos(a) * rad, H / 2 + Math.sin(a) * rad,
+                        base * (0.36 - k * 0.04), a + Math.PI / 2, col, lw * 0.8);
+                }
+            }
+        } else { // scatter
+            cnt = Math.round(5 + dens * 55);
+            rnd = rng(1000 + state.motif * 977 + state.palette * 31);
+            for (i = 0; i < cnt; i++) {
+                drawTile(g, rnd() * W, rnd() * H, Math.min(W, H) * (0.06 + rnd() * 0.1),
+                    rnd() * Math.PI * 2, col, lw * (0.55 + rnd() * 0.7));
+            }
+        }
+        g.restore();
+    }
+
+    function drawFrame(g, W, H, col, u) {
+        g.save();
+        g.strokeStyle = col.b; g.globalAlpha = 0.8; g.lineWidth = Math.max(1, 1.6 * u);
+        g.strokeRect(1.2 * u, 1.2 * u, W - 2.4 * u, H - 2.4 * u);
+        g.globalAlpha = 0.32; g.lineWidth = Math.max(1, u);
+        g.strokeRect(9 * u, 9 * u, W - 18 * u, H - 18 * u);
+        g.restore();
+    }
+
+    function drawCaption(g, W, H, capH, col) {
+        var u = W / 960;
+        g.save();
+        g.globalAlpha = 0.82; g.fillStyle = col.bg; g.fillRect(0, H - capH, W, capH);
+        g.globalAlpha = 0.55; g.strokeStyle = col.b; g.lineWidth = Math.max(1, u);
+        g.beginPath(); g.moveTo(0, H - capH + u * 0.5); g.lineTo(W, H - capH + u * 0.5); g.stroke();
+        g.globalAlpha = 0.95;
+        g.textBaseline = 'middle';
+        g.textAlign = 'left';
+        g.fillStyle = col.ink;
+        g.font = '600 ' + Math.round(capH * 0.36) + 'px "Noto Serif SC","Songti SC","Microsoft YaHei",serif';
+        g.fillText(MOTIFS[state.motif].name + ' · ' + compName(state.comp), W * 0.028, H - capH / 2);
+        g.font = '400 ' + Math.round(capH * 0.29) + 'px "Noto Sans SC","Microsoft YaHei",sans-serif';
+        g.textAlign = 'right';
+        g.fillStyle = col.a;
+        g.fillText((tileCanvas ? '导入母题' : palName(state.palette)) + ' · 麓山绘梦·纹鉴', W * 0.972, H - capH / 2);
+        g.restore();
+    }
+
+    // ---------------------------------------------------------------- 绘制入口
+
+    function paint(g, W, H, opts) {
+        var col = resolveColors(PALETTES[state.palette], state.sat);
+        var capH = Math.round(H * 0.084);
+        var fh = H - capH;
+        var lw = (1 + state.weight / 100 * 7) * (W / 960);
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        g.clearRect(0, 0, W, H);
+        g.fillStyle = col.bg;
+        g.fillRect(0, 0, W, fh);
+        drawGround(g, W, fh, col);
+        drawField(g, W, fh, col, lw);
+        drawFrame(g, W, fh, col, W / 960);
+        drawCaption(g, W, H, capH, col);
+    }
+
+    function render() {
+        if (pending) return;
+        pending = window.requestAnimationFrame(function () {
+            pending = 0;
+            if (!ctx) return;
+            try { paint(ctx, cv.width, cv.height); }
+            catch (e) { if (window.console) console.warn('[二创] 渲染失败', e); }
+        });
+    }
+
+    function fit() {
+        if (!cv) return;
+        var box = cv.parentNode.getBoundingClientRect();
+        var w = Math.round(box.width), h = Math.round(box.height);
+        if (!(w > 40)) w = 880;
+        if (!(h > 40)) h = Math.round(w * 0.75);
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        var nw = Math.round(w * dpr), nh = Math.round(h * dpr);
+        if (cv.width !== nw || cv.height !== nh) { cv.width = nw; cv.height = nh; }
+    }
+
+    function buildTile(img) {
+        var T = 512;
+        var c = document.createElement('canvas');
+        c.width = T; c.height = T;
+        var g = c.getContext('2d');
+        var s = Math.min(T / img.width, T / img.height);
+        var w = img.width * s, h = img.height * s;
+        g.drawImage(img, (T - w) / 2, (T - h) / 2, w, h);
+        // 用当前配色给导入图上色（保留明度，替换色相），让「配色」对导入母题同样生效
+        try {
+            g.globalCompositeOperation = 'color';
+            g.globalAlpha = 0.62;
+            g.fillStyle = resolveColors(PALETTES[state.palette], state.sat).a;
+            g.fillRect(0, 0, T, T);
+        } catch (e) { /* 老引擎不支持 color 混合就保留原色 */ }
+        return c;
+    }
+
+    // ---------------------------------------------------------------- UI 构建
+
+    function el(id) { return document.getElementById(id); }
+
+    function syncRange(input) {
+        var min = +input.min, max = +input.max, v = +input.value;
+        input.style.setProperty('--p', ((v - min) / (max - min) * 100).toFixed(1) + '%');
+    }
+
+    function buildUI() {
+        var list = el('cvSrcList');
+        list.innerHTML = '';
+        MOTIFS.forEach(function (m, i) {
+            var item = document.createElement('div');
+            item.className = 'cv-src-item' + (i === state.motif ? ' on' : '');
+            item.setAttribute('data-motif', i);
+            var thumb = document.createElement('canvas');
+            thumb.className = 'cv-src-thumb';
+            thumb.width = 96; thumb.height = 96;
+            var meta = document.createElement('div');
+            meta.className = 'cv-src-meta';
+            var b = document.createElement('b'); b.textContent = m.name;
+            var sp = document.createElement('span'); sp.textContent = m.meta;
+            meta.appendChild(b); meta.appendChild(sp);
+            item.appendChild(thumb); item.appendChild(meta);
+            item.onclick = function () {
+                state.motif = i;
+                tileCanvas = null;
+                importedName = '';
+                markSrc();
+                drawThumbs();
+                updateLine();
+                render();
+            };
+            list.appendChild(item);
+        });
+
+        var sw = el('cvSwatches');
+        sw.innerHTML = '';
+        PALETTES.forEach(function (p, i) {
+            var s = document.createElement('span');
+            s.className = 'cv-sw' + (i === state.palette ? ' on' : '');
+            s.style.background = 'linear-gradient(135deg,' + p.a + ',' + p.b + ')';
+            s.title = p.name;
+            s.onclick = function () {
+                state.palette = i;
+                markSwatch();
+                el('cvColorName').textContent = p.name;
+                if (importedName) tileCanvas = buildTileFromStored();
+                updateLine();
+                render();
+            };
+            sw.appendChild(s);
+        });
+
+        buildChips(el('cvComps'), COMPS, 'comp', function () { updateLine(); render(); });
+        buildChips(el('cvGrounds'), GROUNDS, 'ground', function () { render(); });
+        buildChips(el('cvStrokes'), STROKES, 'stroke', function () { render(); });
+
+        bindRange('cvDensity', 'density', 'cvDensityVal', function (v) { return v + '%'; });
+        bindRange('cvWeight', 'weight', 'cvWeightVal', function (v) {
+            return v < 35 ? '纤细' : (v < 70 ? '中等' : '厚重');
+        });
+        bindRange('cvSat', 'sat', 'cvSatVal', function (v) { return v + '%'; });
+        el('cvWeightVal').textContent = state.weight < 35 ? '纤细' : (state.weight < 70 ? '中等' : '厚重');
+
+        el('cvTools').onclick = function (ev) {
+            var btn = ev.target.closest ? ev.target.closest('.cv-tool') : null;
+            if (!btn || btn.id === 'cvResetBtn') return;
+            var g = btn.getAttribute('data-group');
+            var tools = el('cvTools').querySelectorAll('.cv-tool');
+            for (var i = 0; i < tools.length; i++) {
+                if (tools[i].id === 'cvResetBtn') continue;
+                if (tools[i] === btn) tools[i].classList.add('on'); else tools[i].classList.remove('on');
+            }
+            hotGroup(g, true);
+        };
+
+        el('cvSrcReset').onclick = function () {
+            tileCanvas = null; importedName = '';
+            markSrc(); updateLine(); render();
+            toast('已换回内置母题');
+        };
+        el('cvResetBtn').onclick = function () { resetAll(); };
+        el('cvRandomBtn').onclick = function () { randomize(); };
+        el('cvSaveBtn').onclick = function () { saveWork(); };
+        el('cvExportBtn').onclick = function () { exportPNG(); };
+        el('cvImportBtn').onclick = function () { el('cvImportFile').click(); };
+        el('cvImportFile').onchange = function () {
+            var f = this.files && this.files[0];
+            if (f) importImage(f);
+            this.value = '';
+        };
+
+        drawThumbs();
+        renderWorks();
+        updateLine();
+    }
+
+    function buildChips(box, list, key, after) {
+        box.innerHTML = '';
+        list.forEach(function (item) {
+            var c = document.createElement('span');
+            c.className = 'cv-chip' + (state[key] === item.id ? ' on' : '');
+            c.textContent = item.name;
+            c.setAttribute('data-v', item.id);
+            c.onclick = function () {
+                state[key] = item.id;
+                var kids = box.children;
+                for (var i = 0; i < kids.length; i++) {
+                    if (kids[i] === c) kids[i].classList.add('on'); else kids[i].classList.remove('on');
+                }
+                after();
+            };
+            box.appendChild(c);
+        });
+    }
+
+    function bindRange(id, key, valId, fmt) {
+        var input = el(id), val = el(valId);
+        syncRange(input);
+        input.oninput = function () {
+            state[key] = +this.value;
+            syncRange(this);
+            val.textContent = fmt(+this.value);
+            updateLine();
+            render();
+        };
+    }
+
+    function markSrc() {
+        var items = el('cvSrcList').children;
+        for (var i = 0; i < items.length; i++) {
+            if (+items[i].getAttribute('data-motif') === state.motif) items[i].classList.add('on');
+            else items[i].classList.remove('on');
+        }
+    }
+
+    function markSwatch() {
+        var kids = el('cvSwatches').children;
+        for (var i = 0; i < kids.length; i++) {
+            if (i === state.palette) kids[i].classList.add('on'); else kids[i].classList.remove('on');
+        }
+    }
+
+    function hotGroup(name, scroll) {
+        var groups = document.querySelectorAll('#createView .cv-group'), hit = null;
+        for (var i = 0; i < groups.length; i++) {
+            if (groups[i].getAttribute('data-group') === name) { groups[i].classList.add('cv-hot'); hit = groups[i]; }
+            else groups[i].classList.remove('cv-hot');
+        }
+        if (scroll && hit && window.innerWidth <= 900 && hit.scrollIntoView) {
+            try { hit.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { }
+        }
+    }
+
+    function drawThumbs() {
+        var items = el('cvSrcList').children, i;
+        for (i = 0; i < items.length; i++) {
+            var c = items[i].querySelector('canvas');
+            if (!c) continue;
+            var g = c.getContext('2d');
+            var pal = PALETTES[state.palette];
+            var col = resolveColors(pal, state.sat);
+            g.clearRect(0, 0, c.width, c.height);
+            g.fillStyle = col.bg; g.fillRect(0, 0, c.width, c.height);
+            var kk = +items[i].getAttribute('data-motif');
+            var lw = Math.max(1.2, c.width / 60);
+            g.save();
+            g.translate(c.width / 2, c.height / 2);
+            motifPath(g, MOTIFS[kk].key, c.width * 0.8, col, lw, 'solid');
+            g.restore();
+        }
+    }
+
+    function updateLine() {
+        var line = el('cvStateLine');
+        if (!line) return;
+        line.textContent = (importedName ? ('导入母题：' + importedName) : MOTIFS[state.motif].name) +
+            ' · ' + compName(state.comp) + ' · ' + palName(state.palette) + ' · 本地 canvas 渲染';
+    }
+
+    function toast(msg) {
+        if (typeof window.showToast === 'function') { try { window.showToast(msg); return; } catch (e) { } }
+        if (window.console) console.log('[二创] ' + msg);
+    }
+
+    // ---------------------------------------------------------------- 存稿（localStorage）
+
+    function lsGet() {
+        try { return JSON.parse(window.localStorage.getItem(LS_KEY) || '[]') || []; }
+        catch (e) { return []; }
+    }
+
+    function lsSet(list) {
+        try { window.localStorage.setItem(LS_KEY, JSON.stringify(list)); return true; }
+        catch (e) {
+            while (list.length > 1) {
+                list.pop();
+                try { window.localStorage.setItem(LS_KEY, JSON.stringify(list)); return true; } catch (e2) { }
+            }
+            return false;
+        }
+    }
+
+    function makeThumb() {
+        var c = document.createElement('canvas');
+        c.width = 384; c.height = 288;
+        paint(c.getContext('2d'), c.width, c.height);
+        try { return c.toDataURL('image/jpeg', 0.72); } catch (e) { return ''; }
+    }
+
+    function saveWork() {
+        if (!ctx) return;
+        var list = lsGet();
+        var item = {
+            id: 'w' + Date.now() + Math.floor(Math.random() * 1000),
+            short: MOTIFS[state.motif].short,
+            name: MOTIFS[state.motif].short + ' · ' + palName(state.palette),
+            meta: compName(state.comp) + ' · ' + byId(GROUNDS, 'id', state.ground).name,
+            ts: Date.now(),
+            params: mix(state),
+            thumb: makeThumb()
+        };
+        list.unshift(item);
+        if (list.length > MAX_WORKS) list = list.slice(0, MAX_WORKS);
+        if (!lsSet(list)) { toast('本地存储写满，保存失败'); return; }
+        renderWorks();
+        toast('已保存到「最近创作」');
+    }
+
+    function loadWork(w) {
+        state = mix(w.params);
+        tileCanvas = null; importedName = '';
+        syncControls();
+        updateLine();
+        render();
+        toast('已载入：' + w.name);
+    }
+
+    function deleteWork(id) {
+        var list = lsGet().filter(function (w) { return w.id !== id; });
+        lsSet(list);
+        renderWorks();
+        toast('已删除该作品');
+    }
+
+    function ago(ts) {
+        var d = Date.now() - ts;
+        if (d < 60000) return '刚刚';
+        if (d < 3600000) return Math.round(d / 60000) + ' 分钟前';
+        if (d < 86400000) return Math.round(d / 3600000) + ' 小时前';
+        if (d < 2592000000) return Math.round(d / 86400000) + ' 天前';
+        return new Date(ts).toLocaleDateString();
+    }
+
+    function renderWorks() {
+        var box = el('cvWorks');
+        if (!box) return;
+        var list = lsGet();
+        box.innerHTML = '';
+        var stat = el('cvStatWorks');
+        if (stat) stat.textContent = list.length;
+        var meta = el('cvWorksMeta');
+        if (meta) meta.textContent = list.length ? (list.length + ' 个方案 · 新存的排前面') : '还没有作品';
+        if (!list.length) {
+            var d0 = document.createElement('div');
+            d0.className = 'cv-works-empty';
+            d0.textContent = '还没有作品 —— 调好参数后点右上角「💾 保存到最近创作」，作品会存在本机浏览器里。';
+            box.appendChild(d0);
+            return;
+        }
+        list.forEach(function (w) {
+            var d = document.createElement('div');
+            d.className = 'cv-work';
+            var th = document.createElement('div');
+            th.className = 'cv-work-thumb';
+            if (w.thumb) { var img = document.createElement('img'); img.src = w.thumb; img.alt = w.name; th.appendChild(img); }
+            var del = document.createElement('button');
+            del.className = 'cv-work-del'; del.type = 'button'; del.textContent = '✕'; del.title = '删除';
+            del.onclick = function (ev) { ev.stopPropagation(); deleteWork(w.id); };
+            th.appendChild(del);
+            var body = document.createElement('div');
+            body.className = 'cv-work-b';
+            var b = document.createElement('b'); b.textContent = w.name;
+            var sp = document.createElement('span'); sp.textContent = ago(w.ts) + ' · ' + (w.meta || '');
+            body.appendChild(b); body.appendChild(sp);
+            d.appendChild(th); d.appendChild(body);
+            d.onclick = function () { loadWork(w); };
+            box.appendChild(d);
+        });
+    }
+
+    // ---------------------------------------------------------------- 导入 / 导出 / 随机 / 重置
+
+    var lastImportedImg = null;
+
+    function buildTileFromStored() {
+        return lastImportedImg ? buildTile(lastImportedImg) : null;
+    }
+
+    function importImage(file) {
+        if (!/^image\//.test(file.type)) { toast('请选择图片文件'); return; }
+        var fr = new FileReader();
+        fr.onload = function () {
+            var img = new Image();
+            img.onload = function () {
+                lastImportedImg = img;
+                tileCanvas = buildTile(img);
+                importedName = file.name.length > 18 ? file.name.slice(0, 16) + '…' : file.name;
+                el('cvSrcList').classList.add('cv-imported');
+                markSrc();
+                updateLine();
+                render();
+                toast('已导入源纹样：' + importedName);
+            };
+            img.onerror = function () { toast('图片解码失败'); };
+            img.src = fr.result;
+        };
+        fr.onerror = function () { toast('读取文件失败'); };
+        fr.readAsDataURL(file);
+    }
+
+    function exportPNG() {
+        if (!cv || !ctx) return;
+        try {
+            paint(ctx, cv.width, cv.height);            // 同步重绘一遍，确保导出的是当前参数
+            var url = cv.toDataURL('image/png');
+            var stamp = new Date();
+            var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+            var name = '纹样二创_' + MOTIFS[state.motif].short + '_' + stamp.getFullYear() +
+                pad(stamp.getMonth() + 1) + pad(stamp.getDate()) + '_' +
+                pad(stamp.getHours()) + pad(stamp.getMinutes()) + '.png';
+            var a = document.createElement('a');
+            a.href = url; a.download = name; a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            window.setTimeout(function () { a.remove(); }, 0);
+            toast('设计稿已导出：' + name);
+            window.__cvLastExport = { name: name, len: url.length, ok: true };
+        } catch (e) {
+            toast('导出失败：' + (e && e.message ? e.message : e));
+            window.__cvLastExport = { ok: false, err: String(e) };
+        }
+    }
+
+    function randomize() {
+        var r = Math.random;
+        state.motif = Math.floor(r() * MOTIFS.length);
+        state.palette = Math.floor(r() * PALETTES.length);
+        state.comp = COMPS[Math.floor(r() * COMPS.length)].id;
+        state.ground = GROUNDS[Math.floor(r() * GROUNDS.length)].id;
+        state.stroke = STROKES[Math.floor(r() * STROKES.length)].id;
+        state.density = 30 + Math.floor(r() * 65);
+        state.weight = 15 + Math.floor(r() * 80);
+        state.sat = 40 + Math.floor(r() * 55);
+        tileCanvas = null; importedName = '';
+        syncControls();
+        updateLine();
+        render();
+        toast('换了一套随机参数');
+    }
+
+    function resetAll() {
+        state = mix(DEFAULTS);
+        tileCanvas = null; importedName = ''; lastImportedImg = null;
+        syncControls();
+        updateLine();
+        render();
+        toast('已重置为默认参数');
+    }
+
+    function syncControls() {
+        markSrc(); markSwatch();
+        el('cvColorName').textContent = palName(state.palette);
+        ['cvComps:comp', 'cvGrounds:ground', 'cvStrokes:stroke'].forEach(function (pair) {
+            var box = el(pair.split(':')[0]), key = pair.split(':')[1];
+            var kids = box.children;
+            for (var i = 0; i < kids.length; i++) {
+                if (kids[i].getAttribute('data-v') === state[key]) kids[i].classList.add('on');
+                else kids[i].classList.remove('on');
+            }
+        });
+        [['cvDensity', 'density', 'cvDensityVal', function (v) { return v + '%'; }],
+         ['cvWeight', 'weight', 'cvWeightVal', function (v) { return v < 35 ? '纤细' : (v < 70 ? '中等' : '厚重'); }],
+         ['cvSat', 'sat', 'cvSatVal', function (v) { return v + '%'; }]].forEach(function (t) {
+            var input = el(t[0]);
+            input.value = state[t[1]];
+            syncRange(input);
+            el(t[2]).textContent = t[3](state[t[1]]);
+        });
+        drawThumbs();
+    }
+
+    // ---------------------------------------------------------------- 进入视图 / 初始化
+
+    function enter() {
+        fit();
+        render();
+        renderWorks();
+    }
+
+    function hookTopView() {
+        if (window.__cvStudioHooked) return;
+        if (typeof window.setTopView !== 'function') return;
+        window.__cvStudioHooked = true;
+        var orig = window.setTopView;
+        window.setTopView = function (name) {
+            orig(name);
+            if (name === 'create') window.setTimeout(enter, 0);
+        };
+    }
+
+    function init() {
+        cv = el('cvCanvas');
+        if (!cv || !cv.getContext) return;
+        ctx = cv.getContext('2d');
+        buildUI();
+        hookTopView();
+        window.addEventListener('resize', function () { fit(); render(); });
+        window.addEventListener('orientationchange', function () { fit(); render(); });
+        if (!window.__cvStudioHooked) window.setTimeout(hookTopView, 300);
+        fit();
+        render();
+    }
+
+    window.CVStudio = {
+        enter: enter, render: render, reset: resetAll, randomize: randomize,
+        save: saveWork, exportPNG: exportPNG, works: lsGet, deleteWork: deleteWork,
+        /* AI 创作台用：把任意参数集画进任意 2D 上下文；不动全局 state，也不吃导入母题 */
+        paintTo: function (g, W, H, params) {
+            var savedState = state, savedTile = tileCanvas, savedName = importedName;
+            state = mix(params || savedState);
+            tileCanvas = null; importedName = '';
+            try { paint(g, W, H); }
+            finally { state = savedState; tileCanvas = savedTile; importedName = savedName; }
+        },
+        getState: function () { return mix(state); },
+        setState: function (o) { state = mix(o); syncControls(); updateLine(); render(); },
+        MOTIFS: MOTIFS, PALETTES: PALETTES, COMPS: COMPS, GROUNDS: GROUNDS, STROKES: STROKES,
+        preset: function () { return { comp: 'radial', palette: 3, motif: 1, ground: 'weave', density: 80, weight: 70, sat: 90 }; }
+    };
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();
+</script>
+
+<!-- ===== AI 创作台：交互层（样式 + 引擎）===== -->
+<style>
+/* ===== AI 创作台（本地生成引擎 + 云端通道预留）——2026-10-08 新增 =====
+   与「二创工作台交互层」同规矩：自成一块（自带 <style>），刻意不并入库样式块，
+   以免被 patch_library_dark.py / patch_library_nav.py 的真相源（lib_css.txt）静默回滚。
+
+   ⚠️ 本块内**不得**出现 range 类型的 input，也不得出现顶层页签属性字样：
+      patch_create_studio.py 的幂等复验断言要求「三条滑杆」「四个页签」计数不变。
+      所以 AI 面板的「变体数量 / 创意自由度」用 chips 而非滑杆。 */
+
+/* ---------- 模式切换（工具箱 / AI创作） ---------- */
+.cv-modes{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 16px;}
+.cv-mode{height:38px;padding:0 20px;border-radius:999px;border:1px solid #3a3a5c;background:#1a1a2e;
+  color:#a0a0b8;font-size:13.5px;font-family:inherit;cursor:pointer;transition:.16s;}
+.cv-mode:hover{background:#252542;color:#fff;}
+.cv-mode.on{border-color:#a78bfa;background:rgba(167,139,250,.16);color:#c4b5fd;font-weight:600;}
+.cv-mode-hint{margin-left:auto;font-size:12px;color:#6b6b8c;line-height:1.6;}
+
+/* 页内面板显隐：用显式 class，不依赖 hidden 属性
+   —— 三份 www/web-dist/android 文件实际跑在 BackCompat（怪异模式），
+      hidden 的 UA 表现不可靠，显式 display:none 才稳。 */
+.cv-pane-off{display:none!important;}
+
+/* ---------- 提示词区 ---------- */
+.cv-ai-prompt{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;padding:16px 16px 14px;
+  margin-bottom:18px;}
+#createView .cv-ai-ta{display:block;width:100%;box-sizing:border-box;min-height:74px;max-height:220px;
+  resize:vertical;padding:12px 13px;border-radius:12px;border:1px solid #3a3a5c;background:#13132a;
+  color:#e2e6ff;font-family:inherit;font-size:13.5px;line-height:1.8;outline:none;transition:border-color .16s;}
+#createView .cv-ai-ta:focus{border-color:#a78bfa;background:#161633;}
+#createView .cv-ai-ta::placeholder{color:#585875;}
+.cv-ai-prow{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-top:12px;}
+.cv-ai-prow .cv-chips{flex:1;min-width:220px;margin:0;}
+.cv-ai-cnt{font-size:11.5px;color:#6b6b8c;white-space:nowrap;padding-top:8px;letter-spacing:.04em;}
+.cv-ai-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;
+  padding-top:12px;border-top:1px dashed #2f2f4a;}
+.cv-ai-tools .lbl{font-size:12px;color:#6b6b8c;letter-spacing:.04em;}
+.cv-ai-tools .sp{flex:1;}
+button.cv-ai-gen{height:40px;padding:0 26px;border:0;border-radius:999px;font-family:inherit;
+  font-size:14px;font-weight:600;cursor:pointer;color:#0f0f1e;
+  background:linear-gradient(135deg,#a78bfa,#818cf8);transition:.16s;}
+button.cv-ai-gen:hover{filter:brightness(1.12);}
+button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed;}
+
+/* ---------- 候选稿列表（复用 .cv-src 外框） ---------- */
+.cv-ai-cands{display:flex;flex-direction:column;gap:9px;}
+.cv-ai-cand{display:flex;align-items:center;gap:10px;padding:8px;border-radius:11px;cursor:pointer;
+  border:1px solid #2a2a40;background:#171728;transition:.16s;}
+.cv-ai-cand:hover{background:#252542;}
+.cv-ai-cand.on{border-color:#a78bfa;background:#252542;}
+.cv-ai-cand-thumb{width:58px;height:44px;border-radius:9px;flex-shrink:0;display:block;background:#0f0f1e;}
+.cv-ai-cand-meta{min-width:0;flex:1;}
+.cv-ai-cand-meta b{display:block;font-size:12.5px;font-weight:600;color:#fff;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cv-ai-cand-meta span{display:block;font-size:11px;color:#6b6b8c;margin-top:3px;line-height:1.5;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+
+/* ---------- 大预览 ---------- */
+#createView .cv-ai-canvas{display:block;padding:0;border-style:solid;background:#101024;position:relative;}
+#cvAiCanvas{display:block;width:100%;height:auto;aspect-ratio:4/3;border-radius:12px;}
+.cv-ai-opts{display:flex;gap:8px;flex-wrap:wrap;}
+.cv-ai-read{border-top:1px dashed #2f2f4a;padding-top:12px;}
+.cv-ai-read-h{font-size:11.5px;color:#6b6b8c;margin-bottom:8px;letter-spacing:.06em;}
+.cv-ai-read-i{display:flex;flex-wrap:wrap;gap:7px;}
+.cv-ai-read-i i{font-style:normal;font-size:11.5px;padding:4px 10px;border-radius:999px;
+  border:1px solid #33334f;background:#171728;color:#a0a0b8;line-height:1.5;}
+.cv-ai-read-i i b{color:#c4b5fd;font-weight:600;}
+.cv-ai-read-i i em{font-style:normal;color:#6b6b8c;margin-left:5px;}
+
+/* ---------- 通道设置 ---------- */
+.cv-ai-chan-line{font-size:12px;color:#a0a0b8;background:#171728;border:1px solid #2f2f4a;
+  border-radius:11px;padding:9px 11px;line-height:1.7;margin-bottom:12px;}
+.cv-ai-chan-line b{color:#c4b5fd;font-weight:600;}
+.cv-ai-chan-line.warn b{color:#fcd34d;}
+#createView .cv-ai-in{display:block;width:100%;box-sizing:border-box;height:34px;padding:0 11px;
+  border-radius:9px;border:1px solid #3a3a5c;background:#13132a;color:#e2e6ff;font-family:inherit;
+  font-size:12.5px;outline:none;margin-bottom:8px;}
+#createView .cv-ai-in:focus{border-color:#a78bfa;}
+.cv-ai-cloud{display:none;margin-top:10px;padding:12px;border-radius:12px;border:1px dashed #3a3a5c;
+  background:#15152a;}
+.cv-ai-cloud.on{display:block;}
+.cv-ai-cloud .tip{font-size:11px;color:#6b6b8c;line-height:1.75;margin-top:2px;}
+.cv-ai-cloud .tip b{color:#fcd34d;font-weight:600;}
+.cv-ai-note{font-size:11.5px;color:#6b6b8c;line-height:1.8;margin-top:10px;}
+.cv-ai-note b{color:#a0a0b8;font-weight:600;}
+.cv-ai-cloud-imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;}
+.cv-ai-cloud-imgs a{display:block;border:1px solid #2a2a40;border-radius:11px;overflow:hidden;
+  background:#0f0f1e;}
+.cv-ai-cloud-imgs img{display:block;width:100%;height:auto;}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:1199px){
+  .cv-mode-hint{display:none;}
+}
+@media (max-width:900px){
+  .cv-ai-prompt{padding:13px;}
+  .cv-ai-tools .sp{display:none;}
+  .cv-ai-tools .lbl{display:none;}
+  button.cv-ai-gen{flex:1;}
+  .cv-ai-cand-thumb{width:50px;height:38px;}
+}
+</style>
+<script>
+/* ===== AI 创作台：描述 → 参数 → 本地程序化生成（不联网、无费用） =====
+   2026-10-08 新增。两条通道：
+     · 本地引擎（默认、始终可用）：中文描述经本地词典逐词匹配，解析成
+       母题 / 配色 / 构图 / 底纹 / 笔法 / 密度 / 线重 / 饱和 八维参数意图；
+       再用带种子的伪随机算法在参数空间里推演多稿变体，最后交给工作台
+       同一套 canvas 引擎绘制（调用 paintTo）。描述没提到的维度按种子补齐，
+       所以同一句描述永远出同一版，换种子才换结果 —— 可复现。
+     · 云端通道（预留、未绑定厂商）：按 OpenAI 图像接口的通用格式调用户自填端点；
+       未配置 / 没填 Key / 网络不通 / 跨域被拦 / 返回异常 —— 任一情况自动回落本地。
+
+   ⚠️ 本块整块独立（自带 <style> + <script>），刻意不并入库块 —— 免得被
+      patch_library_dark.py / patch_library_nav.py 的真相源（lib_css.txt / lib_js.txt）静默回滚。
+   ⚠️ 取工作台引用只用中括号写法（不写 window 点号 + CVStudio 的字面量），
+      否则 patch_create_studio.py 的复验断言「渲染引擎已注入（计数 == 1）」会被本轮打破。
+   ⚠️ 本块内不得出现 range 类型的 input，也不得出现顶层页签属性字样：
+      同理由，那两条断言要求滑杆恒为 3 个、顶层页签恒为 4 个。
+      所以「变体数量 / 创意自由度」用 chips 实现。 */
+(function () {
+    'use strict';
+
+    // 工作台引擎句柄（init 时才取，脚本先后顺序不影响）
+    var CS = null;
+
+    var LS_MODE = 'lushan_cv_ai_mode_v1';
+    var LS_CLOUD = 'lushan_cv_ai_cloud_v1';
+
+    // Hero 段落随模式切换 —— 否则切到 AI 模式后，顶上还写着「点选源纹样、拖密度」，对不上号
+    var HERO_AI = '写一句描述，本地引擎把它拆成母题、配色、构图、底纹、笔法、密度等八维参数，'
+        + '一次推演多稿供你挑；挑中的可以直接送回工具箱继续微调。全程本地渲染，不联网、不上传。';
+    var heroP = null, heroOrig = '';
+
+    // ---------------------------------------------------------------- 小工具
+
+    function el(id) { return document.getElementById(id); }
+
+    function toast(msg) {
+        if (typeof window.showToast === 'function') { try { window.showToast(msg); return; } catch (e) { } }
+        if (window.console) console.log('[AI创作] ' + msg);
+    }
+
+    function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+    function byId(list, key, val) {
+        for (var i = 0; i < list.length; i++) if (list[i][key] === val) return list[i];
+        return list[0];
+    }
+
+    function hash(str) {
+        var h = 2166136261, i;
+        for (i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = (h * 16777619) >>> 0; }
+        return h >>> 0;
+    }
+
+    function rng(seed) {
+        var s = (seed >>> 0) || 1;
+        return function () {
+            s ^= s << 13; s >>>= 0;
+            s ^= s >>> 17;
+            s ^= s << 5; s >>>= 0;
+            return s / 4294967296;
+        };
+    }
+
+    // ---------------------------------------------------------------- 本地词典
+    // 命中词越长、命中越多 → 该取值得分越高；同维度里得分最高的胜出。
+    var DICT = [
+        { dim: 'palette', val: 0, w: 2, words: ['靛蓝', '靛青', '靛', '深蓝', '藏蓝', '蓝色'] },
+        { dim: 'palette', val: 1, w: 2, words: ['藕荷', '粉紫', '玫红', '霞光', '藕', '粉'] },
+        { dim: 'palette', val: 2, w: 2, words: ['青碧', '青绿', '碧色', '湖水', '天青', '雨色'] },
+        { dim: 'palette', val: 3, w: 2, words: ['暖棕', '旧锦', '土黄', '赭石', '金黄', '暖色'] },
+        { dim: 'palette', val: 4, w: 2, words: ['苔绿', '草绿', '山间', '翠色', '绿色'] },
+
+        { dim: 'comp', val: 'grid', w: 2, words: ['四方连续', '满地', '平铺', '连续', '规整'] },
+        { dim: 'comp', val: 'band', w: 2, words: ['二方连续', '带状', '条带', '边饰', '织带', '腰带'] },
+        { dim: 'comp', val: 'radial', w: 2, words: ['中心对称', '团花', '放射', '对称', '同心', '团圆'] },
+        { dim: 'comp', val: 'scatter', w: 1.5, words: ['散点', '自由散布', '星点', '随机', '碎'] },
+
+        { dim: 'ground', val: 'grid45', w: 1.5, words: ['斜网格', '网格', '格子', '格纹'] },
+        { dim: 'ground', val: 'dots', w: 2, words: ['圆点', '点阵', '波点', '珠地'] },
+        { dim: 'ground', val: 'weave', w: 2, words: ['织格', '经纬', '平织', '织底'] },
+        { dim: 'ground', val: 'twill', w: 2, words: ['斜纹', '斜织', '绫纹'] },
+        { dim: 'ground', val: 'none', w: 2, words: ['纯色', '素底', '无底纹'] },
+
+        { dim: 'stroke', val: 'solid', w: 2, words: ['实线', '粗线', '硬朗', '单线'] },
+        { dim: 'stroke', val: 'double', w: 2, words: ['双钩', '勾勒', '线描', '描边', '勾线'] },
+        { dim: 'stroke', val: 'dotted', w: 2, words: ['点线', '虚线', '点描', '碎点'] },
+        { dim: 'stroke', val: 'filled', w: 2, words: ['填彩', '填色', '色块', '平涂'] },
+
+        { dim: 'motif', val: 0, w: 2, words: ['八角', '八瓣', '八芒', '太阳花'] },
+        { dim: 'motif', val: 1, w: 2, words: ['盘王印', '印章', '方印', '盘王', '方形'] },
+        { dim: 'motif', val: 2, w: 2, words: ['四十八勾', '勾纹', '回纹', '雷纹', '几何', '折线'] },
+        { dim: 'motif', val: 3, w: 2, words: ['蝴蝶', '蝶恋', '花鸟', '蝶'] },
+
+        { dim: 'density', val: 88, w: 2, words: ['细密', '堆叠', '铺满', '繁复', '密', '繁', '满'] },
+        { dim: 'density', val: 30, w: 3, words: ['清简', '空灵', '素净', '留白', '疏', '简'] },
+
+        { dim: 'weight', val: 72, w: 2, words: ['厚重', '古朴', '粗放', '拙朴', '朴素'] },
+        { dim: 'weight', val: 28, w: 2, words: ['纤细', '轻盈', '精细', '雅致', '轻巧'] },
+
+        { dim: 'sat', val: 95, w: 2, words: ['明艳', '艳丽', '浓烈', '鲜艳', '浓彩'] },
+        { dim: 'sat', val: 48, w: 2, words: ['素雅', '淡雅', '灰调', '雅淡', '低饱和'] }
+    ];
+
+    var DIM_NAME = {
+        palette: '配色', comp: '构图', ground: '底纹', stroke: '笔法',
+        motif: '母题', density: '密度', weight: '线重', sat: '饱和'
+    };
+    var DIM_ORDER = ['motif', 'palette', 'comp', 'ground', 'stroke', 'density', 'weight', 'sat'];
+
+    function valName(dim, v) {
+        if (!CS) return String(v);
+        if (dim === 'palette') return CS.PALETTES[v] ? CS.PALETTES[v].name : String(v);
+        if (dim === 'motif') return CS.MOTIFS[v] ? CS.MOTIFS[v].short : String(v);
+        if (dim === 'comp') return byId(CS.COMPS, 'id', v).name;
+        if (dim === 'ground') return byId(CS.GROUNDS, 'id', v).name;
+        if (dim === 'stroke') return byId(CS.STROKES, 'id', v).name;
+        if (dim === 'density' || dim === 'sat') return v + '%';
+        if (dim === 'weight') return v < 35 ? '纤细' : (v < 70 ? '中等' : '厚重');
+        return String(v);
+    }
+
+    function optionsOf(dim) {
+        if (!CS) return null;
+        if (dim === 'palette') return CS.PALETTES.map(function (x, i) { return i; });
+        if (dim === 'motif') return CS.MOTIFS.map(function (x, i) { return i; });
+        if (dim === 'comp') return CS.COMPS.map(function (x) { return x.id; });
+        if (dim === 'ground') return CS.GROUNDS.map(function (x) { return x.id; });
+        if (dim === 'stroke') return CS.STROKES.map(function (x) { return x.id; });
+        return null;
+    }
+
+    function pickFrom(list, r, not) {
+        var pool = [], i;
+        for (i = 0; i < list.length; i++) if (list[i] !== not) pool.push(list[i]);
+        if (!pool.length) return list[0];
+        return pool[Math.floor(r() * pool.length) % pool.length];
+    }
+
+    // ---------------------------------------------------------------- 描述解析
+    // 同一维度被多个词命中时（如「团花」+「四方连续」），取「命中词更长、命中更多」的那一档，
+    // 落选的那些记进 alts —— 渲染时会明说「另有 X 未采用」，不让用户在不知情下被换掉构图。
+
+    function parse(text) {
+        var t = String(text || '').toLowerCase();
+        var best = {}, hits = {}, alts = {}, i, j, k, r, dim, found, score, cur;
+        for (i = 0; i < DICT.length; i++) {
+            r = DICT[i];
+            found = [];
+            for (j = 0; j < r.words.length; j++) {
+                if (t.indexOf(r.words[j]) >= 0) found.push(r.words[j]);
+            }
+            if (!found.length) continue;
+            dim = r.dim;
+            score = 0;
+            for (k = 0; k < found.length; k++) score += found[k].length * 0.35 + 1;
+            score *= r.w;
+            cur = best[dim];
+            if (!cur) {
+                best[dim] = { val: r.val, score: score };
+                hits[dim] = found;
+            } else if (score > cur.score) {
+                alts[dim] = alts[dim] || [];
+                alts[dim].push({ val: cur.val, words: hits[dim] });
+                best[dim] = { val: r.val, score: score };
+                hits[dim] = found;
+            } else {
+                alts[dim] = alts[dim] || [];
+                alts[dim].push({ val: r.val, words: found });
+            }
+        }
+        var out = {};
+        for (dim in best) if (best.hasOwnProperty(dim)) out[dim] = best[dim].val;
+        return { params: out, hits: hits, alts: alts };
+    }
+
+    // 描述没提到的维度 → 按种子从全表里随机挑一个（同一描述 → 同一结果）
+    function baseParams(text, seed) {
+        var pr = parse(text), r = rng(seed), out = {}, i, d, opts;
+        for (i = 0; i < DIM_ORDER.length; i++) {
+            d = DIM_ORDER[i];
+            if (pr.params[d] !== undefined) { out[d] = pr.params[d]; continue; }
+            opts = optionsOf(d);
+            if (opts) { out[d] = pickFrom(opts, r, null); continue; }
+            if (d === 'density') out[d] = 40 + Math.floor(r() * 46);
+            else if (d === 'weight') out[d] = 25 + Math.floor(r() * 46);
+            else out[d] = 55 + Math.floor(r() * 40);
+        }
+        return { params: out, hits: pr.hits, alts: pr.alts, matched: pr.params };
+    }
+
+    // ---------------------------------------------------------------- 变体推演
+
+    var MUT = [
+        { d: 'motif', f: function (p, r) { p.motif = pickFrom(optionsOf('motif'), r, p.motif); } },
+        { d: 'palette', f: function (p, r) { p.palette = pickFrom(optionsOf('palette'), r, p.palette); } },
+        { d: 'comp', f: function (p, r) { p.comp = pickFrom(optionsOf('comp'), r, p.comp); } },
+        { d: 'ground', f: function (p, r) { p.ground = pickFrom(optionsOf('ground'), r, p.ground); } },
+        { d: 'stroke', f: function (p, r) { p.stroke = pickFrom(optionsOf('stroke'), r, p.stroke); } },
+        { d: 'density', f: function (p, r) { p.density = clamp(Math.round(p.density + (r() * 2 - 1) * 26), 22, 100); } },
+        { d: 'weight', f: function (p, r) { p.weight = clamp(Math.round(p.weight + (r() * 2 - 1) * 30), 10, 100); } },
+        { d: 'sat', f: function (p, r) { p.sat = clamp(Math.round(p.sat + (r() * 2 - 1) * 28), 20, 100); } }
+    ];
+
+    function buildVariants(base, n, freedom, seed) {
+        var r = rng(seed ^ 2654435761), out = [], i, k, key, p, labels, used, guard, mi, before;
+        out.push({ params: base, label: '忠于描述' });
+        var rounds = 1 + Math.round(freedom / 100 * 3);   // 自由度 0 → 只改 1 维；100 → 改 4 维
+        for (i = 1; i < n; i++) {
+            p = {};
+            for (key in base) if (base.hasOwnProperty(key)) p[key] = base[key];
+            labels = []; used = {}; guard = 0;
+            while (labels.length < rounds && guard < 40) {
+                guard++;
+                mi = Math.floor(r() * MUT.length) % MUT.length;
+                if (used[mi]) continue;
+                used[mi] = 1;
+                before = p[MUT[mi].d];
+                MUT[mi].f(p, r);
+                if (p[MUT[mi].d] !== before) {
+                    labels.push(DIM_NAME[MUT[mi].d] + '→' + valName(MUT[mi].d, p[MUT[mi].d]));
+                }
+            }
+            out.push({ params: p, label: labels.join(' · ') || '微调' });
+        }
+        return out;
+    }
+
+    // ---------------------------------------------------------------- 渲染
+
+    var cands = [], sel = -1, seedSalt = 0;
+
+    function paramTitle(p) {
+        if (!CS) return '方案';
+        return CS.MOTIFS[p.motif].short + ' · ' + CS.PALETTES[p.palette].name;
+    }
+
+    function paramMeta(p) {
+        if (!CS) return '';
+        return byId(CS.COMPS, 'id', p.comp).name + ' · ' + byId(CS.GROUNDS, 'id', p.ground).name
+            + ' · ' + byId(CS.STROKES, 'id', p.stroke).name + ' · 密 ' + p.density + '%';
+    }
+
+    function paintInto(cv, w, h, params, fallbackText) {
+        var g = cv.getContext('2d');
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        if (params && CS && typeof CS.paintTo === 'function') {
+            try { CS.paintTo(g, w, h, params); return; } catch (e) { }
+        }
+        g.fillStyle = '#101024'; g.fillRect(0, 0, w, h);
+        g.fillStyle = '#4a4a6a';
+        g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.font = '500 ' + Math.round(w * 0.03) + 'px "Noto Sans SC","Microsoft YaHei",sans-serif';
+        g.fillText(fallbackText || '等待生成', w / 2, h / 2);
+    }
+
+    // 候选缩略图：整幅画高一点，再把底部落款条裁掉，缩略图才干净
+    function thumbInto(cv, w, h, params) {
+        var full = Math.round(h / 0.916);
+        var tmp = document.createElement('canvas');
+        tmp.width = w; tmp.height = full;
+        paintInto(tmp, w, full, params);
+        var g = cv.getContext('2d');
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        g.clearRect(0, 0, w, h);
+        try { g.drawImage(tmp, 0, 0, w, h, 0, 0, w, h); } catch (e) { }
+    }
+
+    function renderCands() {
+        var box = el('cvAiCands');
+        if (!box) return;
+        box.innerHTML = '';
+        var note = el('cvAiCandNote');
+        if (!cands.length) {
+            if (note) note.textContent = '点上方「✨ 生成纹样」后，这里会出现多稿候选；点一下即可放大预览。';
+            return;
+        }
+        if (note) note.textContent = '共 ' + cands.length + ' 稿：第 1 稿严格照着描述，其余是参数空间里的变体。点选放大预览。';
+        cands.forEach(function (c, i) {
+            var d = document.createElement('div');
+            d.className = 'cv-ai-cand' + (i === sel ? ' on' : '');
+            var tc = document.createElement('canvas');
+            tc.className = 'cv-ai-cand-thumb';
+            tc.width = 232; tc.height = 176;
+            thumbInto(tc, 232, 176, c.params);
+            var meta = document.createElement('div');
+            meta.className = 'cv-ai-cand-meta';
+            var b = document.createElement('b');
+            b.textContent = (i + 1) + '. ' + paramTitle(c.params);
+            var sp = document.createElement('span');
+            sp.textContent = c.label;
+            meta.appendChild(b); meta.appendChild(sp);
+            d.appendChild(tc); d.appendChild(meta);
+            d.onclick = function () { selectCand(i); };
+            box.appendChild(d);
+        });
+    }
+
+    function selectCand(i) {
+        sel = i;
+        var items = el('cvAiCands').children, k;
+        for (k = 0; k < items.length; k++) {
+            items[k].className = (k === i) ? 'cv-ai-cand on' : 'cv-ai-cand';
+        }
+        drawPreview();
+    }
+
+    function drawPreview() {
+        var cv = el('cvAiCanvas');
+        if (!cv || !cv.getContext) return;
+        if (sel < 0 || !cands[sel]) paintInto(cv, cv.width, cv.height, null, '写一句描述，点「✨ 生成纹样」');
+        else paintInto(cv, cv.width, cv.height, cands[sel].params);
+    }
+
+    function renderRead(res) {
+        var box = el('cvAiRead');
+        if (!box) return;
+        box.innerHTML = '';
+        var any = false, i, d, chip, b, em, alt, lost, words;
+        for (i = 0; i < DIM_ORDER.length; i++) {
+            d = DIM_ORDER[i];
+            chip = document.createElement('i');
+            b = document.createElement('b');
+            b.textContent = DIM_NAME[d] + ' ' + valName(d, res.params[d]);
+            chip.appendChild(b);
+            em = document.createElement('em');
+            if (res.matched[d] !== undefined) {
+                em.textContent = '命中「' + (res.hits[d] || []).join('、') + '」';
+                any = true;
+            } else {
+                em.textContent = '未提及 · 按种子补齐';
+            }
+            chip.appendChild(em);
+            alt = res.alts && res.alts[d];
+            if (alt && alt.length) {
+                words = [];
+                for (var q = 0; q < alt.length; q++) {
+                    if (alt[q].words && alt[q].words.length) words.push(alt[q].words[0]);
+                }
+                if (words.length) {
+                    em = document.createElement('em');
+                    em.textContent = '另有「' + words.join('、') + '」未采用（取了更具体的那个）';
+                    chip.appendChild(em);
+                }
+            }
+            box.appendChild(chip);
+        }
+        if (!any) {
+            var t = document.createElement('i');
+            t.textContent = '整句没命中关键词，八个维度全是按种子随机补齐的。试试「靛蓝」「团花」「密」「双钩」这类词。';
+            box.appendChild(t);
+        }
+    }
+
+    // ---------------------------------------------------------------- 通道
+
+    var chan = 'local';
+
+    function setChanLine(kind, detail) {
+        var a = el('cvAiChanLine'), b = el('cvAiChanBox');
+        var text = kind + (detail ? ' · ' + detail : '');
+        if (a) a.textContent = '通道：' + text;
+        if (b) b.innerHTML = '当前通道：<b>' + text + '</b>';
+    }
+
+    function cloudGet() {
+        try { return JSON.parse(window.localStorage.getItem(LS_CLOUD) || 'null'); }
+        catch (e) { return null; }
+    }
+
+    function cloudSet(o) {
+        try { window.localStorage.setItem(LS_CLOUD, JSON.stringify(o)); return true; }
+        catch (e) { return false; }
+    }
+
+    function cloudCall(prompt, n) {
+        return new Promise(function (resolve, reject) {
+            var cfg = cloudGet();
+            if (!cfg || !cfg.ep || !cfg.key) { reject(new Error('未填端点或 Key')); return; }
+            if (typeof window.fetch !== 'function') { reject(new Error('此环境没有 fetch')); return; }
+            var body = {
+                model: cfg.model || 'text-to-image',
+                prompt: prompt || '传统纹样',
+                n: n, size: '1024x1024', response_format: 'b64_json'
+            };
+            var ctl = null, timer = 0;
+            if (typeof window.AbortController === 'function') ctl = new window.AbortController();
+            timer = window.setTimeout(function () { if (ctl) { try { ctl.abort(); } catch (e) { } } }, 30000);
+            var opt = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.key },
+                body: JSON.stringify(body)
+            };
+            if (ctl) opt.signal = ctl.signal;
+            window.fetch(cfg.ep, opt).then(function (r) {
+                window.clearTimeout(timer);
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            }).then(function (j) {
+                var arr = (j && (j.data || (j.result && j.result.data))) || [];
+                var imgs = [], i, d;
+                for (i = 0; i < arr.length; i++) {
+                    d = arr[i];
+                    if (d && d.b64_json) imgs.push('data:image/png;base64,' + d.b64_json);
+                    else if (d && d.url) imgs.push(d.url);
+                }
+                if (!imgs.length) throw new Error('返回里没有图片字段');
+                resolve(imgs);
+            }).catch(function (e) {
+                window.clearTimeout(timer);
+                reject(e);
+            });
+        });
+    }
+
+    function showCloud(imgs) {
+        var box = el('cvAiImgs'), wrap = el('cvAiImgsWrap');
+        if (!box || !wrap) return;
+        box.innerHTML = '';
+        imgs.forEach(function (src, i) {
+            var a = document.createElement('a');
+            a.href = src;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.download = '纹样AI创作_' + (i + 1) + '.png';
+            var img = document.createElement('img');
+            img.src = src;
+            img.alt = '云端生成 ' + (i + 1);
+            a.appendChild(img);
+            box.appendChild(a);
+        });
+        wrap.className = 'cv-ai-read';
+        setChanLine('云端通道', '已返回 ' + imgs.length + ' 张 · 未绑定厂商');
+        toast('云端出图无法直接转成参数；可下载后用「📁 导入源纹样」载入工具箱继续改');
+    }
+
+    function hideCloud() {
+        var wrap = el('cvAiImgsWrap');
+        if (wrap) wrap.className = 'cv-ai-read cv-pane-off';
+    }
+
+    // ---------------------------------------------------------------- 生成
+
+    var NUMS = [2, 3, 4, 6];
+    var FREES = [{ v: 15, n: '保守' }, { v: 40, n: '均衡' }, { v: 65, n: '自由' }, { v: 90, n: '狂放' }];
+    var CHANS = [{ v: 'local', n: '本地引擎（离线）' }, { v: 'cloud', n: '云端通道（预留）' }];
+    var IDEAS = ['靛蓝', '藕荷', '青碧', '暖棕旧锦', '苔绿',
+        '八角', '盘王印', '四十八勾', '蝴蝶妈妈',
+        '四方连续', '二方连续', '团花', '散点',
+        '双钩', '点线', '填彩', '实线',
+        '织格', '斜纹', '圆点', '纯色', '斜网格',
+        '细密', '留白', '古朴', '纤细', '明艳', '素雅'];
+    var SAMPLES = [
+        '靛蓝底，八角团花，密布四方连续，古朴双钩',
+        '藕荷色调，蝴蝶妈妈散点排布，线条纤细，素雅留白',
+        '青碧织雨，四十八勾回纹满铺，填彩，明艳浓烈',
+        '暖棕旧锦，盘王印中心对称，织格底纹，厚重粗放',
+        '苔绿山间，八角花二方连续成带，圆点底纹，轻盈雅致'
+    ];
+
+    var curN = 4, curFree = 65;
+
+    function chip(box, text, on, fn) {
+        var b = document.createElement('span');
+        b.className = 'cv-chip' + (on ? ' on' : '');
+        b.textContent = text;
+        b.onclick = fn;
+        box.appendChild(b);
+    }
+
+    function markChips(box, idx) {
+        var kids = box.children, i;
+        for (i = 0; i < kids.length; i++) {
+            kids[i].className = (i === idx) ? 'cv-chip on' : 'cv-chip';
+        }
+    }
+
+    function markChanChips() {
+        var box = el('cvAiChans');
+        if (!box) return;
+        var kids = box.children, i;
+        for (i = 0; i < kids.length; i++) {
+            kids[i].className = (CHANS[i].v === chan) ? 'cv-chip on' : 'cv-chip';
+        }
+        var box2 = el('cvAiCloud');
+        if (box2) box2.className = 'cv-ai-cloud' + (chan === 'cloud' ? ' on' : '');
+    }
+
+    function setGenBusy(b) {
+        var btn = el('cvAiGen');
+        if (!btn) return;
+        btn.disabled = !!b;
+        btn.textContent = b ? '⏳ 调用中…' : '✨ 生成纹样';
+    }
+
+    function localGen(text, n, freedom) {
+        var seed = (hash(text || '麓山绘梦·纹样') ^ ((seedSalt * 2654435761) >>> 0)) >>> 0;
+        var res = baseParams(text, seed);
+        cands = buildVariants(res.params, n, freedom, seed);
+        sel = 0;
+        renderCands();
+        drawPreview();
+        renderRead(res);
+        setChanLine('本地引擎', '离线 · 种子 ' + (seed % 1000000));
+        return res;
+    }
+
+    function generate(quiet) {
+        var ta = el('cvAiPrompt');
+        var text = ta ? String(ta.value || '').replace(/\s+/g, ' ').trim() : '';
+        var n = curN, freedom = curFree;
+
+        if (chan === 'cloud') {
+            if (typeof Promise !== 'function') { chan = 'local'; markChanChips(); toast('此环境不支持 Promise，已切回本地引擎'); }
+        }
+
+        if (chan === 'cloud') {
+            hideCloud();
+            setGenBusy(true);
+            setChanLine('云端通道', '调用中…');
+            cloudCall(text, n).then(function (imgs) {
+                setGenBusy(false);
+                showCloud(imgs);
+            }).catch(function (e) {
+                setGenBusy(false);
+                toast('云端通道不可用（' + e.message + '），已回落到本地引擎');
+                localGen(text, n, freedom);
+                setChanLine('本地引擎', '云端回落：' + e.message);
+            });
+            return;
+        }
+
+        hideCloud();
+        localGen(text, n, freedom);
+        if (quiet) return;
+        toast(text ? ('已出 ' + n + ' 稿（本地引擎，离线渲染）')
+            : '没写描述，已按随机种子出一版 —— 想更贴题就点几个灵感词');
+    }
+
+    // ---------------------------------------------------------------- 动作
+
+    function currentParams() {
+        return (sel >= 0 && cands[sel]) ? cands[sel].params : null;
+    }
+
+    function adopt() {
+        var p = currentParams();
+        if (!p) { toast('先生成一版候选'); return; }
+        if (!CS || typeof CS.setState !== 'function') { toast('工作台引擎未就绪'); return; }
+        CS.setState(p);
+        setMode('studio', true);
+        toast('已采用「' + paramTitle(p) + '」，可在工具箱继续微调');
+    }
+
+    function saveWork() {
+        var p = currentParams();
+        if (!p) { toast('先生成一版候选'); return; }
+        if (!CS || typeof CS.setState !== 'function' || typeof CS.save !== 'function') { toast('工作台引擎未就绪'); return; }
+        CS.setState(p);
+        CS.save();
+    }
+
+    function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+    function exportPng() {
+        var p = currentParams();
+        if (!p) { toast('先生成一版候选'); return; }
+        var cv = document.createElement('canvas');
+        cv.width = 1920; cv.height = 1440;
+        paintInto(cv, cv.width, cv.height, p);
+        var url;
+        try { url = cv.toDataURL('image/png'); }
+        catch (e) { toast('导出失败：' + e.message); return; }
+        var d = new Date();
+        var name = '纹样AI创作_' + paramTitle(p).replace(/[ \u00b7]/g, '') + '_'
+            + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '_'
+            + pad2(d.getHours()) + pad2(d.getMinutes()) + '.png';
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        window.setTimeout(function () { if (a.parentNode) a.parentNode.removeChild(a); }, 0);
+        toast('已导出：' + name);
+        window.__cvAiLastExport = { name: name, len: url.length, w: cv.width, h: cv.height };
+    }
+
+    function again() {
+        seedSalt = (seedSalt + 1) % 100000;
+        var ta = el('cvAiPrompt');
+        var text = ta ? String(ta.value || '').replace(/\s+/g, ' ').trim() : '';
+        hideCloud();
+        localGen(text, curN, curFree);
+        toast('换了个种子，重新出了 ' + curN + ' 稿');
+    }
+
+    function idea() {
+        var ta = el('cvAiPrompt');
+        if (!ta) return;
+        var s = SAMPLES[Math.floor(Math.random() * SAMPLES.length) % SAMPLES.length];
+        ta.value = s;
+        countChars();
+        toast('已填入一条示例描述，可自行改动');
+    }
+
+    function countChars() {
+        var ta = el('cvAiPrompt'), c = el('cvAiCount');
+        if (!ta || !c) return;
+        c.textContent = String(ta.value || '').length + ' 字';
+    }
+
+    function addWord(w) {
+        var ta = el('cvAiPrompt');
+        if (!ta) return;
+        var v = String(ta.value || '');
+        if (v.indexOf(w) >= 0) { toast('已经写过「' + w + '」了'); return; }
+        ta.value = v ? (v.replace(/[，,、\s]+$/, '') + '，' + w) : w;
+        countChars();
+    }
+
+    // ---------------------------------------------------------------- 模式切换
+
+    var mode = 'studio';
+
+    function setMode(m, quiet) {
+        if (m !== 'ai' && m !== 'studio') m = 'studio';
+        mode = m;
+        var tabs = document.querySelectorAll('#cvModes .cv-mode'), i;
+        for (i = 0; i < tabs.length; i++) {
+            tabs[i].className = (tabs[i].getAttribute('data-mode') === m) ? 'cv-mode on' : 'cv-mode';
+        }
+        var panes = document.querySelectorAll('[data-pane]'), p, on;
+        for (i = 0; i < panes.length; i++) {
+            p = panes[i];
+            on = (p.getAttribute('data-pane') === m);
+            if (!p.classList) continue;
+            if (on) p.classList.remove('cv-pane-off');
+            else p.classList.add('cv-pane-off');
+        }
+        try { window.localStorage.setItem(LS_MODE, m); } catch (e) { }
+        if (heroP) heroP.textContent = (m === 'ai') ? HERO_AI : heroOrig;
+        if (m === 'ai') {
+            drawPreview();
+            if (!cands.length) renderCands();
+            setChanLine(chan === 'cloud' ? '云端通道（预留）' : '本地引擎',
+                chan === 'cloud' ? '未绑定厂商 · 失败会自动回落' : '离线运行 · 不上传、无费用');
+        } else if (CS && typeof CS.enter === 'function') {
+            CS.enter();
+        }
+        if (!quiet) toast(m === 'ai' ? '已切到 AI 创作台' : '已切回工具箱');
+    }
+
+    // ---------------------------------------------------------------- 初始化
+
+    function hookTopView() {
+        if (window.__cvAiHooked) return;
+        if (typeof window.setTopView !== 'function') return;
+        window.__cvAiHooked = true;
+        var orig = window.setTopView;
+        window.setTopView = function (name) {
+            orig(name);
+            if (name === 'create') window.setTimeout(function () { drawPreview(); }, 0);
+        };
+    }
+
+    function buildUI() {
+        var box, i;
+
+        heroP = document.querySelector('#createView .tv-hero p');
+        heroOrig = heroP ? heroP.textContent : '';
+
+        box = el('cvAiChips');
+        if (box) for (i = 0; i < IDEAS.length; i++) (function (w) {
+            chip(box, w, false, function () { addWord(w); });
+        })(IDEAS[i]);
+
+        box = el('cvAiNums');
+        if (box) for (i = 0; i < NUMS.length; i++) (function (idx) {
+            chip(box, NUMS[idx] + ' 稿', NUMS[idx] === curN, function () {
+                curN = NUMS[idx];
+                markChips(box, idx);
+                toast('变体数量：' + curN + ' 稿');
+            });
+        })(i);
+
+        box = el('cvAiFrees');
+        if (box) for (i = 0; i < FREES.length; i++) (function (idx) {
+            chip(box, FREES[idx].n, FREES[idx].v === curFree, function () {
+                curFree = FREES[idx].v;
+                markChips(box, idx);
+                toast('创意自由度：' + FREES[idx].n);
+            });
+        })(i);
+
+        box = el('cvAiChans');
+        if (box) for (i = 0; i < CHANS.length; i++) (function (idx) {
+            chip(box, CHANS[idx].n, CHANS[idx].v === chan, function () {
+                chan = CHANS[idx].v;
+                markChanChips();
+                if (chan === 'cloud') {
+                    var cfg = cloudGet();
+                    if (!cfg || !cfg.ep || !cfg.key) toast('云端通道还没配置，先填端点和 Key；不填就点生成会自动回落本地');
+                    else toast('已切到云端通道');
+                } else {
+                    toast('已切回本地引擎');
+                }
+                setChanLine(chan === 'cloud' ? '云端通道（预留）' : '本地引擎',
+                    chan === 'cloud' ? '未绑定厂商 · 失败会自动回落' : '离线运行 · 不上传、无费用');
+            });
+        })(i);
+
+        var tabs = document.querySelectorAll('#cvModes .cv-mode');
+        for (i = 0; i < tabs.length; i++) (function (btn) {
+            btn.onclick = function () { setMode(btn.getAttribute('data-mode')); };
+        })(tabs[i]);
+
+        if (el('cvAiGen')) el('cvAiGen').onclick = function () { generate(); };
+        if (el('cvAiAgain')) el('cvAiAgain').onclick = function () { again(); };
+        if (el('cvAiExample')) el('cvAiExample').onclick = function () { idea(); };
+        if (el('cvAiAdopt')) el('cvAiAdopt').onclick = function () { adopt(); };
+        if (el('cvAiSave')) el('cvAiSave').onclick = function () { saveWork(); };
+        if (el('cvAiExport')) el('cvAiExport').onclick = function () { exportPng(); };
+
+        var ta = el('cvAiPrompt');
+        if (ta) {
+            ta.oninput = countChars;
+            ta.onkeydown = function (ev) {
+                if (ev && (ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { generate(); }
+            };
+        }
+
+        var cfg = cloudGet();
+        if (el('cvAiEp')) el('cvAiEp').value = cfg ? (cfg.ep || '') : '';
+        if (el('cvAiKey')) el('cvAiKey').value = cfg ? (cfg.key || '') : '';
+        if (el('cvAiModel')) el('cvAiModel').value = cfg ? (cfg.model || '') : '';
+        if (el('cvAiCloudSave')) el('cvAiCloudSave').onclick = function () {
+            var o = {
+                ep: String(el('cvAiEp').value || '').trim(),
+                key: String(el('cvAiKey').value || '').trim(),
+                model: String(el('cvAiModel').value || '').trim()
+            };
+            cloudSet(o);
+            toast(o.ep && o.key ? '云端配置已存在本机浏览器' : '已保存（端点或 Key 还空着，云端通道仍会回落本地）');
+        };
+
+        countChars();
+        markChanChips();
+        renderCands();
+    }
+
+    function init() {
+        if (!el('cvAiCanvas')) return;             // 本页没装 AI 面板，静默退出
+        CS = window['CVStudio'] || null;
+        buildUI();
+        hookTopView();
+        if (!window.__cvAiHooked) window.setTimeout(hookTopView, 300);
+        var m = 'studio';
+        try { m = window.localStorage.getItem(LS_MODE) || 'studio'; } catch (e) { }
+        setMode(m, true);
+        if (CS && typeof CS.paintTo !== 'function') {
+            var btn = el('cvAiGen');
+            if (btn) { btn.disabled = true; btn.textContent = '引擎未就绪'; }
+            var note = el('cvAiCandNote');
+            if (note) note.textContent = '本地渲染引擎缺少 paintTo 接口，AI 生成暂不可用。';
+        }
+        window.CVAI = {
+            version: '1.0',
+            mode: function () { return mode; },
+            setMode: setMode,
+            channel: function () { return chan; },
+            parse: parse,
+            generate: generate,
+            variants: function () { return cands; },
+            current: currentParams,
+            seedSalt: function () { return seedSalt; }
+        };
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();
+</script>
+
+<!-- ===== 特征提取：交互层（样式 + 引擎）===== -->
+<style>
+/* ===== 特征提取（交互版）—— 2026-10-09 由静态展示页升级 =====
+   自成一块，不并入「资源库样式块」，避免被 patch_library_dark.py 的真相源回滚。
+   只补交互态与动态元素，基础外观仍沿用 .tv-* / .fv-* 原规则。 */
+
+.fv-drop{min-height:232px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  outline:none;}
+.fv-drop:focus-visible{border-color:#a78bfa;}
+.fv-drop.is-over{border-color:#a78bfa;background:#221f3c;}
+.fv-drop.has-img{padding:14px;}
+.fv-drop.has-img .fv-drop-idle{display:none;}
+.fv-drop.has-img .fv-drop-h{display:none;}
+
+.fv-drop-busy{display:none;font-size:14px;font-weight:600;color:#c4b5fd;}
+.fv-drop.is-busy .fv-drop-idle{display:none;}
+.fv-drop.is-busy .fv-preview{display:none;}
+.fv-drop.is-busy .fv-drop-busy{display:block;}
+
+.fv-preview{display:none;width:100%;max-height:280px;object-fit:contain;border-radius:12px;
+  background:#15152a;}
+.fv-drop.has-img .fv-preview{display:block;}
+
+.fv-drop-meta{display:none;margin-top:12px;font-size:12.5px;color:#a0a0b8;line-height:1.7;
+  text-align:center;word-break:break-all;}
+.fv-drop.has-img .fv-drop-meta{display:block;}
+.fv-drop-meta b{color:#c4b5fd;font-variant-numeric:tabular-nums;}
+.fv-drop-meta .fv-drop-warn{color:#fca5a5;}
+
+.fv-sample-thumb{position:relative;overflow:hidden;background-color:#1b1b32;background-size:cover;
+  background-position:center;}
+.fv-sample-thumb img{display:block;width:100%;height:100%;object-fit:cover;}
+.fv-sample-name{position:absolute;left:0;right:0;bottom:0;padding:5px 7px;font-size:10.5px;
+  color:#e6e6f5;background:linear-gradient(transparent,rgba(10,10,22,.88));
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fv-sample-thumb.is-off{cursor:default;opacity:.5;}
+.fv-sample-thumb.is-off:hover{transform:none;}
+.fv-sample-tip{margin-top:11px;font-size:11.5px;color:#6b6b8c;text-align:center;line-height:1.6;}
+
+.fv-card-f{min-height:21px;}
+.fv-card-f .fv-empty{color:#6b6b8c;}
+
+.fv-bars i,.fv-vector-bars i{transition:height .28s cubic-bezier(.22,.8,.3,1);}
+.fv-bars i.is-flat,.fv-vector-bars i.is-flat{background:#2f2f52;}
+
+.fv-vector-code.is-idle{color:#6b6b8c;}
+
+.fv-note{border:1px dashed #3a3a5c;border-radius:14px;background:#1a1a2e;padding:20px 22px;
+  margin-bottom:26px;font-size:13.5px;line-height:1.85;color:#a0a0b8;}
+.fv-note b{color:#c4b5fd;}
+
+.fv-toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);z-index:1400;
+  max-width:82vw;padding:11px 18px;border-radius:12px;background:rgba(26,26,46,.96);
+  border:1px solid #3a3a5c;color:#e6e6f5;font-size:13px;line-height:1.6;
+  box-shadow:0 10px 30px rgba(0,0,0,.45);opacity:0;pointer-events:none;
+  transition:opacity .2s ease, transform .2s ease;}
+.fv-toast.on{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+@media (max-width:900px){
+  .fv-io{grid-template-columns:minmax(0,1fr);}
+}
+</style>
+<script>
+/* ===== 特征提取：本地特征引擎 + 页面交互（2026-10-09） =====
+   四组特征全部本地计算，零网络、零依赖、离线可用：
+     LBP  旋转不变均匀局部二值模式（8 邻域，10 类）—— 纹理
+     HSV  H 12 桶（按饱和加权）+ S/V 均值与标准差      —— 色彩
+     Hu   7 个 Hu 不变矩（Otsu 二值化后）              —— 形状
+     FFT  128² 功率谱，8 径向环 + 8 角度扇区           —— 周期结构
+   拼成的向量长度即 hero 上「特征维度」显示的数字。 */
+(function () {
+    'use strict';
+
+    var SIZE = 128;        // 分析分辨率（2 的幂，FFT 需要）
+    var MAX_BYTES = 10 * 1024 * 1024;
+    var LBP_BINS = 10, HSV_BINS = 16, HU_BINS = 7, FFT_BINS = 16;
+    var VEC_HEAD = 24;     // 特征向量区展示的前 N 维
+
+    var last = null;
+    var pending = false;
+    var seq = 0;
+    var curObjectUrl = null;
+
+    function $(id) { return document.getElementById(id); }
+
+    function esc(s) {
+        return String(s === null || s === undefined ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function hex2(v) {
+        var n = Math.max(0, Math.min(255, Math.round(v)));
+        return (n < 16 ? '0' : '') + n.toString(16);
+    }
+
+    function toast(msg) {
+        var el = document.querySelector('.fv-toast');
+        if (!el) {
+            el = document.createElement('div');
+            el.className = 'fv-toast';
+            document.body.appendChild(el);
+        }
+        el.textContent = msg;
+        el.classList.add('on');
+        clearTimeout(el.__t);
+        el.__t = setTimeout(function () { el.classList.remove('on'); }, 2600);
+    }
+
+    /* ---------------- 图像 -> 分析画布（居中裁剪成正方形） ---------------- */
+
+    function coverCanvas(src, sw, sh) {
+        var cv = document.createElement('canvas');
+        cv.width = SIZE;
+        cv.height = SIZE;
+        var g = cv.getContext('2d', { willReadFrequently: true });
+        var side = Math.max(1, Math.min(sw, sh));
+        var sx = Math.max(0, (sw - side) / 2);
+        var sy = Math.max(0, (sh - side) / 2);
+        g.drawImage(src, sx, sy, side, side, 0, 0, SIZE, SIZE);
+        return cv;
+    }
+
+    /* ---------------- LBP：旋转不变均匀模式 ---------------- */
+
+    function uniformRI(code) {
+        var t = 0, i;
+        for (i = 0; i < 8; i++) {
+            if (((code >> i) & 1) !== ((code >> ((i + 1) % 8)) & 1)) t++;
+        }
+        if (t > 2) return 9;             // 非均匀
+        var pc = 0;
+        for (i = 0; i < 8; i++) { if ((code >> i) & 1) pc++; }
+        return pc;                       // 0..8 共 9 个均匀旋转不变类
+    }
+
+    function groupLbp(g) {
+        var bins = new Float64Array(LBP_BINS);
+        var total = 0, contrast = 0;
+        var N = SIZE;
+        for (var y = 1; y < N - 1; y++) {
+            for (var x = 1; x < N - 1; x++) {
+                var c = g[y * N + x];
+                var code = 0, sum = 0, k, v;
+                for (k = 0; k < 8; k++) {
+                    var dx = [1, 1, 0, -1, -1, -1, 0, 1][k];
+                    var dy = [0, 1, 1, 1, 0, -1, -1, -1][k];
+                    v = g[(y + dy) * N + (x + dx)];
+                    if (v >= c) code |= (1 << k);
+                    sum += Math.abs(v - c);
+                }
+                contrast += sum / 8;
+                total++;
+                bins[uniformRI(code)]++;
+            }
+        }
+        var vals = new Array(LBP_BINS), maxB = 0;
+        for (var i = 0; i < LBP_BINS; i++) {
+            vals[i] = total ? bins[i] / total : 0;
+            if (vals[i] > maxB) maxB = vals[i];
+        }
+        return {
+            key: 'lbp', name: '纹理特征', tag: 'LBP', dims: LBP_BINS, values: vals,
+            foot: '对比度 <b>' + (contrast / (total || 1) / 255).toFixed(3) +
+                  '</b> · 一致性 <b>' + maxB.toFixed(3) + '</b>'
+        };
+    }
+
+    /* ---------------- HSV：色相直方图 + 饱和/明度统计 ---------------- */
+
+    function groupHsv(rgba) {
+        var hist = new Float64Array(12);
+        var hr = new Float64Array(12), hg = new Float64Array(12), hb = new Float64Array(12);
+        var hCnt = new Float64Array(12);
+        var sSum = 0, sSq = 0, vSum = 0, vSq = 0, n = SIZE * SIZE;
+        for (var i = 0; i < n; i++) {
+            var r = rgba[i * 4] / 255, gg = rgba[i * 4 + 1] / 255, b = rgba[i * 4 + 2] / 255;
+            var mx = r > gg ? (r > b ? r : b) : (gg > b ? gg : b);
+            var mn = r < gg ? (r < b ? r : b) : (gg < b ? gg : b);
+            var d = mx - mn;
+            var s = mx > 1e-6 ? d / mx : 0;
+            var h = 0;
+            if (d > 1e-6) {
+                if (mx === r) h = ((gg - b) / d) % 6;
+                else if (mx === gg) h = (b - r) / d + 2;
+                else h = (r - gg) / d + 4;
+                h *= 60;
+                if (h < 0) h += 360;
+            }
+            sSum += s; sSq += s * s; vSum += mx; vSq += mx * mx;
+            if (s > 0.08) {                       // 低饱和像素不参与色相统计
+                var bIdx = Math.min(11, Math.floor(h / 30));
+                hist[bIdx] += s;
+                hr[bIdx] += r; hg[bIdx] += gg; hb[bIdx] += b;
+                hCnt[bIdx]++;
+            }
+        }
+        var hSum = 0, k;
+        for (k = 0; k < 12; k++) hSum += hist[k];
+        var vals = new Array(HSV_BINS), peak = -1, peakV = -1;
+        for (k = 0; k < 12; k++) {
+            vals[k] = hSum > 1e-9 ? hist[k] / hSum : 0;
+            if (vals[k] > peakV) { peakV = vals[k]; peak = k; }
+        }
+        var sMean = sSum / n, vMean = vSum / n;
+        vals[12] = sMean;
+        vals[13] = Math.sqrt(Math.max(0, sSq / n - sMean * sMean));
+        vals[14] = vMean;
+        vals[15] = Math.sqrt(Math.max(0, vSq / n - vMean * vMean));
+
+        // 主色：取峰值色相桶内像素的平均 RGB（必须按桶内像素数取平均，累加值不能直接当颜色用）
+        var mainHex = '#6b6b8c';
+        if (peak >= 0 && hCnt[peak] > 0) {
+            mainHex = '#' + hex2(hr[peak] / hCnt[peak] * 255)
+                          + hex2(hg[peak] / hCnt[peak] * 255)
+                          + hex2(hb[peak] / hCnt[peak] * 255);
+        }
+
+        // 色相熵（归一化到 0..1）
+        var ent = 0;
+        for (k = 0; k < 12; k++) { if (vals[k] > 1e-9) ent -= vals[k] * Math.log(vals[k]); }
+        ent = ent / Math.log(12);
+
+        return {
+            key: 'hsv', name: '色彩特征', tag: 'HSV', dims: HSV_BINS, values: vals,
+            foot: '主色 <b>' + mainHex + '</b> · 色相熵 <b>' + ent.toFixed(2) + '</b>'
+        };
+    }
+
+    /* ---------------- Hu 矩：Otsu 二值化 -> 7 个不变矩 ---------------- */
+
+    function otsu(g) {
+        var hist = new Float64Array(256), i;
+        for (i = 0; i < g.length; i++) {
+            hist[Math.max(0, Math.min(255, Math.round(g[i])))]++;
+        }
+        var total = g.length, sum = 0;
+        for (i = 0; i < 256; i++) sum += i * hist[i];
+        var sumB = 0, wB = 0, best = -1, thr = 128;
+        for (i = 0; i < 256; i++) {
+            wB += hist[i];
+            if (wB === 0) continue;
+            var wF = total - wB;
+            if (wF === 0) break;
+            sumB += i * hist[i];
+            var mB = sumB / wB, mF = (sum - sumB) / wF;
+            var between = wB * wF * (mB - mF) * (mB - mF);
+            if (between > best) { best = between; thr = i; }
+        }
+        return thr;
+    }
+
+    function groupHu(g) {
+        var N = SIZE, thr = otsu(g), bin = new Uint8Array(N * N);
+        var m00 = 0, mx = 0, my = 0, x, y, i;
+        for (y = 0; y < N; y++) {
+            for (x = 0; x < N; x++) {
+                var on = g[y * N + x] > thr ? 1 : 0;
+                bin[y * N + x] = on;
+                if (on) { m00++; mx += x; my += y; }
+            }
+        }
+        if (m00 < N * N * 0.005 || m00 > N * N * 0.995) {   // 极端图兜底：改用中位数阈值
+            var tmp = Array.prototype.slice.call(g).sort(function (a, b) { return a - b; });
+            var med = tmp[Math.floor(tmp.length / 2)];
+            m00 = 0; mx = 0; my = 0;
+            for (i = 0; i < N * N; i++) {
+                var on2 = g[i] > med ? 1 : 0;
+                bin[i] = on2;
+                if (on2) { m00++; mx += i % N; my += Math.floor(i / N); }
+            }
+        }
+        // 归一化中心矩
+        var cxm = mx / (m00 || 1), cym = my / (m00 || 1);
+        var mu = new Float64Array(16);          // mu[p*4+q]，p+q<=3
+        for (y = 0; y < N; y++) {
+            for (x = 0; x < N; x++) {
+                if (!bin[y * N + x]) continue;
+                var dx = x - cxm, dy = y - cym;
+                var p2 = dx * dx, p3 = p2 * dx;
+                var q2 = dy * dy, q3 = q2 * dy;
+                mu[0] += 1;               // p0q0
+                mu[1] += dy;              // p0q1
+                mu[2] += q2;              // p0q2
+                mu[3] += q3;              // p0q3
+                mu[4] += dx;              // p1q0
+                mu[5] += dx * dy;         // p1q1
+                mu[6] += dx * q2;         // p1q2
+                mu[8] += p2;              // p2q0
+                mu[9] += p2 * dy;         // p2q1
+                mu[12] += p3;             // p3q0
+            }
+        }
+        function eta(p, q) {
+            var raw = mu[p * 4 + q];
+            return raw / Math.pow(mu[0] || 1, 1 + (p + q) / 2);
+        }
+        var e20 = eta(2, 0), e02 = eta(0, 2), e11 = eta(1, 1);
+        var e30 = eta(3, 0), e21 = eta(2, 1), e12 = eta(1, 2), e03 = eta(0, 3);
+        var hu = [
+            e20 + e02,
+            (e20 - e02) * (e20 - e02) + 4 * e11 * e11,
+            (e30 - 3 * e12) * (e30 - 3 * e12) + (3 * e21 - e03) * (3 * e21 - e03),
+            (e30 + e12) * (e30 + e12) + (e21 + e03) * (e21 + e03),
+            (e30 - 3 * e12) * (e30 + e12) * ((e30 + e12) * (e30 + e12) - 3 * (e21 + e03) * (e21 + e03))
+                + (3 * e21 - e03) * (e21 + e03) * (3 * (e30 + e12) * (e30 + e12) - (e21 + e03) * (e21 + e03)),
+            (e20 - e02) * ((e30 + e12) * (e30 + e12) - (e21 + e03) * (e21 + e03))
+                + 4 * e11 * (e30 + e12) * (e21 + e03),
+            (3 * e21 - e03) * (e30 + e12) * ((e30 + e12) * (e30 + e12) - 3 * (e21 + e03) * (e21 + e03))
+                - (e30 - 3 * e12) * (e21 + e03) * (3 * (e30 + e12) * (e30 + e12) - (e21 + e03) * (e21 + e03))
+        ];
+        var logged = hu.map(function (v) {
+            return (v < 0 ? -1 : 1) * Math.log1p(Math.abs(v));
+        });
+
+        // 对称性（水平 + 垂直镜像的平均一致率）、紧致度 4πA/P²
+        var diff = 0, per = 0;
+        for (y = 0; y < N; y++) {
+            for (x = 0; x < N; x++) {
+                var v = bin[y * N + x];
+                if (v !== bin[y * N + (N - 1 - x)]) diff++;
+                if (v !== bin[(N - 1 - y) * N + x]) diff++;
+                if (!v) continue;
+                if (x === 0 || y === 0 || x === N - 1 || y === N - 1) per++;
+                else if (!bin[y * N + x - 1] || !bin[y * N + x + 1] ||
+                         !bin[(y - 1) * N + x] || !bin[(y + 1) * N + x]) per++;
+            }
+        }
+        var sym = 1 - diff / (2 * N * N);
+        var compact = per > 0 ? (4 * Math.PI * m00) / (per * per) : 0;
+
+        return {
+            key: 'hu', name: '形状特征', tag: 'Hu 矩', dims: HU_BINS, values: logged,
+            foot: '对称性 <b>' + sym.toFixed(3) + '</b> · 紧致度 <b>' + compact.toFixed(3) + '</b>'
+        };
+    }
+
+    /* ---------------- FFT：可分离 2D 快速傅里叶 -> 环/扇区能量 ---------------- */
+
+    var TWC = {};
+
+    function twiddle(len) {
+        var t = TWC[len];
+        if (t) return t;
+        var half = len >> 1, cr = new Float64Array(half), ci = new Float64Array(half);
+        for (var k = 0; k < half; k++) {
+            var a = -2 * Math.PI * k / len;
+            cr[k] = Math.cos(a); ci[k] = Math.sin(a);
+        }
+        t = { re: cr, im: ci, half: half };
+        TWC[len] = t;
+        return t;
+    }
+
+    function fft1d(re, im, n) {
+        var i, j, bit, t;
+        for (i = 1, j = 0; i < n; i++) {
+            bit = n >> 1;
+            for (; j & bit; bit >>= 1) { j ^= bit; }
+            j ^= bit;
+            if (i < j) {
+                t = re[i]; re[i] = re[j]; re[j] = t;
+                t = im[i]; im[i] = im[j]; im[j] = t;
+            }
+        }
+        for (var len = 2; len <= n; len <<= 1) {
+            var tw = twiddle(len), half = tw.half;
+            for (i = 0; i < n; i += len) {
+                for (var k = 0; k < half; k++) {
+                    var cr = tw.re[k], ci = tw.im[k];
+                    var ur = re[i + k], ui = im[i + k];
+                    var xr = re[i + k + half], xi = im[i + k + half];
+                    var vr = xr * cr - xi * ci, vi = xr * ci + xi * cr;
+                    re[i + k] = ur + vr; im[i + k] = ui + vi;
+                    re[i + k + half] = ur - vr; im[i + k + half] = ui - vi;
+                }
+            }
+        }
+    }
+
+    function groupFft(g) {
+        var N = SIZE, n2 = N * N, i, x, y;
+        var re = new Float64Array(n2), im = new Float64Array(n2);
+        var mean = 0;
+        for (i = 0; i < n2; i++) mean += g[i];
+        mean /= n2;
+        for (y = 0; y < N; y++) {
+            var wy = 0.5 - 0.5 * Math.cos(2 * Math.PI * y / (N - 1));
+            for (x = 0; x < N; x++) {
+                var wx = 0.5 - 0.5 * Math.cos(2 * Math.PI * x / (N - 1));
+                re[y * N + x] = (g[y * N + x] - mean) * wx * wy;
+            }
+        }
+        var rr = new Float64Array(N), ii = new Float64Array(N);
+        for (y = 0; y < N; y++) {
+            for (x = 0; x < N; x++) { rr[x] = re[y * N + x]; ii[x] = im[y * N + x]; }
+            fft1d(rr, ii, N);
+            for (x = 0; x < N; x++) { re[y * N + x] = rr[x]; im[y * N + x] = ii[x]; }
+        }
+        for (x = 0; x < N; x++) {
+            for (y = 0; y < N; y++) { rr[y] = re[y * N + x]; ii[y] = im[y * N + x]; }
+            fft1d(rr, ii, N);
+            for (y = 0; y < N; y++) { re[y * N + x] = rr[y]; im[y * N + x] = ii[y]; }
+        }
+
+        var RINGS = 8, SECT = 8, half = N >> 1, maxR = N / 2;
+        var ring = new Float64Array(RINGS), sect = new Float64Array(SECT);
+        var ringSum = 0, sectSum = 0, peakP = -1, peakR = 0, rMin = 0.04 * maxR;
+        for (y = 0; y < N; y++) {
+            var dy = y < half ? y : y - N;
+            for (x = 0; x < N; x++) {
+                var dx = x < half ? x : x - N;
+                var p = re[y * N + x] * re[y * N + x] + im[y * N + x] * im[y * N + x];
+                var r = Math.sqrt(dx * dx + dy * dy);
+                if (r < rMin) continue;                   // 剔除极低频与直流
+                var rb = Math.min(RINGS - 1, Math.floor(r / maxR * RINGS));
+                ring[rb] += p; ringSum += p;
+                var ang = Math.atan2(dy, dx);
+                if (ang < 0) ang += Math.PI;              // 频谱中心对称 -> [0, π)
+                var sb = Math.min(SECT - 1, Math.floor(ang / Math.PI * SECT));
+                sect[sb] += p; sectSum += p;
+                if (p > peakP) { peakP = p; peakR = r; }
+            }
+        }
+        var vals = new Array(FFT_BINS), k;
+        for (k = 0; k < RINGS; k++) vals[k] = ringSum > 1e-12 ? ring[k] / ringSum : 0;
+        for (k = 0; k < SECT; k++) vals[RINGS + k] = sectSum > 1e-12 ? sect[k] / sectSum : 0;
+
+        var ent = 0;
+        for (k = 0; k < SECT; k++) { if (vals[RINGS + k] > 1e-9) ent -= vals[RINGS + k] * Math.log(vals[RINGS + k]); }
+        ent /= Math.log(SECT);
+
+        return {
+            key: 'fft', name: '周期结构', tag: 'FFT', dims: FFT_BINS, values: vals,
+            foot: '主频 <b>' + peakR.toFixed(1) + ' cyc</b> · 方向性 <b>' + (1 - ent).toFixed(2) + '</b>'
+        };
+    }
+
+    /* ---------------- 计算与渲染 ---------------- */
+
+    function normGroup(grp) {
+        var v = grp.values, mn = Infinity, mx = -Infinity, i;
+        for (i = 0; i < v.length; i++) { if (v[i] < mn) mn = v[i]; if (v[i] > mx) mx = v[i]; }
+        var rng = mx - mn;
+        grp.norm = v.map(function (q) {
+            return rng > 1e-12 ? (q - mn) / rng : 0.5;
+        });
+        return grp;
+    }
+
+    function compute(src, sw, sh) {
+        var cv = coverCanvas(src, sw, sh);
+        var rgba = cv.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, SIZE, SIZE).data;
+        var n2 = SIZE * SIZE, g = new Float64Array(n2);
+        for (var i = 0; i < n2; i++) {
+            g[i] = 0.299 * rgba[i * 4] + 0.587 * rgba[i * 4 + 1] + 0.114 * rgba[i * 4 + 2];
+        }
+        var groups = [groupLbp(g), groupHsv(rgba), groupHu(g), groupFft(g)];
+        groups.forEach(normGroup);
+
+        // 拼成完整向量（各组归一化值顺序拼接），并对其再做一次整体 min-max
+        var vec = [];
+        groups.forEach(function (grp) { vec = vec.concat(grp.norm); });
+        var totalDims = 0;
+        groups.forEach(function (grp) { totalDims += grp.dims; });
+        return { groups: groups, vector: vec, totalDims: totalDims };
+    }
+
+    function barsHtml(norms, cap) {
+        var out = '';
+        for (var i = 0; i < norms.length; i++) {
+            var pct = 8 + 92 * Math.max(0, Math.min(1, norms[i]));
+            out += '<i class="' + (norms[i] <= 0.02 ? 'is-flat' : '') +
+                   '" style="height:' + (cap ? Math.min(pct, cap) : pct).toFixed(1) + '%"></i>';
+        }
+        return out;
+    }
+
+    function render(res, meta) {
+        last = res;
+        res.ms = meta.ms;
+
+        $('fvStatDims').textContent = res.totalDims;
+        $('fvStatMs').textContent = meta.ms.toFixed(0) + ' ms';
+        $('fvCardsNote').innerHTML = esc(meta.label || '本次结果') + ' · ' +
+            res.groups.map(function (grp) { return grp.tag + ' ' + grp.dims; }).join(' / ');
+
+        res.groups.forEach(function (grp) {
+            var card = document.querySelector('.fv-card[data-fv="' + grp.key + '"]');
+            if (!card) return;
+            card.querySelector('.fv-bars').innerHTML = barsHtml(grp.norm);
+            card.querySelector('.fv-card-f').innerHTML = grp.foot;
+        });
+
+        var head = res.vector.slice(0, VEC_HEAD);
+        $('fvVecNote').textContent = '归一化后前 ' + head.length + ' 维（共 ' + res.totalDims + ' 维）';
+        var code = $('fvVecCode');
+        code.classList.remove('is-idle');
+        var rows = [];
+        for (var i = 0; i < head.length; i += 8) {
+            rows.push(head.slice(i, i + 8).map(function (v) { return v.toFixed(2); }).join(', '));
+        }
+        code.textContent = '[ ' + rows[0] + ',\n  ' + rows.slice(1).join(',\n  ') + ' ]';
+        $('fvVecBars').innerHTML = barsHtml(head);
+    }
+
+    function renderIdle() {
+        last = null;
+        $('fvStatDims').textContent = '—';
+        $('fvStatMs').textContent = '—';
+        $('fvCardsNote').textContent = '等待提取 · 选图后自动计算';
+        document.querySelectorAll('.fv-card').forEach(function (card) {
+            card.querySelector('.fv-bars').innerHTML = '';
+            card.querySelector('.fv-card-f').innerHTML = '<span class="fv-empty">尚未提取</span>';
+        });
+        $('fvVecNote').textContent = '归一化后前 24 维';
+        var code = $('fvVecCode');
+        code.classList.add('is-idle');
+        code.textContent = '[ 等待提取 ]';
+        $('fvVecBars').innerHTML = '';
+    }
+
+    function setBusy(on) {
+        pending = on;
+        var d = $('fvDrop');
+        if (on) d.classList.add('is-busy');
+        else d.classList.remove('is-busy');
+    }
+
+    function previewObjectUrl(url) {
+        var img = $('fvPreview');
+        img.src = url;
+        $('fvDrop').classList.add('has-img');
+    }
+
+    function releaseObjectUrl() {
+        if (curObjectUrl) {
+            try { URL.revokeObjectURL(curObjectUrl); } catch (e) { /* 忽略 */ }
+            curObjectUrl = null;
+        }
+    }
+
+    function reportImage(name, sw, sh, bytes) {
+        $('fvDropMeta').innerHTML = '<b>' + esc(name) + '</b><br>' +
+            sw + ' × ' + sh + ' px' +
+            (bytes ? ' · ' + (bytes / 1024).toFixed(0) + ' KB' : '') +
+            ' · 分析分辨率 ' + SIZE + ' × ' + SIZE;
+    }
+
+    function feedImage(img, label, name, bytes, objectUrl) {
+        var sw = img.naturalWidth || img.width, sh = img.naturalHeight || img.height;
+        if (!sw || !sh) { toast('这张图读不出尺寸，换一张试试'); return; }
+        if (objectUrl) previewObjectUrl(objectUrl);
+        reportImage(name || label, sw, sh, bytes);
+        setBusy(true);
+        var my = ++seq;
+        setTimeout(function () {
+            if (my !== seq) return;
+            var t0 = (window.performance || Date).now();
+            try {
+                var res = compute(img, sw, sh);
+                var ms = (window.performance || Date).now() - t0;
+                setBusy(false);
+                render(res, { ms: ms, label: label });
+            } catch (err) {
+                setBusy(false);
+                toast('特征提取失败：' + (err && err.message ? err.message : err));
+            }
+        }, 24);
+    }
+
+    /* ---------------- 输入：拖拽 / 选择文件 / 示例 ---------------- */
+
+    function handleFile(file) {
+        if (!file) return;
+        if (file.type && file.type.indexOf('image/') !== 0) {
+            toast('只支持图片文件（JPG / PNG 等）');
+            return;
+        }
+        if (file.size > MAX_BYTES) {
+            toast('图片超过 10MB，请先压缩后再试');
+            return;
+        }
+        var url = URL.createObjectURL(file);
+        releaseObjectUrl();
+        curObjectUrl = url;
+        var img = new Image();
+        img.onload = function () {
+            feedImage(img, '本地图片', file.name, file.size, url);
+        };
+        img.onerror = function () {
+            URL.revokeObjectURL(url);
+            toast('这张图加载失败，换一张试试');
+        };
+        img.src = url;
+    }
+
+    function loadUrl(url) {
+        return new Promise(function (resolve, reject) {
+            var img = new Image();
+            img.onload = function () {
+                feedImage(img, '示例纹样', url.split('/').pop(), 0, url);
+                resolve(last);
+            };
+            img.onerror = function () { reject(new Error('图片加载失败：' + url)); };
+            img.src = url;
+        });
+    }
+
+    function initSamples() {
+        var box = $('fvSamples'), tip = $('fvSampleTip');
+        var list = (window.IMPORTED_PATTERNS || []).filter(function (p) {
+            return p && p.imageUrl;
+        });
+        if (!list.length) {
+            tip.textContent = '纹样库未就绪，可拖入自己的图片';
+            return;
+        }
+        var step = Math.max(1, Math.floor(list.length / 4)), picks = [], i;
+        for (i = 0; i < 4 && i * step < list.length; i++) picks.push(list[i * step]);
+
+        picks.forEach(function (p, idx) {
+            var d = document.createElement('div');
+            d.className = 'fv-sample-thumb' + (idx === 0 ? ' on' : '');
+            d.setAttribute('data-src', p.imageUrl);
+            d.innerHTML = '<img src="' + esc(p.imageUrl) + '" alt="" loading="lazy" decoding="async">' +
+                '<span class="fv-sample-name">' + esc(p.name || p.code || '纹样') + '</span>';
+            var im = d.querySelector('img');
+            im.addEventListener('error', function () {
+                d.classList.add('is-off');
+                d.style.background = '#1b1b32';
+                d.querySelector('img').style.display = 'none';
+            });
+            d.addEventListener('click', function () {
+                if (d.classList.contains('is-off')) { toast('这张示例图没能加载，试试拖入自己的图片'); return; }
+                document.querySelectorAll('.fv-sample-thumb').forEach(function (o) { o.classList.remove('on'); });
+                d.classList.add('on');
+                loadUrl(p.imageUrl).catch(function (e) { toast(e.message); });
+            });
+            box.appendChild(d);
+        });
+        tip.textContent = '点一张，直接跑一遍真实特征';
+    }
+
+    /* ---------------- 绑定 ---------------- */
+
+    function init() {
+        var drop = $('fvDrop'), fileEl = $('fvFile');
+        if (!drop || !fileEl) return;
+
+        drop.addEventListener('click', function () { fileEl.click(); });
+        drop.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileEl.click(); }
+        });
+        ['dragenter', 'dragover'].forEach(function (ev) {
+            drop.addEventListener(ev, function (e) {
+                e.preventDefault();
+                if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+                drop.classList.add('is-over');
+            });
+        });
+        ['dragleave', 'dragend'].forEach(function (ev) {
+            drop.addEventListener(ev, function () { drop.classList.remove('is-over'); });
+        });
+        drop.addEventListener('drop', function (e) {
+            e.preventDefault();
+            drop.classList.remove('is-over');
+            var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+            if (f) handleFile(f);
+        });
+        fileEl.addEventListener('change', function () {
+            if (fileEl.files && fileEl.files[0]) handleFile(fileEl.files[0]);
+            fileEl.value = '';
+        });
+
+        $('fvRunBtn').addEventListener('click', function () {
+            var img = $('fvPreview');
+            if (!img.src) { toast('请先拖入或选择一张纹样图片'); return; }
+            var probe = new Image();
+            probe.onload = function () { feedImage(probe, '重新提取', null, 0, img.src); };
+            probe.onerror = function () { toast('图片已失效，请重新选择'); };
+            probe.src = img.src;
+        });
+
+        $('fvResetBtn').addEventListener('click', function () {
+            seq++;
+            setBusy(false);
+            releaseObjectUrl();
+            var img = $('fvPreview');
+            img.removeAttribute('src');
+            $('fvDrop').classList.remove('has-img');
+            $('fvDropMeta').innerHTML = '';
+            renderIdle();
+            toast('已重置');
+        });
+
+        renderIdle();
+        initSamples();
+    }
+
+    window.FVFeature = {
+        SIZE: SIZE,
+        loadUrl: loadUrl,
+        handleFile: handleFile,
+        reset: function () { $('fvResetBtn').click(); },
+        getLast: function () { return last; },
+        extractFromImage: function (img) {
+            var sw = img.naturalWidth || img.width, sh = img.naturalHeight || img.height;
+            var t0 = (window.performance || Date).now();
+            var res = compute(img, sw, sh);
+            res.ms = (window.performance || Date).now() - t0;
+            return res;
+        }
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
 
 <!-- 纹样详情 -->
 <div id="libDetail" onclick="if(event.target===this){libCloseDetail();}">
