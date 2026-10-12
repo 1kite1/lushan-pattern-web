@@ -596,6 +596,7 @@
 .cv-sw{width:30px;height:30px;border-radius:9px;cursor:pointer;border:2px solid transparent;transition:.16s;}
 .cv-sw.on{border-color:#fff;transform:scale(1.06);}
 .cv-chips{display:flex;flex-wrap:wrap;gap:7px;}
+.cv-ai-models{margin:-3px 0 8px;}
 .cv-chip{padding:6px 12px;border-radius:999px;border:1px solid #3a3a5c;background:#1a1a2e;
   font-size:12.5px;color:#a0a0b8;cursor:pointer;transition:.16s;}
 .cv-chip:hover{background:#252542;color:#fff;}
@@ -1739,16 +1740,6 @@
     }
 
     // 库特征缓存（localStorage）
-    // 带超时的图片加载，避免单张图片加载失败导致预热永久卡死
-    function loadImageWithTimeout(src, ms) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            const timer = setTimeout(() => { img.src = ''; reject(new Error('load timeout: ' + src)); }, ms || 15000);
-            img.onload = () => { clearTimeout(timer); resolve(img); };
-            img.onerror = (e) => { clearTimeout(timer); reject(new Error('load error: ' + src)); };
-            img.src = src;
-        });
-    }
     const LIB_FEATURES_KEY = 'libFeatures_v7';  // v6: 5固定裁剪(抗裁剪偏移)+pHash归一化+改进autoCropRect
     var _libFeatures = null;
     async function getLibFeatures() {
@@ -1760,7 +1751,6 @@
             if (c) { _libFeatures = JSON.parse(c); if (_libFeatures && Object.keys(_libFeatures).length >= patterns.length) return _libFeatures; }
         } catch (e) {}
         _libFeatures = {};
-        let _done = 0, _total = patterns.length;
         for (const p of patterns) {
             if (!p.imageUrl) continue;
             const _urls = (Array.isArray(p.imageUrls) && p.imageUrls.length) ? p.imageUrls : [p.imageUrl];
@@ -1772,8 +1762,6 @@
                 } catch (e) { console.warn('特征提取失败/跳过', p.id, _u, e.message || e); }
             }
             if (_feats.length) _libFeatures[p.id] = _feats;
-            _done++;
-            try { window._warmProgress = Math.round(_done / _total * 100); } catch (e) {}
         }
         try { localStorage.setItem(LIB_FEATURES_KEY, JSON.stringify(_libFeatures)); } catch (e) {}
         return _libFeatures;
@@ -3073,179 +3061,87 @@ async function segmentPattern(img) {
         <div class="tv-head-in">
             <button class="tv-back" onclick="setTopView('trace')">← 返回纹鉴</button>
             <div class="tv-brand">纹样<em>二次创作</em></div>
-            <div class="tv-actions">
-                <button class="tv-btn" id="cvImportBtn" title="用本地图片当母题">📁 导入源纹样</button>
-                <input type="file" id="cvImportFile" accept="image/*" style="display:none">
-                <button class="tv-btn" id="cvRandomBtn" title="随机换一套参数">🎲 随机灵感</button>
-                <button class="tv-btn" id="cvSaveBtn" title="存进浏览器本地">💾 保存到最近创作</button>
-                <button class="tv-btn primary" id="cvExportBtn" title="导出 PNG 设计稿">⬇ 导出设计稿</button>
-            </div>
         </div>
     </div>
     <div class="tv-wrap">
-        <section class="tv-hero">
-            <span class="tv-eyebrow">数字文创 · 纹样再造</span>
-            <h1>让传统纹样<span>长出新枝</span></h1>
-            <p>点选源纹样，调配色、换构图、拖密度——画布即时重绘，满意了就存稿或导出成设计稿。全程本地渲染，不联网、不上传。</p>
-            <div class="tv-stats">
-                <div class="s"><div class="n">4</div><div class="l">示例母题</div></div>
-                <div class="s"><div class="n">5</div><div class="l">预设配色</div></div>
-                <div class="s"><div class="n">4</div><div class="l">构图范式</div></div>
-                <div class="s"><div class="n" id="cvStatWorks">0</div><div class="l">已存创作</div></div>
+
+        <div class="cv-pane" data-pane="ai">
+            <div class="tv-bar">
+                <span class="t">AI 创作台</span>
+                <span class="c" id="cvAiChanLine">未配置 · 在右侧选服务商、填一个 Key 就能出图</span>
             </div>
-        </section>
 
-        <div class="cv-modes" id="cvModes">
-            <button class="cv-mode on" type="button" data-mode="studio">🧰 工具箱</button>
-            <button class="cv-mode" type="button" data-mode="ai">✨ AI创作</button>
-            <span class="cv-mode-hint" id="cvModeHint">工具箱里自己调参数；切到 AI创作，写一句描述让本地引擎给你出几稿。</span>
-        </div>
-
-        <div class="cv-pane" data-pane="studio">
-        <div class="tv-bar">
-            <span class="t">创作工作台</span>
-            <span class="c" id="cvStateLine">本地 canvas 渲染 · 示例母题，未接入云端纹样库</span>
-        </div>
-
-        <div class="cv-studio">
-            <aside class="cv-src">
-                <div class="tv-panel-h">源 纹 样</div>
-                <div class="cv-src-list" id="cvSrcList"></div>
-                <button class="cv-src-reset" id="cvSrcReset">↺ 换回内置母题</button>
-                <div class="cv-src-note">四个母题为演示用几何提取，非馆藏原件；导入本地图片后以它为母题重复排布。</div>
-            </aside>
-
-            <div class="cv-stage">
-                <div class="cv-canvas">
-                    <canvas id="cvCanvas" width="960" height="720"></canvas>
+            <div class="cv-ai-prompt">
+                <textarea class="cv-ai-ta" id="cvAiPrompt" rows="3" placeholder="描述你想要的纹样… 例如：靛蓝底、八角团花、密布四方连续、古朴双钩"></textarea>
+                <div class="cv-ai-prow">
+                    <div class="cv-chips" id="cvAiChips"></div>
+                    <span class="cv-ai-cnt" id="cvAiCount">0 字</span>
                 </div>
-                <div class="cv-tools" id="cvTools">
-                    <button class="cv-tool on" data-group="color">🎨 配色</button>
-                    <button class="cv-tool" data-group="layout">▦ 构图</button>
-                    <button class="cv-tool" data-group="stroke">✎ 笔触</button>
-                    <button class="cv-tool" data-group="ground">🖼 底纹</button>
-                    <button class="cv-tool ghost" id="cvResetBtn">↺ 重置</button>
+                <div class="cv-ai-tools">
+                    <span class="sp"></span>
+                    <button class="tv-btn" type="button" id="cvAiExample">🎲 来点灵感</button>
+                    <button class="cv-ai-gen" type="button" id="cvAiGen">✨ 生成纹样</button>
                 </div>
             </div>
 
-            <aside class="cv-ctrl">
-                <div class="tv-panel-h">参 数</div>
-                <div class="cv-group cv-hot" data-group="color">
-                    <div class="cv-label">配色方案 <b class="cv-val" id="cvColorName">靛蓝新解</b></div>
-                    <div class="cv-swatches" id="cvSwatches"></div>
-                </div>
-                <div class="cv-group" data-group="layout">
-                    <div class="cv-label">构图范式</div>
-                    <div class="cv-chips" id="cvComps"></div>
-                </div>
-                <div class="cv-group" data-group="layout">
-                    <div class="cv-label">纹样密度 <b class="cv-val" id="cvDensityVal">62%</b></div>
-                    <input class="cv-range" type="range" id="cvDensity" min="20" max="100" step="1" value="62">
-                </div>
-                <div class="cv-group" data-group="stroke">
-                    <div class="cv-label">线条权重 <b class="cv-val" id="cvWeightVal">中等</b></div>
-                    <input class="cv-range" type="range" id="cvWeight" min="10" max="100" step="1" value="45">
-                </div>
-                <div class="cv-group" data-group="stroke">
-                    <div class="cv-label">笔法</div>
-                    <div class="cv-chips" id="cvStrokes"></div>
-                </div>
-                <div class="cv-group" data-group="ground">
-                    <div class="cv-label">底纹</div>
-                    <div class="cv-chips" id="cvGrounds"></div>
-                </div>
-                <div class="cv-group" data-group="color">
-                    <div class="cv-label">色彩饱和度 <b class="cv-val" id="cvSatVal">78%</b></div>
-                    <input class="cv-range" type="range" id="cvSat" min="20" max="100" step="1" value="78">
-                </div>
-            </aside>
-        </div>
+            <div class="cv-ai-only">
+                <section class="cv-ai-main">
+                    <div class="tv-panel-h">出 图 结 果</div>
 
-        </div>
+                    <div class="cv-ai-empty" id="cvAiEmpty">
+                        <b>还没有出图</b>
+                        <span>在上面写一句描述，点「✨ 生成纹样」；真图返回后会显示在这里，点图看大图。</span>
+                    </div>
 
-<div class="cv-pane cv-pane-off" data-pane="ai">
-    <div class="tv-bar">
-        <span class="t">AI 创作台</span>
-        <span class="c" id="cvAiChanLine">通道：本地引擎 · 离线运行，不上传、无调用费用</span>
-    </div>
+                    <div class="cv-pane-off" id="cvAiImgsWrap">
+                        <div class="cv-ai-read-h" id="cvAiImgsHead">云端出图</div>
+                        <div class="cv-ai-cloud-imgs" id="cvAiImgs"></div>
+                        <div class="cv-ai-opts">
+                            <button class="cv-tool" type="button" id="cvAiDl">💾 下载全部</button>
+                            <button class="cv-tool ghost" type="button" id="cvAiClear">🧹 清空结果</button>
+                        </div>
+                    </div>
 
-    <div class="cv-ai-prompt">
-        <textarea class="cv-ai-ta" id="cvAiPrompt" rows="3" placeholder="描述你想要的纹样… 例如：靛蓝底、八角团花、密布、古朴双钩"></textarea>
-        <div class="cv-ai-prow">
-            <div class="cv-chips" id="cvAiChips"></div>
-            <span class="cv-ai-cnt" id="cvAiCount">0 字</span>
-        </div>
-        <div class="cv-ai-tools">
-            <span class="lbl">变体数量</span>
-            <div class="cv-chips" id="cvAiNums"></div>
-            <span class="lbl" style="margin-left:6px;">创意自由度</span>
-            <div class="cv-chips" id="cvAiFrees"></div>
-            <span class="sp"></span>
-            <button class="tv-btn" type="button" id="cvAiExample">🎲 来点灵感</button>
-            <button class="cv-ai-gen" type="button" id="cvAiGen">✨ 生成纹样</button>
-        </div>
-    </div>
+                    <div class="cv-lightbox" id="cvLightbox">
+                        <button class="cv-lb-close" type="button" id="cvLbClose" title="关闭">✕</button>
+                        <img id="cvLbImg" alt="AI 出图大图">
+                        <div class="cv-lb-bar">
+                            <button class="cv-lb-btn primary" type="button" id="cvLbSave">💾 保存这张图</button>
+                            <button class="cv-lb-btn" type="button" id="cvLbClose2">关闭</button>
+                        </div>
+                    </div>
+                </section>
 
-    <div class="cv-studio cv-ai-body">
-        <aside class="cv-src">
-            <div class="tv-panel-h">候 选 稿</div>
-            <div class="cv-ai-cands" id="cvAiCands"></div>
-            <div class="cv-ai-note" id="cvAiCandNote">点右上「✨ 生成纹样」后，这里会出现多稿候选；点一下即可放大预览。</div>
-        </aside>
+                <aside class="cv-ai-side">
+                    <div class="tv-panel-h">模 型 配 置</div>
+                    <div class="cv-ai-chan-line" id="cvAiChanBox">当前状态：<b>未配置</b></div>
 
-        <div class="cv-stage">
-            <div class="cv-canvas cv-ai-canvas">
-                <canvas id="cvAiCanvas" width="960" height="720"></canvas>
-            </div>
-            <div class="cv-ai-opts">
-                <button class="cv-tool" type="button" id="cvAiAdopt">✓ 采用到工具箱</button>
-                <button class="cv-tool" type="button" id="cvAiSave">💾 存稿</button>
-                <button class="cv-tool" type="button" id="cvAiExport">⬇ 导出 PNG</button>
-                <button class="cv-tool ghost" type="button" id="cvAiAgain">🎲 换个种子</button>
-            </div>
-            <div class="cv-ai-read">
-                <div class="cv-ai-read-h">描述解析 · 本地词典逐词匹配，不发任何网络请求</div>
-                <div class="cv-ai-read-i" id="cvAiRead"></div>
-            </div>
-            <div class="cv-ai-read cv-pane-off" id="cvAiImgsWrap">
-                <div class="cv-ai-read-h">云端通道返回 · 点图可下载（本轮未绑定厂商，需自填端点）</div>
-                <div class="cv-ai-cloud-imgs" id="cvAiImgs"></div>
+                    <div class="cv-label">服务商</div>
+                    <div class="cv-chips" id="cvAiProvs"></div>
+                    <div class="cv-ai-keyhint" id="cvAiKeyHint"></div>
+
+                    <input class="cv-ai-in" id="cvAiEp" placeholder="端点 URL，如 https://…/v1/images/generations">
+                    <input class="cv-ai-in" id="cvAiKey" placeholder="API Key（sk- 开头那串）" autocomplete="off">
+                    <input class="cv-ai-in" id="cvAiModel" placeholder="模型名，如 Kwai-Kolors/Kolors">
+                    <div class="cv-chips cv-ai-models" id="cvAiModels"></div>
+                    <button class="tv-btn" type="button" id="cvAiCloudSave" style="width:100%;">保存配置</button>
+
+                    <div class="tip">
+                        选<b>硅基流动</b>时端点与模型已自动填好，只差一个 Key —— 快手 Kolors 模型<b>免费</b>，
+                        中文原生，一张 10~60 秒。<br>
+                        各家协议并不相同（硅基流动返回 images[].url，智谱返回 data[].url），本页按服务商分别适配，
+                        取不到还会递归扫描整个响应兜底。<br>
+                        本页只走云端出图：Key 只存在本机浏览器，只发往你填的那个端点。没填 Key、网络不通、
+                        被跨域拦、返回异常、超时 150 秒 —— 任一情况都会把原因直接报出来，不会偷偷出图。
+                    </div>
+
+                    <div class="cv-ai-note">
+                        <b>关于图片</b>：返回的是生图模型的真实位图，不是本地绘制，没法反解成参数。
+                        点图放大预览；保存走悬浮图标或「💾 下载全部」，也可右键、长按另存。
+                    </div>
+                </aside>
             </div>
         </div>
-
-        <aside class="cv-ctrl">
-            <div class="tv-panel-h">通 道 与 说 明</div>
-            <div class="cv-ai-chan-line" id="cvAiChanBox">当前通道：<b>本地引擎</b>（离线）</div>
-            <div class="cv-group">
-                <div class="cv-label">生成通道</div>
-                <div class="cv-chips" id="cvAiChans"></div>
-            </div>
-            <div class="cv-ai-cloud" id="cvAiCloud">
-                <div class="cv-label" style="margin-bottom:7px;">云端通道配置（预留，未绑定厂商）</div>
-                <input class="cv-ai-in" id="cvAiEp" placeholder="端点 URL，如 https://…/v1/images/generations">
-                <input class="cv-ai-in" id="cvAiKey" placeholder="API Key（Bearer）" autocomplete="off">
-                <input class="cv-ai-in" id="cvAiModel" placeholder="模型名，如 cogview-3">
-                <button class="tv-btn" type="button" id="cvAiCloudSave" style="width:100%;">保存云端配置</button>
-                <div class="tip">
-                    本轮<b>未绑定任何具体厂商</b>：只按 OpenAI 图像接口的通用格式发请求（POST 到你填的端点，body 带 model / prompt / n / size / response_format），
-                    并识别返回里的 data[].b64_json 与 data[].url。<br>
-                    未填端点或 Key、网络不通、跨域被拦、返回异常，任一情况都会自动回落到本地引擎，并在上方标注原因。<br>
-                    Key 只存在本机浏览器里，除了你填的那个端点，不会发往任何其他地方。
-                </div>
-            </div>
-            <div class="cv-ai-note">
-                <b>本地引擎</b>：把描述解析成参数意图，再用带种子的伪随机算法推演多稿变体，最后由工作台同一套 canvas 引擎绘制。<br>
-                采用后的方案会以普通作品存进下方「最近创作」，可随时载回工具箱继续微调。
-            </div>
-        </aside>
-    </div>
-</div>
-
-        <div class="tv-bar" style="margin-top:34px;">
-            <span class="t">最近创作</span>
-            <span class="c" id="cvWorksMeta">还没有作品</span>
-        </div>
-        <div class="cv-works" id="cvWorks"></div>
 
         <div class="tv-foot">
             二次创作成果仅作设计研究参考 · 商用前请核实纹样来源与版权归属
@@ -3347,1008 +3243,26 @@ async function segmentPattern(img) {
 
 <!-- ===== 顶层视图：二次创作 / 特征提取 ===== -->
 
-<!-- ===== 二次创作工作台：交互层（样式 + 引擎）===== -->
-<style>
-/* ===== 二次创作工作台（交互版）——2026-10-08 由静态展示页升级 =====
-   自成一块，不并入「资源库样式块」，避免被 patch_library_dark.py 的真相源（lib_css.txt）回滚。 */
-
-/* 画布 */
-#createView .cv-canvas{display:block;padding:0;border-style:solid;background:#101024;}
-#cvCanvas{display:block;width:100%;height:100%;border-radius:12px;}
-
-/* 源纹样：缩略图画布 + 复位按钮 */
-.cv-src-thumb{background:none!important;}
-button.cv-src-reset{margin-top:12px;width:100%;height:34px;border-radius:10px;border:1px dashed #3a3a5c;
-  background:transparent;color:#7d7da0;font-size:12.5px;cursor:pointer;transition:.16s;font-family:inherit;}
-button.cv-src-reset:hover{border-color:#a78bfa;color:#c4b5fd;background:rgba(167,139,250,.08);}
-.cv-src-note{font-size:11.5px;color:#6b6b8c;line-height:1.7;margin-top:10px;}
-
-/* 工具条：幽灵按钮（重置） */
-.cv-tool.ghost{border-style:dashed;color:#7d7da0;}
-.cv-tool.ghost:hover{color:#c4b5fd;border-color:#a78bfa;}
-
-/* 参数组：被工具条选中时高亮 */
-#createView .cv-group{padding:11px 12px 13px;border:1px solid transparent;border-radius:13px;
-  margin-bottom:12px;transition:border-color .2s,background .2s;}
-#createView .cv-group.cv-hot{border-color:rgba(167,139,250,.45);background:rgba(167,139,250,.07);}
-
-/* 滑杆 */
-.cv-range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:20px;margin:2px 0 0;
-  background:transparent;cursor:pointer;}
-.cv-range::-webkit-slider-runnable-track{height:6px;border-radius:999px;
-  background:linear-gradient(90deg,#818cf8 0 var(--p,50%),#252542 var(--p,50%) 100%);}
-.cv-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;margin-top:-5px;
-  border-radius:50%;border:2px solid #0f0f1e;background:#c4b5fd;
-  box-shadow:0 0 0 1px rgba(167,139,250,.6);}
-.cv-range:active::-webkit-slider-thumb{background:#fff;}
-.cv-range:focus{outline:none;}
-
-/* 最近创作 */
-.cv-works-empty{grid-column:1/-1;border:1.5px dashed #3a3a5c;border-radius:16px;padding:30px 20px;
-  text-align:center;font-size:13px;color:#6b6b8c;line-height:1.9;}
-.cv-work-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-.cv-work-del{position:absolute;top:8px;right:8px;width:24px;height:24px;padding:0;border:0;border-radius:50%;
-  background:rgba(15,15,30,.78);color:#ffb4b4;font-size:12px;line-height:1;cursor:pointer;z-index:2;
-  opacity:0;transition:opacity .16s;}
-.cv-work:hover .cv-work-del{opacity:1;}
-.cv-work-del:hover{background:#4a1f2a;color:#fff;}
-.cv-work.on{border-color:#a78bfa;box-shadow:0 0 0 1px rgba(167,139,250,.5);}
-
-@media (max-width:900px){
-  .cv-work-del{opacity:1;}
-  #createView .cv-group{padding:10px;}
-}
-</style>
-<script>
-/* ===== 二次创作工作台：本地 canvas 渲染引擎（无需联网、不接后端） =====
-   2026-10-08：把「二次创作」从静态展示页升级为可交互工作台 ——
-   点选母题 / 换配色 / 切构图 / 换底纹 / 换笔法 / 拖密度·权重·饱和度，
-   画布即时重绘；支持导入本地图片当母题、导出 PNG 设计稿、localStorage 存稿。
-
-   ⚠️ 整块独立（自带 <style> + <script>），刻意不并入「库样式块 / 库 JS 块」，
-      以免被 patch_library_dark.py / patch_library_nav.py 的真相源（lib_css.txt / lib_js.txt）静默回滚。 */
-(function () {
-    'use strict';
-
-    // ---------------------------------------------------------------- 素材表
-
-    var PALETTES = [
-        { name: '靛蓝新解', bg: '#14142a', ink: '#e2e6ff', a: '#a78bfa', b: '#818cf8', c: '#4a5fa8' },
-        { name: '藕荷春信', bg: '#241530', ink: '#ffe6fb', a: '#f0abfc', b: '#c084fc', c: '#8b5fa8' },
-        { name: '青碧织雨', bg: '#0f2328', ink: '#dffbff', a: '#67e8f9', b: '#38bdf8', c: '#2b7c94' },
-        { name: '暖棕旧锦', bg: '#2b1e10', ink: '#ffeacb', a: '#fcd34d', b: '#fb923c', c: '#a1561f' },
-        { name: '苔绿山间', bg: '#132119', ink: '#e3ffe9', a: '#6ee7b7', b: '#34d399', c: '#2f7a52' }
-    ];
-
-    var MOTIFS = [
-        { key: 'octagon', short: '八角花', name: '侗锦 · 八角花', meta: '湖南通道 · 清代' },
-        { key: 'seal', short: '盘王印', name: '瑶锦 · 盘王印', meta: '广西金秀 · 民国' },
-        { key: 'hook', short: '四十八勾', name: '土家锦 · 四十八勾', meta: '湖南龙山 · 近代' },
-        { key: 'butterfly', short: '蝴蝶妈妈', name: '苗锦 · 蝴蝶妈妈', meta: '贵州台江 · 清代' }
-    ];
-
-    var COMPS = [
-        { id: 'grid', name: '四方连续' },
-        { id: 'band', name: '二方连续' },
-        { id: 'radial', name: '中心对称' },
-        { id: 'scatter', name: '自由散点' }
-    ];
-
-    var GROUNDS = [
-        { id: 'none', name: '纯色' },
-        { id: 'grid45', name: '斜网格' },
-        { id: 'dots', name: '圆点阵列' },
-        { id: 'weave', name: '织格' },
-        { id: 'twill', name: '斜纹' }
-    ];
-
-    var STROKES = [
-        { id: 'solid', name: '实线' },
-        { id: 'double', name: '双钩' },
-        { id: 'dotted', name: '点线' },
-        { id: 'filled', name: '填彩' }
-    ];
-
-    var DEFAULTS = {
-        motif: 0, palette: 0, comp: 'grid', ground: 'grid45', stroke: 'solid',
-        density: 62, weight: 45, sat: 78
-    };
-
-    var LS_KEY = 'lushan_cv_works_v1';
-    var MAX_WORKS = 12;
-
-    // ---------------------------------------------------------------- 状态
-
-    var state = mix(DEFAULTS);
-
-    function mix(o) {
-        var r = {}, k;
-        for (k in DEFAULTS) r[k] = (o && o[k] !== undefined) ? o[k] : DEFAULTS[k];
-        return r;
-    }
-
-    var cv = null, ctx = null, pending = 0, tileCanvas = null, importedName = '';
-
-    // ---------------------------------------------------------------- 颜色工具
-
-    function clamp01(v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
-
-    function hex2hsl(hex) {
-        var h = String(hex).replace('#', '');
-        if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
-        var r = parseInt(h.substr(0, 2), 16) / 255,
-            g = parseInt(h.substr(2, 2), 16) / 255,
-            b = parseInt(h.substr(4, 2), 16) / 255;
-        var mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
-        var l = (mx + mn) / 2, s = 0, hue = 0;
-        if (d) {
-            s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
-            if (mx === r) hue = (g - b) / d + (g < b ? 6 : 0);
-            else if (mx === g) hue = (b - r) / d + 2;
-            else hue = (r - g) / d + 4;
-            hue /= 6;
-        }
-        return { h: hue, s: s, l: l };
-    }
-
-    function hsl2hex(c) {
-        function f(p, q, t) {
-            if (t < 0) t += 1;
-            if (t > 1) t -= 1;
-            if (t < 1 / 6) return p + (q - p) * 6 * t;
-            if (t < 1 / 2) return q;
-            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-            return p;
-        }
-        function to(x) { var v = Math.round(clamp01(x) * 255).toString(16); return v.length < 2 ? '0' + v : v; }
-        var r, g, b;
-        if (!c.s) { r = g = b = c.l; }
-        else {
-            var q = c.l < 0.5 ? c.l * (1 + c.s) : c.l + c.s - c.l * c.s;
-            var p = 2 * c.l - q;
-            r = f(p, q, c.h + 1 / 3); g = f(p, q, c.h); b = f(p, q, c.h - 1 / 3);
-        }
-        return '#' + to(r) + to(g) + to(b);
-    }
-
-    function satur(hex, m) {
-        var c = hex2hsl(hex);
-        c.s = clamp01(c.s * m);
-        return hsl2hex(c);
-    }
-
-    function rgba(hex, al) {
-        var h = String(hex).replace('#', '');
-        if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
-        return 'rgba(' + parseInt(h.substr(0, 2), 16) + ',' + parseInt(h.substr(2, 2), 16) +
-            ',' + parseInt(h.substr(4, 2), 16) + ',' + al + ')';
-    }
-
-    function resolveColors(pal, sat) {
-        var m = sat / 78;
-        return {
-            bg: satur(pal.bg, m), ink: satur(pal.ink, m),
-            a: satur(pal.a, m), b: satur(pal.b, m), c: satur(pal.c, m)
-        };
-    }
-
-    function rng(seed) {
-        var s = (seed >>> 0) || 1;
-        return function () {
-            s = (s * 1664525 + 1013904223) >>> 0;
-            return s / 4294967296;
-        };
-    }
-
-    function byId(list, key, val) {
-        for (var i = 0; i < list.length; i++) if (list[i][key] === val) return list[i];
-        return list[0];
-    }
-
-    function compName(id) { return byId(COMPS, 'id', id).name; }
-    function palName(i) { return PALETTES[i] ? PALETTES[i].name : PALETTES[0].name; }
-
-    // ---------------------------------------------------------------- 母题绘制（归一化在 size×size 方框内）
-
-    function motifPath(g, kind, size, col, lw, stroke) {
-        var r = size / 2, i, a;
-        g.save();
-        g.lineJoin = 'round';
-        g.lineCap = 'round';
-        g.lineWidth = lw;
-
-        if (kind === 'octagon') {
-            for (i = 0; i < 8; i++) {
-                g.save();
-                g.rotate(i * Math.PI / 4);
-                g.beginPath();
-                g.ellipse(0, -r * 0.6, r * 0.17, r * 0.33, 0, 0, Math.PI * 2);
-                g.strokeStyle = i % 2 ? col.a : col.b;
-                g.stroke();
-                g.restore();
-            }
-            g.beginPath(); g.arc(0, 0, r * 0.31, 0, Math.PI * 2);
-            g.strokeStyle = col.ink; g.stroke();
-            g.beginPath();
-            for (i = 0; i < 8; i++) {
-                a = i * Math.PI / 4 - Math.PI / 2;
-                var rr = (i % 2 ? r * 0.26 : r * 0.14);
-                var x = Math.cos(a) * rr, y = Math.sin(a) * rr;
-                if (i) g.lineTo(x, y); else g.moveTo(x, y);
-            }
-            g.closePath(); g.fillStyle = col.ink; g.fill();
-            g.beginPath(); g.arc(0, 0, r * 0.07, 0, Math.PI * 2);
-            g.fillStyle = col.a; g.fill();
-
-        } else if (kind === 'seal') {
-            var sq = [[1.02, 0], [0.74, Math.PI / 4], [0.48, 0], [0.26, Math.PI / 4]];
-            for (i = 0; i < sq.length; i++) {
-                g.save();
-                g.rotate(sq[i][1]);
-                var s2 = r * sq[i][0];
-                g.beginPath(); g.rect(-s2 / 2, -s2 / 2, s2, s2);
-                g.strokeStyle = i % 2 ? col.b : col.ink;
-                g.lineWidth = lw * (i === 0 ? 1.6 : 1);
-                g.stroke();
-                g.restore();
-            }
-            g.beginPath();
-            g.moveTo(-r * 0.34, 0); g.lineTo(r * 0.34, 0);
-            g.moveTo(0, -r * 0.34); g.lineTo(0, r * 0.34);
-            g.strokeStyle = col.a; g.lineWidth = lw * 1.1; g.stroke();
-            g.beginPath(); g.arc(0, 0, r * 0.1, 0, Math.PI * 2);
-            g.fillStyle = col.a; g.fill();
-            for (i = 0; i < 4; i++) {
-                g.save(); g.rotate(i * Math.PI / 2 + Math.PI / 4);
-                g.beginPath(); g.arc(0, -r * 0.86, r * 0.07, 0, Math.PI * 2);
-                g.fillStyle = col.b; g.fill();
-                g.restore();
-            }
-
-        } else if (kind === 'hook') {
-            for (i = 0; i < 4; i++) {
-                g.save();
-                g.rotate(i * Math.PI / 2);
-                g.beginPath();
-                g.moveTo(r * 0.12, -r * 0.14);
-                g.lineTo(r * 0.8, -r * 0.14);
-                g.lineTo(r * 0.8, r * 0.52);
-                g.lineTo(r * 0.42, r * 0.52);
-                g.strokeStyle = i % 2 ? col.a : col.b;
-                g.lineWidth = lw * 1.15;
-                g.stroke();
-                g.beginPath();
-                g.arc(r * 0.5, r * 0.34, r * 0.13, 0.25 * Math.PI, 1.95 * Math.PI);
-                g.strokeStyle = col.ink; g.lineWidth = lw * 0.85; g.stroke();
-                g.restore();
-            }
-            g.beginPath(); g.rect(-r * 0.14, -r * 0.14, r * 0.28, r * 0.28);
-            g.fillStyle = col.ink; g.fill();
-
-        } else { // butterfly
-            var wing = function (sign) {
-                g.save();
-                g.scale(sign, 1);
-                g.beginPath();
-                g.moveTo(r * 0.06, -r * 0.12);
-                g.bezierCurveTo(r * 0.42, -r * 0.92, r * 1.02, -r * 0.86, r * 0.94, -r * 0.28);
-                g.bezierCurveTo(r * 0.88, r * 0.02, r * 0.46, -r * 0.02, r * 0.06, -r * 0.12);
-                g.closePath();
-                g.strokeStyle = col.a; g.stroke();
-                g.fillStyle = rgba(col.a, 0.16); g.fill();
-                g.beginPath();
-                g.moveTo(r * 0.06, r * 0.04);
-                g.bezierCurveTo(r * 0.56, r * 0.12, r * 0.86, r * 0.5, r * 0.58, r * 0.86);
-                g.bezierCurveTo(r * 0.38, r * 1.0, r * 0.16, r * 0.5, r * 0.06, r * 0.04);
-                g.closePath();
-                g.strokeStyle = col.b; g.stroke();
-                g.fillStyle = rgba(col.b, 0.16); g.fill();
-                g.beginPath(); g.arc(r * 0.5, -r * 0.44, r * 0.12, 0, Math.PI * 2);
-                g.fillStyle = col.ink; g.fill();
-                g.beginPath(); g.arc(r * 0.42, r * 0.56, r * 0.085, 0, Math.PI * 2);
-                g.fillStyle = col.ink; g.fill();
-                g.restore();
-            };
-            wing(1); wing(-1);
-            g.beginPath(); g.ellipse(0, r * 0.05, r * 0.07, r * 0.44, 0, 0, Math.PI * 2);
-            g.fillStyle = col.ink; g.fill();
-            g.beginPath(); g.arc(0, -r * 0.46, r * 0.11, 0, Math.PI * 2);
-            g.fillStyle = col.ink; g.fill();
-            g.beginPath();
-            g.moveTo(-r * 0.05, -r * 0.54);
-            g.quadraticCurveTo(-r * 0.3, -r * 0.9, -r * 0.42, -r * 0.84);
-            g.moveTo(r * 0.05, -r * 0.54);
-            g.quadraticCurveTo(r * 0.3, -r * 0.9, r * 0.42, -r * 0.84);
-            g.strokeStyle = col.ink; g.lineWidth = lw * 0.8; g.stroke();
-        }
-
-        g.restore();
-    }
-
-    // 笔法：单次描边 vs 双钩 / 点线 / 填彩
-    function motifStroke(g, kind, size, col, lw, stroke) {
-        if (stroke === 'double') {
-            var u = Math.max(1.4, lw * 0.55);
-            g.save(); g.translate(-u, -u); motifPath(g, kind, size * 0.985, col, lw * 0.7, stroke); g.restore();
-            g.save(); g.translate(u, u); motifPath(g, kind, size * 0.985, col, lw * 0.7, stroke); g.restore();
-            motifPath(g, kind, size, col, lw * 0.5, stroke);
-        } else if (stroke === 'dotted') {
-            g.save();
-            g.setLineDash([Math.max(2, lw * 1.6), Math.max(2.4, lw * 2.1)]);
-            motifPath(g, kind, size, col, lw * 1.25, stroke);
-            g.restore();
-        } else if (stroke === 'filled') {
-            g.save();
-            g.shadowColor = rgba(col.a, 0.5);
-            g.shadowBlur = Math.max(4, size * 0.05);
-            motifPath(g, kind, size, col, lw * 1.5, stroke);
-            g.restore();
-        } else {
-            motifPath(g, kind, size, col, lw, stroke);
-        }
-    }
-
-    function drawTile(g, cx, cy, size, ang, col, lw) {
-        g.save();
-        g.translate(cx, cy);
-        if (ang) g.rotate(ang);
-        if (tileCanvas) {
-            g.globalAlpha = 0.9;
-            g.drawImage(tileCanvas, -size / 2, -size / 2, size, size);
-            g.globalAlpha = 1;
-        } else {
-            motifStroke(g, MOTIFS[state.motif].key, size, col, lw, state.stroke);
-        }
-        g.restore();
-    }
-
-    // ---------------------------------------------------------------- 底纹 / 构图 / 画框 / 落款
-
-    function drawGround(g, W, H, col) {
-        var t = state.ground;
-        if (t === 'none') return;
-        var step = Math.max(16, W / 40), u = W / 960, x, y, d;
-        g.save();
-        g.strokeStyle = col.b; g.fillStyle = col.a;
-        if (t === 'grid45') {
-            g.globalAlpha = 0.3; g.lineWidth = Math.max(1, 1.4 * u);
-            g.beginPath();
-            for (d = -H; d < W + H; d += step) {
-                g.moveTo(d, 0); g.lineTo(d + H, H);
-                g.moveTo(d, 0); g.lineTo(d - H, H);
-            }
-            g.stroke();
-        } else if (t === 'dots') {
-            g.globalAlpha = 0.42;
-            var rr = Math.max(1.3, 2.4 * u);
-            for (y = step / 2; y < H; y += step) {
-                for (x = step / 2; x < W; x += step) {
-                    g.beginPath(); g.moveTo(x + rr, y); g.arc(x, y, rr, 0, Math.PI * 2); g.fill();
-                }
-            }
-        } else if (t === 'weave') {
-            g.globalAlpha = 0.28; g.lineWidth = Math.max(1, 2 * u);
-            g.beginPath();
-            for (x = 0; x < W; x += step) { g.moveTo(x, 0); g.lineTo(x, H); }
-            for (y = 0; y < H; y += step) { g.moveTo(0, y); g.lineTo(W, y); }
-            g.stroke();
-        } else { // twill
-            g.globalAlpha = 0.32; g.lineWidth = Math.max(1, 3 * u);
-            g.beginPath();
-            for (d = -H; d < W + H; d += step) { g.moveTo(d, 0); g.lineTo(d + H, H); }
-            g.stroke();
-        }
-        g.restore();
-    }
-
-    function drawField(g, W, H, col, lw) {
-        var dens = state.density / 100, i, j, k, cx, cy, a, rad, cnt, rnd;
-        g.save();
-        if (state.comp === 'grid') {
-            var n = Math.round(2 + dens * 5);
-            var cols = n, rows = Math.max(2, Math.round(n * H / W));
-            var cw = W / cols, ch = H / rows;
-            for (i = 0; i < rows; i++) {
-                for (j = 0; j < cols; j++) {
-                    drawTile(g, cw * (j + 0.5), ch * (i + 0.5), Math.min(cw, ch) * 0.84,
-                        ((i + j) % 2) * Math.PI / 4, col, lw);
-                }
-            }
-        } else if (state.comp === 'band') {
-            var reps = Math.round(3 + dens * 7);
-            var bw = W / reps, bh = Math.min(H * 0.44, bw * 0.9);
-            for (i = 0; i < reps; i++) {
-                cx = bw * (i + 0.5);
-                drawTile(g, cx, H / 2 - bh * 0.5, bh * 0.92, 0, col, lw);
-                g.save();
-                g.translate(cx, H / 2 + bh * 0.5); g.scale(1, -1);
-                drawTile(g, 0, 0, bh * 0.92, 0, col, lw);
-                g.restore();
-            }
-            g.strokeStyle = col.b; g.globalAlpha = 0.7; g.lineWidth = Math.max(1, lw * 0.8);
-            g.beginPath();
-            g.moveTo(0, H / 2 - bh * 0.98); g.lineTo(W, H / 2 - bh * 0.98);
-            g.moveTo(0, H / 2 + bh * 0.98); g.lineTo(W, H / 2 + bh * 0.98);
-            g.stroke();
-            g.globalAlpha = 1;
-        } else if (state.comp === 'radial') {
-            var rings = Math.round(1 + dens * 2);
-            var base = Math.min(W, H) * 0.27;
-            drawTile(g, W / 2, H / 2, base, 0, col, lw * 1.25);
-            for (k = 1; k <= rings; k++) {
-                rad = base * (0.62 + k * 0.36);
-                cnt = 6 + k * 2;
-                for (j = 0; j < cnt; j++) {
-                    a = j * 2 * Math.PI / cnt + (k % 2 ? Math.PI / cnt : 0);
-                    drawTile(g, W / 2 + Math.cos(a) * rad, H / 2 + Math.sin(a) * rad,
-                        base * (0.36 - k * 0.04), a + Math.PI / 2, col, lw * 0.8);
-                }
-            }
-        } else { // scatter
-            cnt = Math.round(5 + dens * 55);
-            rnd = rng(1000 + state.motif * 977 + state.palette * 31);
-            for (i = 0; i < cnt; i++) {
-                drawTile(g, rnd() * W, rnd() * H, Math.min(W, H) * (0.06 + rnd() * 0.1),
-                    rnd() * Math.PI * 2, col, lw * (0.55 + rnd() * 0.7));
-            }
-        }
-        g.restore();
-    }
-
-    function drawFrame(g, W, H, col, u) {
-        g.save();
-        g.strokeStyle = col.b; g.globalAlpha = 0.8; g.lineWidth = Math.max(1, 1.6 * u);
-        g.strokeRect(1.2 * u, 1.2 * u, W - 2.4 * u, H - 2.4 * u);
-        g.globalAlpha = 0.32; g.lineWidth = Math.max(1, u);
-        g.strokeRect(9 * u, 9 * u, W - 18 * u, H - 18 * u);
-        g.restore();
-    }
-
-    function drawCaption(g, W, H, capH, col) {
-        var u = W / 960;
-        g.save();
-        g.globalAlpha = 0.82; g.fillStyle = col.bg; g.fillRect(0, H - capH, W, capH);
-        g.globalAlpha = 0.55; g.strokeStyle = col.b; g.lineWidth = Math.max(1, u);
-        g.beginPath(); g.moveTo(0, H - capH + u * 0.5); g.lineTo(W, H - capH + u * 0.5); g.stroke();
-        g.globalAlpha = 0.95;
-        g.textBaseline = 'middle';
-        g.textAlign = 'left';
-        g.fillStyle = col.ink;
-        g.font = '600 ' + Math.round(capH * 0.36) + 'px "Noto Serif SC","Songti SC","Microsoft YaHei",serif';
-        g.fillText(MOTIFS[state.motif].name + ' · ' + compName(state.comp), W * 0.028, H - capH / 2);
-        g.font = '400 ' + Math.round(capH * 0.29) + 'px "Noto Sans SC","Microsoft YaHei",sans-serif';
-        g.textAlign = 'right';
-        g.fillStyle = col.a;
-        g.fillText((tileCanvas ? '导入母题' : palName(state.palette)) + ' · 麓山绘梦·纹鉴', W * 0.972, H - capH / 2);
-        g.restore();
-    }
-
-    // ---------------------------------------------------------------- 绘制入口
-
-    function paint(g, W, H, opts) {
-        var col = resolveColors(PALETTES[state.palette], state.sat);
-        var capH = Math.round(H * 0.084);
-        var fh = H - capH;
-        var lw = (1 + state.weight / 100 * 7) * (W / 960);
-        g.setTransform(1, 0, 0, 1, 0, 0);
-        g.clearRect(0, 0, W, H);
-        g.fillStyle = col.bg;
-        g.fillRect(0, 0, W, fh);
-        drawGround(g, W, fh, col);
-        drawField(g, W, fh, col, lw);
-        drawFrame(g, W, fh, col, W / 960);
-        drawCaption(g, W, H, capH, col);
-    }
-
-    function render() {
-        if (pending) return;
-        pending = window.requestAnimationFrame(function () {
-            pending = 0;
-            if (!ctx) return;
-            try { paint(ctx, cv.width, cv.height); }
-            catch (e) { if (window.console) console.warn('[二创] 渲染失败', e); }
-        });
-    }
-
-    function fit() {
-        if (!cv) return;
-        var box = cv.parentNode.getBoundingClientRect();
-        var w = Math.round(box.width), h = Math.round(box.height);
-        if (!(w > 40)) w = 880;
-        if (!(h > 40)) h = Math.round(w * 0.75);
-        var dpr = Math.min(window.devicePixelRatio || 1, 2);
-        var nw = Math.round(w * dpr), nh = Math.round(h * dpr);
-        if (cv.width !== nw || cv.height !== nh) { cv.width = nw; cv.height = nh; }
-    }
-
-    function buildTile(img) {
-        var T = 512;
-        var c = document.createElement('canvas');
-        c.width = T; c.height = T;
-        var g = c.getContext('2d');
-        var s = Math.min(T / img.width, T / img.height);
-        var w = img.width * s, h = img.height * s;
-        g.drawImage(img, (T - w) / 2, (T - h) / 2, w, h);
-        // 用当前配色给导入图上色（保留明度，替换色相），让「配色」对导入母题同样生效
-        try {
-            g.globalCompositeOperation = 'color';
-            g.globalAlpha = 0.62;
-            g.fillStyle = resolveColors(PALETTES[state.palette], state.sat).a;
-            g.fillRect(0, 0, T, T);
-        } catch (e) { /* 老引擎不支持 color 混合就保留原色 */ }
-        return c;
-    }
-
-    // ---------------------------------------------------------------- UI 构建
-
-    function el(id) { return document.getElementById(id); }
-
-    function syncRange(input) {
-        var min = +input.min, max = +input.max, v = +input.value;
-        input.style.setProperty('--p', ((v - min) / (max - min) * 100).toFixed(1) + '%');
-    }
-
-    function buildUI() {
-        var list = el('cvSrcList');
-        list.innerHTML = '';
-        MOTIFS.forEach(function (m, i) {
-            var item = document.createElement('div');
-            item.className = 'cv-src-item' + (i === state.motif ? ' on' : '');
-            item.setAttribute('data-motif', i);
-            var thumb = document.createElement('canvas');
-            thumb.className = 'cv-src-thumb';
-            thumb.width = 96; thumb.height = 96;
-            var meta = document.createElement('div');
-            meta.className = 'cv-src-meta';
-            var b = document.createElement('b'); b.textContent = m.name;
-            var sp = document.createElement('span'); sp.textContent = m.meta;
-            meta.appendChild(b); meta.appendChild(sp);
-            item.appendChild(thumb); item.appendChild(meta);
-            item.onclick = function () {
-                state.motif = i;
-                tileCanvas = null;
-                importedName = '';
-                markSrc();
-                drawThumbs();
-                updateLine();
-                render();
-            };
-            list.appendChild(item);
-        });
-
-        var sw = el('cvSwatches');
-        sw.innerHTML = '';
-        PALETTES.forEach(function (p, i) {
-            var s = document.createElement('span');
-            s.className = 'cv-sw' + (i === state.palette ? ' on' : '');
-            s.style.background = 'linear-gradient(135deg,' + p.a + ',' + p.b + ')';
-            s.title = p.name;
-            s.onclick = function () {
-                state.palette = i;
-                markSwatch();
-                el('cvColorName').textContent = p.name;
-                if (importedName) tileCanvas = buildTileFromStored();
-                updateLine();
-                render();
-            };
-            sw.appendChild(s);
-        });
-
-        buildChips(el('cvComps'), COMPS, 'comp', function () { updateLine(); render(); });
-        buildChips(el('cvGrounds'), GROUNDS, 'ground', function () { render(); });
-        buildChips(el('cvStrokes'), STROKES, 'stroke', function () { render(); });
-
-        bindRange('cvDensity', 'density', 'cvDensityVal', function (v) { return v + '%'; });
-        bindRange('cvWeight', 'weight', 'cvWeightVal', function (v) {
-            return v < 35 ? '纤细' : (v < 70 ? '中等' : '厚重');
-        });
-        bindRange('cvSat', 'sat', 'cvSatVal', function (v) { return v + '%'; });
-        el('cvWeightVal').textContent = state.weight < 35 ? '纤细' : (state.weight < 70 ? '中等' : '厚重');
-
-        el('cvTools').onclick = function (ev) {
-            var btn = ev.target.closest ? ev.target.closest('.cv-tool') : null;
-            if (!btn || btn.id === 'cvResetBtn') return;
-            var g = btn.getAttribute('data-group');
-            var tools = el('cvTools').querySelectorAll('.cv-tool');
-            for (var i = 0; i < tools.length; i++) {
-                if (tools[i].id === 'cvResetBtn') continue;
-                if (tools[i] === btn) tools[i].classList.add('on'); else tools[i].classList.remove('on');
-            }
-            hotGroup(g, true);
-        };
-
-        el('cvSrcReset').onclick = function () {
-            tileCanvas = null; importedName = '';
-            markSrc(); updateLine(); render();
-            toast('已换回内置母题');
-        };
-        el('cvResetBtn').onclick = function () { resetAll(); };
-        el('cvRandomBtn').onclick = function () { randomize(); };
-        el('cvSaveBtn').onclick = function () { saveWork(); };
-        el('cvExportBtn').onclick = function () { exportPNG(); };
-        el('cvImportBtn').onclick = function () { el('cvImportFile').click(); };
-        el('cvImportFile').onchange = function () {
-            var f = this.files && this.files[0];
-            if (f) importImage(f);
-            this.value = '';
-        };
-
-        drawThumbs();
-        renderWorks();
-        updateLine();
-    }
-
-    function buildChips(box, list, key, after) {
-        box.innerHTML = '';
-        list.forEach(function (item) {
-            var c = document.createElement('span');
-            c.className = 'cv-chip' + (state[key] === item.id ? ' on' : '');
-            c.textContent = item.name;
-            c.setAttribute('data-v', item.id);
-            c.onclick = function () {
-                state[key] = item.id;
-                var kids = box.children;
-                for (var i = 0; i < kids.length; i++) {
-                    if (kids[i] === c) kids[i].classList.add('on'); else kids[i].classList.remove('on');
-                }
-                after();
-            };
-            box.appendChild(c);
-        });
-    }
-
-    function bindRange(id, key, valId, fmt) {
-        var input = el(id), val = el(valId);
-        syncRange(input);
-        input.oninput = function () {
-            state[key] = +this.value;
-            syncRange(this);
-            val.textContent = fmt(+this.value);
-            updateLine();
-            render();
-        };
-    }
-
-    function markSrc() {
-        var items = el('cvSrcList').children;
-        for (var i = 0; i < items.length; i++) {
-            if (+items[i].getAttribute('data-motif') === state.motif) items[i].classList.add('on');
-            else items[i].classList.remove('on');
-        }
-    }
-
-    function markSwatch() {
-        var kids = el('cvSwatches').children;
-        for (var i = 0; i < kids.length; i++) {
-            if (i === state.palette) kids[i].classList.add('on'); else kids[i].classList.remove('on');
-        }
-    }
-
-    function hotGroup(name, scroll) {
-        var groups = document.querySelectorAll('#createView .cv-group'), hit = null;
-        for (var i = 0; i < groups.length; i++) {
-            if (groups[i].getAttribute('data-group') === name) { groups[i].classList.add('cv-hot'); hit = groups[i]; }
-            else groups[i].classList.remove('cv-hot');
-        }
-        if (scroll && hit && window.innerWidth <= 900 && hit.scrollIntoView) {
-            try { hit.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { }
-        }
-    }
-
-    function drawThumbs() {
-        var items = el('cvSrcList').children, i;
-        for (i = 0; i < items.length; i++) {
-            var c = items[i].querySelector('canvas');
-            if (!c) continue;
-            var g = c.getContext('2d');
-            var pal = PALETTES[state.palette];
-            var col = resolveColors(pal, state.sat);
-            g.clearRect(0, 0, c.width, c.height);
-            g.fillStyle = col.bg; g.fillRect(0, 0, c.width, c.height);
-            var kk = +items[i].getAttribute('data-motif');
-            var lw = Math.max(1.2, c.width / 60);
-            g.save();
-            g.translate(c.width / 2, c.height / 2);
-            motifPath(g, MOTIFS[kk].key, c.width * 0.8, col, lw, 'solid');
-            g.restore();
-        }
-    }
-
-    function updateLine() {
-        var line = el('cvStateLine');
-        if (!line) return;
-        line.textContent = (importedName ? ('导入母题：' + importedName) : MOTIFS[state.motif].name) +
-            ' · ' + compName(state.comp) + ' · ' + palName(state.palette) + ' · 本地 canvas 渲染';
-    }
-
-    function toast(msg) {
-        if (typeof window.showToast === 'function') { try { window.showToast(msg); return; } catch (e) { } }
-        if (window.console) console.log('[二创] ' + msg);
-    }
-
-    // ---------------------------------------------------------------- 存稿（localStorage）
-
-    function lsGet() {
-        try { return JSON.parse(window.localStorage.getItem(LS_KEY) || '[]') || []; }
-        catch (e) { return []; }
-    }
-
-    function lsSet(list) {
-        try { window.localStorage.setItem(LS_KEY, JSON.stringify(list)); return true; }
-        catch (e) {
-            while (list.length > 1) {
-                list.pop();
-                try { window.localStorage.setItem(LS_KEY, JSON.stringify(list)); return true; } catch (e2) { }
-            }
-            return false;
-        }
-    }
-
-    function makeThumb() {
-        var c = document.createElement('canvas');
-        c.width = 384; c.height = 288;
-        paint(c.getContext('2d'), c.width, c.height);
-        try { return c.toDataURL('image/jpeg', 0.72); } catch (e) { return ''; }
-    }
-
-    function saveWork() {
-        if (!ctx) return;
-        var list = lsGet();
-        var item = {
-            id: 'w' + Date.now() + Math.floor(Math.random() * 1000),
-            short: MOTIFS[state.motif].short,
-            name: MOTIFS[state.motif].short + ' · ' + palName(state.palette),
-            meta: compName(state.comp) + ' · ' + byId(GROUNDS, 'id', state.ground).name,
-            ts: Date.now(),
-            params: mix(state),
-            thumb: makeThumb()
-        };
-        list.unshift(item);
-        if (list.length > MAX_WORKS) list = list.slice(0, MAX_WORKS);
-        if (!lsSet(list)) { toast('本地存储写满，保存失败'); return; }
-        renderWorks();
-        toast('已保存到「最近创作」');
-    }
-
-    function loadWork(w) {
-        state = mix(w.params);
-        tileCanvas = null; importedName = '';
-        syncControls();
-        updateLine();
-        render();
-        toast('已载入：' + w.name);
-    }
-
-    function deleteWork(id) {
-        var list = lsGet().filter(function (w) { return w.id !== id; });
-        lsSet(list);
-        renderWorks();
-        toast('已删除该作品');
-    }
-
-    function ago(ts) {
-        var d = Date.now() - ts;
-        if (d < 60000) return '刚刚';
-        if (d < 3600000) return Math.round(d / 60000) + ' 分钟前';
-        if (d < 86400000) return Math.round(d / 3600000) + ' 小时前';
-        if (d < 2592000000) return Math.round(d / 86400000) + ' 天前';
-        return new Date(ts).toLocaleDateString();
-    }
-
-    function renderWorks() {
-        var box = el('cvWorks');
-        if (!box) return;
-        var list = lsGet();
-        box.innerHTML = '';
-        var stat = el('cvStatWorks');
-        if (stat) stat.textContent = list.length;
-        var meta = el('cvWorksMeta');
-        if (meta) meta.textContent = list.length ? (list.length + ' 个方案 · 新存的排前面') : '还没有作品';
-        if (!list.length) {
-            var d0 = document.createElement('div');
-            d0.className = 'cv-works-empty';
-            d0.textContent = '还没有作品 —— 调好参数后点右上角「💾 保存到最近创作」，作品会存在本机浏览器里。';
-            box.appendChild(d0);
-            return;
-        }
-        list.forEach(function (w) {
-            var d = document.createElement('div');
-            d.className = 'cv-work';
-            var th = document.createElement('div');
-            th.className = 'cv-work-thumb';
-            if (w.thumb) { var img = document.createElement('img'); img.src = w.thumb; img.alt = w.name; th.appendChild(img); }
-            var del = document.createElement('button');
-            del.className = 'cv-work-del'; del.type = 'button'; del.textContent = '✕'; del.title = '删除';
-            del.onclick = function (ev) { ev.stopPropagation(); deleteWork(w.id); };
-            th.appendChild(del);
-            var body = document.createElement('div');
-            body.className = 'cv-work-b';
-            var b = document.createElement('b'); b.textContent = w.name;
-            var sp = document.createElement('span'); sp.textContent = ago(w.ts) + ' · ' + (w.meta || '');
-            body.appendChild(b); body.appendChild(sp);
-            d.appendChild(th); d.appendChild(body);
-            d.onclick = function () { loadWork(w); };
-            box.appendChild(d);
-        });
-    }
-
-    // ---------------------------------------------------------------- 导入 / 导出 / 随机 / 重置
-
-    var lastImportedImg = null;
-
-    function buildTileFromStored() {
-        return lastImportedImg ? buildTile(lastImportedImg) : null;
-    }
-
-    function importImage(file) {
-        if (!/^image\//.test(file.type)) { toast('请选择图片文件'); return; }
-        var fr = new FileReader();
-        fr.onload = function () {
-            var img = new Image();
-            img.onload = function () {
-                lastImportedImg = img;
-                tileCanvas = buildTile(img);
-                importedName = file.name.length > 18 ? file.name.slice(0, 16) + '…' : file.name;
-                el('cvSrcList').classList.add('cv-imported');
-                markSrc();
-                updateLine();
-                render();
-                toast('已导入源纹样：' + importedName);
-            };
-            img.onerror = function () { toast('图片解码失败'); };
-            img.src = fr.result;
-        };
-        fr.onerror = function () { toast('读取文件失败'); };
-        fr.readAsDataURL(file);
-    }
-
-    function exportPNG() {
-        if (!cv || !ctx) return;
-        try {
-            paint(ctx, cv.width, cv.height);            // 同步重绘一遍，确保导出的是当前参数
-            var url = cv.toDataURL('image/png');
-            var stamp = new Date();
-            var pad = function (n) { return (n < 10 ? '0' : '') + n; };
-            var name = '纹样二创_' + MOTIFS[state.motif].short + '_' + stamp.getFullYear() +
-                pad(stamp.getMonth() + 1) + pad(stamp.getDate()) + '_' +
-                pad(stamp.getHours()) + pad(stamp.getMinutes()) + '.png';
-            var a = document.createElement('a');
-            a.href = url; a.download = name; a.rel = 'noopener';
-            document.body.appendChild(a);
-            a.click();
-            window.setTimeout(function () { a.remove(); }, 0);
-            toast('设计稿已导出：' + name);
-            window.__cvLastExport = { name: name, len: url.length, ok: true };
-        } catch (e) {
-            toast('导出失败：' + (e && e.message ? e.message : e));
-            window.__cvLastExport = { ok: false, err: String(e) };
-        }
-    }
-
-    function randomize() {
-        var r = Math.random;
-        state.motif = Math.floor(r() * MOTIFS.length);
-        state.palette = Math.floor(r() * PALETTES.length);
-        state.comp = COMPS[Math.floor(r() * COMPS.length)].id;
-        state.ground = GROUNDS[Math.floor(r() * GROUNDS.length)].id;
-        state.stroke = STROKES[Math.floor(r() * STROKES.length)].id;
-        state.density = 30 + Math.floor(r() * 65);
-        state.weight = 15 + Math.floor(r() * 80);
-        state.sat = 40 + Math.floor(r() * 55);
-        tileCanvas = null; importedName = '';
-        syncControls();
-        updateLine();
-        render();
-        toast('换了一套随机参数');
-    }
-
-    function resetAll() {
-        state = mix(DEFAULTS);
-        tileCanvas = null; importedName = ''; lastImportedImg = null;
-        syncControls();
-        updateLine();
-        render();
-        toast('已重置为默认参数');
-    }
-
-    function syncControls() {
-        markSrc(); markSwatch();
-        el('cvColorName').textContent = palName(state.palette);
-        ['cvComps:comp', 'cvGrounds:ground', 'cvStrokes:stroke'].forEach(function (pair) {
-            var box = el(pair.split(':')[0]), key = pair.split(':')[1];
-            var kids = box.children;
-            for (var i = 0; i < kids.length; i++) {
-                if (kids[i].getAttribute('data-v') === state[key]) kids[i].classList.add('on');
-                else kids[i].classList.remove('on');
-            }
-        });
-        [['cvDensity', 'density', 'cvDensityVal', function (v) { return v + '%'; }],
-         ['cvWeight', 'weight', 'cvWeightVal', function (v) { return v < 35 ? '纤细' : (v < 70 ? '中等' : '厚重'); }],
-         ['cvSat', 'sat', 'cvSatVal', function (v) { return v + '%'; }]].forEach(function (t) {
-            var input = el(t[0]);
-            input.value = state[t[1]];
-            syncRange(input);
-            el(t[2]).textContent = t[3](state[t[1]]);
-        });
-        drawThumbs();
-    }
-
-    // ---------------------------------------------------------------- 进入视图 / 初始化
-
-    function enter() {
-        fit();
-        render();
-        renderWorks();
-    }
-
-    function hookTopView() {
-        if (window.__cvStudioHooked) return;
-        if (typeof window.setTopView !== 'function') return;
-        window.__cvStudioHooked = true;
-        var orig = window.setTopView;
-        window.setTopView = function (name) {
-            orig(name);
-            if (name === 'create') window.setTimeout(enter, 0);
-        };
-    }
-
-    function init() {
-        cv = el('cvCanvas');
-        if (!cv || !cv.getContext) return;
-        ctx = cv.getContext('2d');
-        buildUI();
-        hookTopView();
-        window.addEventListener('resize', function () { fit(); render(); });
-        window.addEventListener('orientationchange', function () { fit(); render(); });
-        if (!window.__cvStudioHooked) window.setTimeout(hookTopView, 300);
-        fit();
-        render();
-    }
-
-    window.CVStudio = {
-        enter: enter, render: render, reset: resetAll, randomize: randomize,
-        save: saveWork, exportPNG: exportPNG, works: lsGet, deleteWork: deleteWork,
-        /* AI 创作台用：把任意参数集画进任意 2D 上下文；不动全局 state，也不吃导入母题 */
-        paintTo: function (g, W, H, params) {
-            var savedState = state, savedTile = tileCanvas, savedName = importedName;
-            state = mix(params || savedState);
-            tileCanvas = null; importedName = '';
-            try { paint(g, W, H); }
-            finally { state = savedState; tileCanvas = savedTile; importedName = savedName; }
-        },
-        getState: function () { return mix(state); },
-        setState: function (o) { state = mix(o); syncControls(); updateLine(); render(); },
-        MOTIFS: MOTIFS, PALETTES: PALETTES, COMPS: COMPS, GROUNDS: GROUNDS, STROKES: STROKES,
-        preset: function () { return { comp: 'radial', palette: 3, motif: 1, ground: 'weave', density: 80, weight: 70, sat: 90 }; }
-    };
-
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-    else init();
-})();
-</script>
 
 <!-- ===== AI 创作台：交互层（样式 + 引擎）===== -->
 <style>
-/* ===== AI 创作台（本地生成引擎 + 云端通道预留）——2026-10-08 新增 =====
+/* ===== AI 创作台（纯云端文生图）——2026-10-09 由「本地引擎 + 云端」双通道收敛为只走云端 =====
    与「二创工作台交互层」同规矩：自成一块（自带 <style>），刻意不并入库样式块，
    以免被 patch_library_dark.py / patch_library_nav.py 的真相源（lib_css.txt）静默回滚。
 
    ⚠️ 本块内**不得**出现 range 类型的 input，也不得出现顶层页签属性字样：
-      patch_create_studio.py 的幂等复验断言要求「三条滑杆」「四个页签」计数不变。
-      所以 AI 面板的「变体数量 / 创意自由度」用 chips 而非滑杆。 */
-
-/* ---------- 模式切换（工具箱 / AI创作） ---------- */
-.cv-modes{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 16px;}
-.cv-mode{height:38px;padding:0 20px;border-radius:999px;border:1px solid #3a3a5c;background:#1a1a2e;
-  color:#a0a0b8;font-size:13.5px;font-family:inherit;cursor:pointer;transition:.16s;}
-.cv-mode:hover{background:#252542;color:#fff;}
-.cv-mode.on{border-color:#a78bfa;background:rgba(167,139,250,.16);color:#c4b5fd;font-weight:600;}
-.cv-mode-hint{margin-left:auto;font-size:12px;color:#6b6b8c;line-height:1.6;}
+      页面样式区里那三条约束（滑杆 3 / 顶层页签 4）虽已随工作台一起退役，
+      但保持本块干净可以避免将来又被误认为是某条断言的来源。
+   ⚠️ .cv-tool.ghost 原本定义在「工作台交互层」里，工作台撤掉后必须在本块自带一份。 */
 
 /* 页内面板显隐：用显式 class，不依赖 hidden 属性
    —— 三份 www/web-dist/android 文件实际跑在 BackCompat（怪异模式），
       hidden 的 UA 表现不可靠，显式 display:none 才稳。 */
 .cv-pane-off{display:none!important;}
+
+/* ---------- 两栏：出图结果 + 模型配置 ---------- */
+.cv-ai-only{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start;}
+.cv-ai-main,.cv-ai-side{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;padding:16px;}
 
 /* ---------- 提示词区 ---------- */
 .cv-ai-prompt{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;padding:16px 16px 14px;
@@ -4371,95 +3285,141 @@ button.cv-ai-gen{height:40px;padding:0 26px;border:0;border-radius:999px;font-fa
 button.cv-ai-gen:hover{filter:brightness(1.12);}
 button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed;}
 
-/* ---------- 候选稿列表（复用 .cv-src 外框） ---------- */
-.cv-ai-cands{display:flex;flex-direction:column;gap:9px;}
-.cv-ai-cand{display:flex;align-items:center;gap:10px;padding:8px;border-radius:11px;cursor:pointer;
-  border:1px solid #2a2a40;background:#171728;transition:.16s;}
-.cv-ai-cand:hover{background:#252542;}
-.cv-ai-cand.on{border-color:#a78bfa;background:#252542;}
-.cv-ai-cand-thumb{width:58px;height:44px;border-radius:9px;flex-shrink:0;display:block;background:#0f0f1e;}
-.cv-ai-cand-meta{min-width:0;flex:1;}
-.cv-ai-cand-meta b{display:block;font-size:12.5px;font-weight:600;color:#fff;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.cv-ai-cand-meta span{display:block;font-size:11px;color:#6b6b8c;margin-top:3px;line-height:1.5;
-  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+/* ---------- 结果区 ---------- */
+.cv-ai-empty{border:1.5px dashed #3a3a5c;border-radius:13px;padding:36px 20px;text-align:center;
+  font-size:12.5px;color:#6b6b8c;line-height:1.95;}
+.cv-ai-empty b{display:block;font-size:14px;color:#a0a0b8;font-weight:600;margin-bottom:7px;
+  font-family:"Noto Serif SC","Songti SC",serif;letter-spacing:.06em;}
+.cv-ai-empty span{display:block;max-width:420px;margin:0 auto;}
+.cv-ai-read-h{font-size:11.5px;color:#6b6b8c;margin-bottom:10px;letter-spacing:.06em;}
+.cv-ai-cloud-imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;}
+.cv-ai-cloud-imgs a{display:block;border:1px solid #2a2a40;border-radius:11px;overflow:hidden;
+  background:#0f0f1e;transition:.16s;}
+.cv-ai-cloud-imgs a:hover{border-color:#a78bfa;transform:translateY(-2px);}
+.cv-ai-cloud-imgs img{display:block;width:100%;height:auto;}
+.cv-ai-img{position:relative;border:1px solid #2a2a40;border-radius:11px;overflow:hidden;
+  background:#0f0f1e;transition:.16s;cursor:zoom-in;}
+.cv-ai-img:hover{border-color:#a78bfa;transform:translateY(-2px);}
+.cv-ai-img .cv-ai-img-dl{position:absolute;right:6px;bottom:6px;width:30px;height:30px;
+  border-radius:8px;border:1px solid #3a3a5c;background:rgba(15,15,30,.82);color:#c4b5fd;
+  font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:.16s;}
+.cv-ai-img:hover .cv-ai-img-dl{opacity:1;}
+.cv-ai-img .cv-ai-img-dl:hover{background:#a78bfa;color:#0f0f1e;border-color:#a78bfa;}
+/* 点图看大图灯箱 */
+.cv-lightbox{display:none;position:fixed;inset:0;background:rgba(8,8,18,.94);z-index:2000;
+  align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:24px;}
+.cv-lightbox.show{display:flex;}
+.cv-lightbox img{max-width:92vw;max-height:78vh;border-radius:12px;box-shadow:0 8px 48px rgba(0,0,0,.6);}
+.cv-lightbox .cv-lb-bar{display:flex;gap:10px;align-items:center;}
+.cv-lightbox .cv-lb-btn{height:38px;padding:0 20px;border-radius:999px;border:1px solid #3a3a5c;
+  background:#1a1a2e;color:#e5e5f0;cursor:pointer;font-size:14px;}
+.cv-lightbox .cv-lb-btn:hover{background:#252542;}
+.cv-lightbox .cv-lb-btn.primary{background:#a78bfa;color:#0f0f1e;border-color:#a78bfa;font-weight:600;}
+.cv-lightbox .cv-lb-btn.primary:hover{background:#b89bff;}
+.cv-lightbox .cv-lb-close{position:absolute;top:18px;right:22px;width:40px;height:40px;border-radius:50%;
+  border:1px solid #3a3a5c;background:rgba(26,26,46,.9);color:#c4b5fd;font-size:20px;cursor:pointer;line-height:1;}
+.cv-lightbox .cv-lb-close:hover{background:#a78bfa;color:#0f0f1e;}
+.cv-ai-opts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;
+  border-top:1px dashed #2f2f4a;}
+/* 工作台撤掉后，幽灵按钮的样式必须在本块自带 */
+.cv-tool.ghost{border-style:dashed;color:#7d7da0;}
+.cv-tool.ghost:hover{color:#c4b5fd;border-color:#a78bfa;}
 
-/* ---------- 大预览 ---------- */
-#createView .cv-ai-canvas{display:block;padding:0;border-style:solid;background:#101024;position:relative;}
-#cvAiCanvas{display:block;width:100%;height:auto;aspect-ratio:4/3;border-radius:12px;}
-.cv-ai-opts{display:flex;gap:8px;flex-wrap:wrap;}
-.cv-ai-read{border-top:1px dashed #2f2f4a;padding-top:12px;}
-.cv-ai-read-h{font-size:11.5px;color:#6b6b8c;margin-bottom:8px;letter-spacing:.06em;}
-.cv-ai-read-i{display:flex;flex-wrap:wrap;gap:7px;}
-.cv-ai-read-i i{font-style:normal;font-size:11.5px;padding:4px 10px;border-radius:999px;
-  border:1px solid #33334f;background:#171728;color:#a0a0b8;line-height:1.5;}
-.cv-ai-read-i i b{color:#c4b5fd;font-weight:600;}
-.cv-ai-read-i i em{font-style:normal;color:#6b6b8c;margin-left:5px;}
-
-/* ---------- 通道设置 ---------- */
+/* ---------- 配置栏 ---------- */
 .cv-ai-chan-line{font-size:12px;color:#a0a0b8;background:#171728;border:1px solid #2f2f4a;
-  border-radius:11px;padding:9px 11px;line-height:1.7;margin-bottom:12px;}
+  border-radius:11px;padding:9px 11px;line-height:1.7;margin-bottom:14px;}
 .cv-ai-chan-line b{color:#c4b5fd;font-weight:600;}
 .cv-ai-chan-line.warn b{color:#fcd34d;}
 #createView .cv-ai-in{display:block;width:100%;box-sizing:border-box;height:34px;padding:0 11px;
   border-radius:9px;border:1px solid #3a3a5c;background:#13132a;color:#e2e6ff;font-family:inherit;
   font-size:12.5px;outline:none;margin-bottom:8px;}
 #createView .cv-ai-in:focus{border-color:#a78bfa;}
-.cv-ai-cloud{display:none;margin-top:10px;padding:12px;border-radius:12px;border:1px dashed #3a3a5c;
-  background:#15152a;}
-.cv-ai-cloud.on{display:block;}
-.cv-ai-cloud .tip{font-size:11px;color:#6b6b8c;line-height:1.75;margin-top:2px;}
-.cv-ai-cloud .tip b{color:#fcd34d;font-weight:600;}
-.cv-ai-note{font-size:11.5px;color:#6b6b8c;line-height:1.8;margin-top:10px;}
+.cv-ai-side .tip{font-size:11px;color:#6b6b8c;line-height:1.8;margin-top:12px;}
+.cv-ai-side .tip b{color:#fcd34d;font-weight:600;}
+
+/* 服务商选择与「去哪拿 Key」引导 */
+#cvAiProvs{margin-bottom:9px;}
+.cv-ai-keyhint{font-size:11px;color:#6b6b8c;line-height:1.75;margin:0 0 10px;}
+.cv-ai-keyhint a{color:#c4b5fd;text-decoration:none;border-bottom:1px dashed #5a4a8a;}
+.cv-ai-keyhint a:hover{color:#ddd6fe;border-bottom-color:#a78bfa;}
+.cv-ai-note{font-size:11.5px;color:#6b6b8c;line-height:1.8;margin-top:12px;
+  padding-top:12px;border-top:1px dashed #2f2f4a;}
 .cv-ai-note b{color:#a0a0b8;font-weight:600;}
-.cv-ai-cloud-imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;}
-.cv-ai-cloud-imgs a{display:block;border:1px solid #2a2a40;border-radius:11px;overflow:hidden;
-  background:#0f0f1e;}
-.cv-ai-cloud-imgs img{display:block;width:100%;height:auto;}
 
 /* ---------- 响应式 ---------- */
 @media (max-width:1199px){
-  .cv-mode-hint{display:none;}
+  .cv-ai-only{grid-template-columns:minmax(0,1fr) 272px;}
 }
 @media (max-width:900px){
+  .cv-ai-only{grid-template-columns:1fr;}
   .cv-ai-prompt{padding:13px;}
   .cv-ai-tools .sp{display:none;}
   .cv-ai-tools .lbl{display:none;}
   button.cv-ai-gen{flex:1;}
-  .cv-ai-cand-thumb{width:50px;height:38px;}
+  .cv-ai-main,.cv-ai-side{padding:13px;}
 }
 </style>
 <script>
-/* ===== AI 创作台：描述 → 参数 → 本地程序化生成（不联网、无费用） =====
-   2026-10-08 新增。两条通道：
-     · 本地引擎（默认、始终可用）：中文描述经本地词典逐词匹配，解析成
-       母题 / 配色 / 构图 / 底纹 / 笔法 / 密度 / 线重 / 饱和 八维参数意图；
-       再用带种子的伪随机算法在参数空间里推演多稿变体，最后交给工作台
-       同一套 canvas 引擎绘制（调用 paintTo）。描述没提到的维度按种子补齐，
-       所以同一句描述永远出同一版，换种子才换结果 —— 可复现。
-     · 云端通道（预留、未绑定厂商）：按 OpenAI 图像接口的通用格式调用户自填端点；
-       未配置 / 没填 Key / 网络不通 / 跨域被拦 / 返回异常 —— 任一情况自动回落本地。
+/* ===== AI 创作台：描述 → 云端文生图（纯云端，无本地引擎） =====
+   2026-10-09 由「本地引擎 + 云端」双通道收敛为只走云端：
+     · 本地引擎、描述解析、候选稿、大画布、采用到工具箱、换种子 —— 全部撤掉；
+     · 保留提示词 → 真·文生图 → 看大图 / 下载 这一条闭环。
+
+   协议适配（这是接各家最容易踩的坑）：
+     · siliconflow —— 请求体用 image_size / batch_size / num_inference_steps / guidance_scale，
+                      响应是 { images: [ { url } ] }；
+     · openai      —— 请求体 n / size / response_format，响应是 { data: [ { url | b64_json } ] }。
+     用一套 OpenAI 格式通吃，接硅基流动会直接报「返回里没有图片字段」。
 
    ⚠️ 本块整块独立（自带 <style> + <script>），刻意不并入库块 —— 免得被
       patch_library_dark.py / patch_library_nav.py 的真相源（lib_css.txt / lib_js.txt）静默回滚。
-   ⚠️ 取工作台引用只用中括号写法（不写 window 点号 + CVStudio 的字面量），
-      否则 patch_create_studio.py 的复验断言「渲染引擎已注入（计数 == 1）」会被本轮打破。
-   ⚠️ 本块内不得出现 range 类型的 input，也不得出现顶层页签属性字样：
-      同理由，那两条断言要求滑杆恒为 3 个、顶层页签恒为 4 个。
-      所以「变体数量 / 创意自由度」用 chips 实现。 */
+   ⚠️ 本块内不得出现 range 类型的 input，也不得出现顶层页签属性字样。
+      出图数量固定 1 张（接口限制）。
+   ⚠️ 失败不再回落本地（已经没有本地引擎了）—— 必须把原因直接写进状态行并 toast 出来，
+      否则用户只会看到「点了没反应」。 */
 (function () {
     'use strict';
 
-    // 工作台引擎句柄（init 时才取，脚本先后顺序不影响）
-    var CS = null;
-
-    var LS_MODE = 'lushan_cv_ai_mode_v1';
     var LS_CLOUD = 'lushan_cv_ai_cloud_v1';
 
-    // Hero 段落随模式切换 —— 否则切到 AI 模式后，顶上还写着「点选源纹样、拖密度」，对不上号
-    var HERO_AI = '写一句描述，本地引擎把它拆成母题、配色、构图、底纹、笔法、密度等八维参数，'
-        + '一次推演多稿供你挑；挑中的可以直接送回工具箱继续微调。全程本地渲染，不联网、不上传。';
-    var heroP = null, heroOrig = '';
+    // ---------------------------------------------------------------- 服务商预设
+    // 每家协议都不一样，所以必须有 proto 字段。端点与模型只是「默认值」，用户可随时改；
+    // Key 必须用户自己在服务商控制台申请后填。
+    var PROV = [
+        {
+            id: 'siliconflow', name: '硅基流动', proto: 'siliconflow',
+            ep: 'https://api.siliconflow.cn/v1/images/generations',
+            model: 'Kwai-Kolors/Kolors', keyUrl: 'https://cloud.siliconflow.cn/account/ak',
+            note: '快手 Kolors 免费（¥0/张）· 中文原生 · 一张 10~60 秒',
+            models: [
+                { id: 'Kwai-Kolors/Kolors', d: '免费 · 中文原生 · 风格写实明快' }
+            ]
+        },
+        {
+            id: 'zhipu', name: '智谱 BigModel', proto: 'openai',
+            ep: 'https://open.bigmodel.cn/api/paas/v4/images/generations',
+            model: 'cogview-3-flash', keyUrl: 'https://open.bigmodel.cn/usercenter/apikeys',
+            note: 'OpenAI 格式 · cogview-3-flash 有免费额度',
+            models: [
+                { id: 'cogview-3-flash', d: '免费额度 · 出图快' },
+                { id: 'cogview-4', d: '最新一代 · 画质更高' },
+                { id: 'glm-image', d: 'GLM 系列 · 中文语义细腻' }
+            ]
+        },
+        {
+            id: 'custom', name: '自定义端点', proto: 'openai',
+            ep: '', model: '', keyUrl: '',
+            note: '任何 OpenAI 兼容的生图接口都能接：自填端点、模型名与 Key',
+            models: []
+        }
+    ];
+
+    function provById(id) {
+        var i;
+        for (i = 0; i < PROV.length; i++) if (PROV[i].id === id) return PROV[i];
+        return PROV[0];
+    }
 
     // ---------------------------------------------------------------- 小工具
 
@@ -4470,329 +3430,15 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         if (window.console) console.log('[AI创作] ' + msg);
     }
 
-    function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+    function pad2(n) { return (n < 10 ? '0' : '') + n; }
 
-    function byId(list, key, val) {
-        for (var i = 0; i < list.length; i++) if (list[i][key] === val) return list[i];
-        return list[0];
+    function stamp() {
+        var d = new Date();
+        return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate())
+            + '_' + pad2(d.getHours()) + pad2(d.getMinutes());
     }
 
-    function hash(str) {
-        var h = 2166136261, i;
-        for (i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = (h * 16777619) >>> 0; }
-        return h >>> 0;
-    }
-
-    function rng(seed) {
-        var s = (seed >>> 0) || 1;
-        return function () {
-            s ^= s << 13; s >>>= 0;
-            s ^= s >>> 17;
-            s ^= s << 5; s >>>= 0;
-            return s / 4294967296;
-        };
-    }
-
-    // ---------------------------------------------------------------- 本地词典
-    // 命中词越长、命中越多 → 该取值得分越高；同维度里得分最高的胜出。
-    var DICT = [
-        { dim: 'palette', val: 0, w: 2, words: ['靛蓝', '靛青', '靛', '深蓝', '藏蓝', '蓝色'] },
-        { dim: 'palette', val: 1, w: 2, words: ['藕荷', '粉紫', '玫红', '霞光', '藕', '粉'] },
-        { dim: 'palette', val: 2, w: 2, words: ['青碧', '青绿', '碧色', '湖水', '天青', '雨色'] },
-        { dim: 'palette', val: 3, w: 2, words: ['暖棕', '旧锦', '土黄', '赭石', '金黄', '暖色'] },
-        { dim: 'palette', val: 4, w: 2, words: ['苔绿', '草绿', '山间', '翠色', '绿色'] },
-
-        { dim: 'comp', val: 'grid', w: 2, words: ['四方连续', '满地', '平铺', '连续', '规整'] },
-        { dim: 'comp', val: 'band', w: 2, words: ['二方连续', '带状', '条带', '边饰', '织带', '腰带'] },
-        { dim: 'comp', val: 'radial', w: 2, words: ['中心对称', '团花', '放射', '对称', '同心', '团圆'] },
-        { dim: 'comp', val: 'scatter', w: 1.5, words: ['散点', '自由散布', '星点', '随机', '碎'] },
-
-        { dim: 'ground', val: 'grid45', w: 1.5, words: ['斜网格', '网格', '格子', '格纹'] },
-        { dim: 'ground', val: 'dots', w: 2, words: ['圆点', '点阵', '波点', '珠地'] },
-        { dim: 'ground', val: 'weave', w: 2, words: ['织格', '经纬', '平织', '织底'] },
-        { dim: 'ground', val: 'twill', w: 2, words: ['斜纹', '斜织', '绫纹'] },
-        { dim: 'ground', val: 'none', w: 2, words: ['纯色', '素底', '无底纹'] },
-
-        { dim: 'stroke', val: 'solid', w: 2, words: ['实线', '粗线', '硬朗', '单线'] },
-        { dim: 'stroke', val: 'double', w: 2, words: ['双钩', '勾勒', '线描', '描边', '勾线'] },
-        { dim: 'stroke', val: 'dotted', w: 2, words: ['点线', '虚线', '点描', '碎点'] },
-        { dim: 'stroke', val: 'filled', w: 2, words: ['填彩', '填色', '色块', '平涂'] },
-
-        { dim: 'motif', val: 0, w: 2, words: ['八角', '八瓣', '八芒', '太阳花'] },
-        { dim: 'motif', val: 1, w: 2, words: ['盘王印', '印章', '方印', '盘王', '方形'] },
-        { dim: 'motif', val: 2, w: 2, words: ['四十八勾', '勾纹', '回纹', '雷纹', '几何', '折线'] },
-        { dim: 'motif', val: 3, w: 2, words: ['蝴蝶', '蝶恋', '花鸟', '蝶'] },
-
-        { dim: 'density', val: 88, w: 2, words: ['细密', '堆叠', '铺满', '繁复', '密', '繁', '满'] },
-        { dim: 'density', val: 30, w: 3, words: ['清简', '空灵', '素净', '留白', '疏', '简'] },
-
-        { dim: 'weight', val: 72, w: 2, words: ['厚重', '古朴', '粗放', '拙朴', '朴素'] },
-        { dim: 'weight', val: 28, w: 2, words: ['纤细', '轻盈', '精细', '雅致', '轻巧'] },
-
-        { dim: 'sat', val: 95, w: 2, words: ['明艳', '艳丽', '浓烈', '鲜艳', '浓彩'] },
-        { dim: 'sat', val: 48, w: 2, words: ['素雅', '淡雅', '灰调', '雅淡', '低饱和'] }
-    ];
-
-    var DIM_NAME = {
-        palette: '配色', comp: '构图', ground: '底纹', stroke: '笔法',
-        motif: '母题', density: '密度', weight: '线重', sat: '饱和'
-    };
-    var DIM_ORDER = ['motif', 'palette', 'comp', 'ground', 'stroke', 'density', 'weight', 'sat'];
-
-    function valName(dim, v) {
-        if (!CS) return String(v);
-        if (dim === 'palette') return CS.PALETTES[v] ? CS.PALETTES[v].name : String(v);
-        if (dim === 'motif') return CS.MOTIFS[v] ? CS.MOTIFS[v].short : String(v);
-        if (dim === 'comp') return byId(CS.COMPS, 'id', v).name;
-        if (dim === 'ground') return byId(CS.GROUNDS, 'id', v).name;
-        if (dim === 'stroke') return byId(CS.STROKES, 'id', v).name;
-        if (dim === 'density' || dim === 'sat') return v + '%';
-        if (dim === 'weight') return v < 35 ? '纤细' : (v < 70 ? '中等' : '厚重');
-        return String(v);
-    }
-
-    function optionsOf(dim) {
-        if (!CS) return null;
-        if (dim === 'palette') return CS.PALETTES.map(function (x, i) { return i; });
-        if (dim === 'motif') return CS.MOTIFS.map(function (x, i) { return i; });
-        if (dim === 'comp') return CS.COMPS.map(function (x) { return x.id; });
-        if (dim === 'ground') return CS.GROUNDS.map(function (x) { return x.id; });
-        if (dim === 'stroke') return CS.STROKES.map(function (x) { return x.id; });
-        return null;
-    }
-
-    function pickFrom(list, r, not) {
-        var pool = [], i;
-        for (i = 0; i < list.length; i++) if (list[i] !== not) pool.push(list[i]);
-        if (!pool.length) return list[0];
-        return pool[Math.floor(r() * pool.length) % pool.length];
-    }
-
-    // ---------------------------------------------------------------- 描述解析
-    // 同一维度被多个词命中时（如「团花」+「四方连续」），取「命中词更长、命中更多」的那一档，
-    // 落选的那些记进 alts —— 渲染时会明说「另有 X 未采用」，不让用户在不知情下被换掉构图。
-
-    function parse(text) {
-        var t = String(text || '').toLowerCase();
-        var best = {}, hits = {}, alts = {}, i, j, k, r, dim, found, score, cur;
-        for (i = 0; i < DICT.length; i++) {
-            r = DICT[i];
-            found = [];
-            for (j = 0; j < r.words.length; j++) {
-                if (t.indexOf(r.words[j]) >= 0) found.push(r.words[j]);
-            }
-            if (!found.length) continue;
-            dim = r.dim;
-            score = 0;
-            for (k = 0; k < found.length; k++) score += found[k].length * 0.35 + 1;
-            score *= r.w;
-            cur = best[dim];
-            if (!cur) {
-                best[dim] = { val: r.val, score: score };
-                hits[dim] = found;
-            } else if (score > cur.score) {
-                alts[dim] = alts[dim] || [];
-                alts[dim].push({ val: cur.val, words: hits[dim] });
-                best[dim] = { val: r.val, score: score };
-                hits[dim] = found;
-            } else {
-                alts[dim] = alts[dim] || [];
-                alts[dim].push({ val: r.val, words: found });
-            }
-        }
-        var out = {};
-        for (dim in best) if (best.hasOwnProperty(dim)) out[dim] = best[dim].val;
-        return { params: out, hits: hits, alts: alts };
-    }
-
-    // 描述没提到的维度 → 按种子从全表里随机挑一个（同一描述 → 同一结果）
-    function baseParams(text, seed) {
-        var pr = parse(text), r = rng(seed), out = {}, i, d, opts;
-        for (i = 0; i < DIM_ORDER.length; i++) {
-            d = DIM_ORDER[i];
-            if (pr.params[d] !== undefined) { out[d] = pr.params[d]; continue; }
-            opts = optionsOf(d);
-            if (opts) { out[d] = pickFrom(opts, r, null); continue; }
-            if (d === 'density') out[d] = 40 + Math.floor(r() * 46);
-            else if (d === 'weight') out[d] = 25 + Math.floor(r() * 46);
-            else out[d] = 55 + Math.floor(r() * 40);
-        }
-        return { params: out, hits: pr.hits, alts: pr.alts, matched: pr.params };
-    }
-
-    // ---------------------------------------------------------------- 变体推演
-
-    var MUT = [
-        { d: 'motif', f: function (p, r) { p.motif = pickFrom(optionsOf('motif'), r, p.motif); } },
-        { d: 'palette', f: function (p, r) { p.palette = pickFrom(optionsOf('palette'), r, p.palette); } },
-        { d: 'comp', f: function (p, r) { p.comp = pickFrom(optionsOf('comp'), r, p.comp); } },
-        { d: 'ground', f: function (p, r) { p.ground = pickFrom(optionsOf('ground'), r, p.ground); } },
-        { d: 'stroke', f: function (p, r) { p.stroke = pickFrom(optionsOf('stroke'), r, p.stroke); } },
-        { d: 'density', f: function (p, r) { p.density = clamp(Math.round(p.density + (r() * 2 - 1) * 26), 22, 100); } },
-        { d: 'weight', f: function (p, r) { p.weight = clamp(Math.round(p.weight + (r() * 2 - 1) * 30), 10, 100); } },
-        { d: 'sat', f: function (p, r) { p.sat = clamp(Math.round(p.sat + (r() * 2 - 1) * 28), 20, 100); } }
-    ];
-
-    function buildVariants(base, n, freedom, seed) {
-        var r = rng(seed ^ 2654435761), out = [], i, k, key, p, labels, used, guard, mi, before;
-        out.push({ params: base, label: '忠于描述' });
-        var rounds = 1 + Math.round(freedom / 100 * 3);   // 自由度 0 → 只改 1 维；100 → 改 4 维
-        for (i = 1; i < n; i++) {
-            p = {};
-            for (key in base) if (base.hasOwnProperty(key)) p[key] = base[key];
-            labels = []; used = {}; guard = 0;
-            while (labels.length < rounds && guard < 40) {
-                guard++;
-                mi = Math.floor(r() * MUT.length) % MUT.length;
-                if (used[mi]) continue;
-                used[mi] = 1;
-                before = p[MUT[mi].d];
-                MUT[mi].f(p, r);
-                if (p[MUT[mi].d] !== before) {
-                    labels.push(DIM_NAME[MUT[mi].d] + '→' + valName(MUT[mi].d, p[MUT[mi].d]));
-                }
-            }
-            out.push({ params: p, label: labels.join(' · ') || '微调' });
-        }
-        return out;
-    }
-
-    // ---------------------------------------------------------------- 渲染
-
-    var cands = [], sel = -1, seedSalt = 0;
-
-    function paramTitle(p) {
-        if (!CS) return '方案';
-        return CS.MOTIFS[p.motif].short + ' · ' + CS.PALETTES[p.palette].name;
-    }
-
-    function paramMeta(p) {
-        if (!CS) return '';
-        return byId(CS.COMPS, 'id', p.comp).name + ' · ' + byId(CS.GROUNDS, 'id', p.ground).name
-            + ' · ' + byId(CS.STROKES, 'id', p.stroke).name + ' · 密 ' + p.density + '%';
-    }
-
-    function paintInto(cv, w, h, params, fallbackText) {
-        var g = cv.getContext('2d');
-        g.setTransform(1, 0, 0, 1, 0, 0);
-        if (params && CS && typeof CS.paintTo === 'function') {
-            try { CS.paintTo(g, w, h, params); return; } catch (e) { }
-        }
-        g.fillStyle = '#101024'; g.fillRect(0, 0, w, h);
-        g.fillStyle = '#4a4a6a';
-        g.textAlign = 'center'; g.textBaseline = 'middle';
-        g.font = '500 ' + Math.round(w * 0.03) + 'px "Noto Sans SC","Microsoft YaHei",sans-serif';
-        g.fillText(fallbackText || '等待生成', w / 2, h / 2);
-    }
-
-    // 候选缩略图：整幅画高一点，再把底部落款条裁掉，缩略图才干净
-    function thumbInto(cv, w, h, params) {
-        var full = Math.round(h / 0.916);
-        var tmp = document.createElement('canvas');
-        tmp.width = w; tmp.height = full;
-        paintInto(tmp, w, full, params);
-        var g = cv.getContext('2d');
-        g.setTransform(1, 0, 0, 1, 0, 0);
-        g.clearRect(0, 0, w, h);
-        try { g.drawImage(tmp, 0, 0, w, h, 0, 0, w, h); } catch (e) { }
-    }
-
-    function renderCands() {
-        var box = el('cvAiCands');
-        if (!box) return;
-        box.innerHTML = '';
-        var note = el('cvAiCandNote');
-        if (!cands.length) {
-            if (note) note.textContent = '点上方「✨ 生成纹样」后，这里会出现多稿候选；点一下即可放大预览。';
-            return;
-        }
-        if (note) note.textContent = '共 ' + cands.length + ' 稿：第 1 稿严格照着描述，其余是参数空间里的变体。点选放大预览。';
-        cands.forEach(function (c, i) {
-            var d = document.createElement('div');
-            d.className = 'cv-ai-cand' + (i === sel ? ' on' : '');
-            var tc = document.createElement('canvas');
-            tc.className = 'cv-ai-cand-thumb';
-            tc.width = 232; tc.height = 176;
-            thumbInto(tc, 232, 176, c.params);
-            var meta = document.createElement('div');
-            meta.className = 'cv-ai-cand-meta';
-            var b = document.createElement('b');
-            b.textContent = (i + 1) + '. ' + paramTitle(c.params);
-            var sp = document.createElement('span');
-            sp.textContent = c.label;
-            meta.appendChild(b); meta.appendChild(sp);
-            d.appendChild(tc); d.appendChild(meta);
-            d.onclick = function () { selectCand(i); };
-            box.appendChild(d);
-        });
-    }
-
-    function selectCand(i) {
-        sel = i;
-        var items = el('cvAiCands').children, k;
-        for (k = 0; k < items.length; k++) {
-            items[k].className = (k === i) ? 'cv-ai-cand on' : 'cv-ai-cand';
-        }
-        drawPreview();
-    }
-
-    function drawPreview() {
-        var cv = el('cvAiCanvas');
-        if (!cv || !cv.getContext) return;
-        if (sel < 0 || !cands[sel]) paintInto(cv, cv.width, cv.height, null, '写一句描述，点「✨ 生成纹样」');
-        else paintInto(cv, cv.width, cv.height, cands[sel].params);
-    }
-
-    function renderRead(res) {
-        var box = el('cvAiRead');
-        if (!box) return;
-        box.innerHTML = '';
-        var any = false, i, d, chip, b, em, alt, lost, words;
-        for (i = 0; i < DIM_ORDER.length; i++) {
-            d = DIM_ORDER[i];
-            chip = document.createElement('i');
-            b = document.createElement('b');
-            b.textContent = DIM_NAME[d] + ' ' + valName(d, res.params[d]);
-            chip.appendChild(b);
-            em = document.createElement('em');
-            if (res.matched[d] !== undefined) {
-                em.textContent = '命中「' + (res.hits[d] || []).join('、') + '」';
-                any = true;
-            } else {
-                em.textContent = '未提及 · 按种子补齐';
-            }
-            chip.appendChild(em);
-            alt = res.alts && res.alts[d];
-            if (alt && alt.length) {
-                words = [];
-                for (var q = 0; q < alt.length; q++) {
-                    if (alt[q].words && alt[q].words.length) words.push(alt[q].words[0]);
-                }
-                if (words.length) {
-                    em = document.createElement('em');
-                    em.textContent = '另有「' + words.join('、') + '」未采用（取了更具体的那个）';
-                    chip.appendChild(em);
-                }
-            }
-            box.appendChild(chip);
-        }
-        if (!any) {
-            var t = document.createElement('i');
-            t.textContent = '整句没命中关键词，八个维度全是按种子随机补齐的。试试「靛蓝」「团花」「密」「双钩」这类词。';
-            box.appendChild(t);
-        }
-    }
-
-    // ---------------------------------------------------------------- 通道
-
-    var chan = 'local';
-
-    function setChanLine(kind, detail) {
-        var a = el('cvAiChanLine'), b = el('cvAiChanBox');
-        var text = kind + (detail ? ' · ' + detail : '');
-        if (a) a.textContent = '通道：' + text;
-        if (b) b.innerHTML = '当前通道：<b>' + text + '</b>';
-    }
+    // ---------------------------------------------------------------- 云配置读写
 
     function cloudGet() {
         try { return JSON.parse(window.localStorage.getItem(LS_CLOUD) || 'null'); }
@@ -4804,77 +3450,305 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         catch (e) { return false; }
     }
 
+    function curProvId() {
+        var cfg = cloudGet();
+        return (cfg && cfg.prov) ? cfg.prov : PROV[0].id;
+    }
+
+    // ---------------------------------------------------------------- 请求体 / 响应解析
+
+    var CLOUD_TIMEOUT = 150000;   // Kolors 一张 10~60 秒；给足 150 秒再判超时
+
+    function httpErr(status) {
+        if (status === 401 || status === 403) return 'Key 无效或没有权限（HTTP ' + status + '）';
+        if (status === 402) return '账户余额不足（HTTP 402）';
+        if (status === 404) return '端点不存在（HTTP 404），检查 URL 是否写全';
+        if (status === 429) return '触发限流，稍后再试（HTTP 429）';
+        if (status >= 500) return '服务商内部出错（HTTP ' + status + '），可稍后重试';
+        return 'HTTP ' + status;
+    }
+
+    // 请求体：按协议分派。用户没填的字段用各家的默认值兜住。
+    function buildBody(proto, cfg, prompt, n) {
+        if (proto === 'siliconflow') {
+            return {
+                model: cfg.model || 'Kwai-Kolors/Kolors',
+                prompt: prompt,
+                image_size: '1024x1024',
+                // 硅基流动 Kolors/Qwen-Image 单次只回 1 张（batch_size 参数被忽略），固定 1
+                batch_size: 1,
+                num_inference_steps: 20,
+                guidance_scale: 3.5
+            };
+        }
+        return {
+            model: cfg.model || 'text-to-image',
+            prompt: prompt,
+            n: n,
+            size: '1024x1024',
+            response_format: 'b64_json'
+        };
+    }
+
+    var IMG_URL_RE = /^(https?:\/\/|data:image\/)/;
+
+    // 兜底：递归翻整个响应，捞所有像图片的 url / b64_json。
+    // 防的是「换了端点、字段名又不一样」—— 只认一层 data[] 太脆。
+    function digImgs(o, out, depth) {
+        if (!o || depth > 6 || typeof o === 'string') return out;
+        if (Object.prototype.toString.call(o) === '[object Array]') {
+            var i;
+            for (i = 0; i < o.length; i++) digImgs(o[i], out, depth + 1);
+            return out;
+        }
+        if (typeof o !== 'object') return out;
+        if (typeof o.b64_json === 'string' && o.b64_json.length > 64) {
+            out.push('data:image/png;base64,' + o.b64_json);
+        } else if (typeof o.url === 'string' && IMG_URL_RE.test(o.url)) {
+            out.push(o.url);
+        }
+        var k;
+        for (k in o) {
+            if (Object.prototype.hasOwnProperty.call(o, k)) digImgs(o[k], out, depth + 1);
+        }
+        return out;
+    }
+
+    // 响应解析：先按协议取，取不到再递归兜底。
+    // ⚠️ 硅基流动是 images[].url，不是 OpenAI 的 data[].url —— 这是接它最容易踩的坑。
+    function parseImgs(proto, j) {
+        var out = [], arr, i, d;
+        if (proto === 'siliconflow' && j && Object.prototype.toString.call(j.images) === '[object Array]') {
+            arr = j.images;
+            for (i = 0; i < arr.length; i++) {
+                d = arr[i];
+                if (d && typeof d.url === 'string') out.push(d.url);
+                else if (d && typeof d.b64_json === 'string') out.push('data:image/png;base64,' + d.b64_json);
+            }
+        }
+        if (!out.length && j && Object.prototype.toString.call(j.data) === '[object Array]') {
+            arr = j.data;
+            for (i = 0; i < arr.length; i++) {
+                d = arr[i];
+                if (!d) continue;
+                if (typeof d.b64_json === 'string') out.push('data:image/png;base64,' + d.b64_json);
+                else if (typeof d.url === 'string') out.push(d.url);
+            }
+        }
+        if (!out.length) out = digImgs(j, [], 0);
+        return out;
+    }
+
     function cloudCall(prompt, n) {
         return new Promise(function (resolve, reject) {
             var cfg = cloudGet();
             if (!cfg || !cfg.ep || !cfg.key) { reject(new Error('未填端点或 Key')); return; }
             if (typeof window.fetch !== 'function') { reject(new Error('此环境没有 fetch')); return; }
-            var body = {
-                model: cfg.model || 'text-to-image',
-                prompt: prompt || '传统纹样',
-                n: n, size: '1024x1024', response_format: 'b64_json'
-            };
-            var ctl = null, timer = 0;
+
+            // proto 兜底也要走预设：老配置里没有 proto 字段，不能默认成 openai
+            var proto = cfg.proto || provById(cfg.prov || PROV[0].id).proto;
+            var body = buildBody(proto, cfg, prompt, n);
+            var ctl = null, timer = 0, aborted = false;
             if (typeof window.AbortController === 'function') ctl = new window.AbortController();
-            timer = window.setTimeout(function () { if (ctl) { try { ctl.abort(); } catch (e) { } } }, 30000);
+            timer = window.setTimeout(function () {
+                aborted = true;
+                if (ctl) { try { ctl.abort(); } catch (e) { } }
+            }, CLOUD_TIMEOUT);
+
             var opt = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.key },
                 body: JSON.stringify(body)
             };
             if (ctl) opt.signal = ctl.signal;
+
             window.fetch(cfg.ep, opt).then(function (r) {
-                window.clearTimeout(timer);
-                if (!r.ok) throw new Error('HTTP ' + r.status);
+                if (!r.ok) throw new Error(httpErr(r.status));
                 return r.json();
             }).then(function (j) {
-                var arr = (j && (j.data || (j.result && j.result.data))) || [];
-                var imgs = [], i, d;
-                for (i = 0; i < arr.length; i++) {
-                    d = arr[i];
-                    if (d && d.b64_json) imgs.push('data:image/png;base64,' + d.b64_json);
-                    else if (d && d.url) imgs.push(d.url);
+                window.clearTimeout(timer);
+                var imgs = parseImgs(proto, j);
+                if (!imgs.length) {
+                    var keys = (j && typeof j === 'object') ? Object.keys(j).join('/') : String(j);
+                    throw new Error('返回里没有图片字段（顶层键：' + keys + '）');
                 }
-                if (!imgs.length) throw new Error('返回里没有图片字段');
                 resolve(imgs);
             }).catch(function (e) {
                 window.clearTimeout(timer);
-                reject(e);
+                if (aborted) { reject(new Error('超时（超过 ' + Math.round(CLOUD_TIMEOUT / 1000) + ' 秒没返回）')); return; }
+                var msg = (e && e.message) ? e.message : String(e);
+                if (/abort/i.test(msg)) msg = '请求被中断';
+                else if (/Failed to fetch|NetworkError|Load failed|Network request failed/i.test(msg)) {
+                    msg = '连不上（网络不通，或被跨域拦截）';
+                }
+                reject(new Error(msg));
             });
         });
     }
 
-    function showCloud(imgs) {
-        var box = el('cvAiImgs'), wrap = el('cvAiImgsWrap');
+    // ---------------------------------------------------------------- 状态行
+
+    function setStatus(kind, detail) {
+        var text = kind + (detail ? ' · ' + detail : '');
+        var a = el('cvAiChanLine'), b = el('cvAiChanBox');
+        if (a) a.textContent = text;
+        if (b) {
+            b.innerHTML = '当前状态：<b>' + text + '</b>';
+            b.className = 'cv-ai-chan-line' + (/失败|未配置|待填/.test(kind) ? ' warn' : '');
+        }
+    }
+
+    // ---------------------------------------------------------------- 结果渲染
+
+    var lastImgs = [], curN = 1;
+
+    function showImgs(imgs, provName) {
+        var box = el('cvAiImgs'), wrap = el('cvAiImgsWrap'), emp = el('cvAiEmpty');
         if (!box || !wrap) return;
+        lastImgs = imgs.slice();
         box.innerHTML = '';
         imgs.forEach(function (src, i) {
-            var a = document.createElement('a');
-            a.href = src;
-            a.target = '_blank';
-            a.rel = 'noopener';
-            a.download = '纹样AI创作_' + (i + 1) + '.png';
+            var d = document.createElement('div');
+            d.className = 'cv-ai-img';
+            d.title = '点击看大图';
             var img = document.createElement('img');
             img.src = src;
-            img.alt = '云端生成 ' + (i + 1);
-            a.appendChild(img);
-            box.appendChild(a);
+            img.alt = 'AI 出图 ' + (i + 1);
+            d.appendChild(img);
+            // 点图 → 灯箱放大预览（不再触发下载）
+            d.addEventListener('click', function () { openLightbox(src); });
+            // 独立下载按钮（hover 显示）
+            var dl = document.createElement('button');
+            dl.type = 'button';
+            dl.className = 'cv-ai-img-dl';
+            dl.title = '保存这张图';
+            dl.textContent = '💾';
+            dl.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+                saveOne(src, i);
+            });
+            d.appendChild(dl);
+            box.appendChild(d);
         });
-        wrap.className = 'cv-ai-read';
-        setChanLine('云端通道', '已返回 ' + imgs.length + ' 张 · 未绑定厂商');
-        toast('云端出图无法直接转成参数；可下载后用「📁 导入源纹样」载入工具箱继续改');
+        if (emp) emp.className = 'cv-ai-empty cv-pane-off';
+        wrap.className = '';
+        var head = el('cvAiImgsHead');
+        if (head) {
+            head.textContent = '云端出图 · ' + provName + ' 返回 ' + imgs.length
+                + ' 张 · 点图看大图，悬浮图标或「下载全部」保存';
+        }
+        var dl = el('cvAiDl');
+        if (dl) dl.textContent = '💾 下载全部（' + imgs.length + ' 张）';
+        setStatus('出图完成', provName + ' · ' + imgs.length + ' 张');
+        toast('已出 ' + imgs.length + ' 张（' + provName + '）');
     }
 
-    function hideCloud() {
-        var wrap = el('cvAiImgsWrap');
-        if (wrap) wrap.className = 'cv-ai-read cv-pane-off';
+    function clearImgs(quiet) {
+        var box = el('cvAiImgs'), wrap = el('cvAiImgsWrap'), emp = el('cvAiEmpty');
+        if (box) box.innerHTML = '';
+        if (wrap) wrap.className = 'cv-pane-off';
+        if (emp) emp.className = 'cv-ai-empty';
+        lastImgs = [];
+        var dl = el('cvAiDl');
+        if (dl) dl.textContent = '💾 下载全部';
+        if (!quiet) { refreshStatus(); toast('已清空出图结果'); }
     }
 
-    // ---------------------------------------------------------------- 生成
+    // ---------------------------------------------------------------- 服务商
 
-    var NUMS = [2, 3, 4, 6];
-    var FREES = [{ v: 15, n: '保守' }, { v: 40, n: '均衡' }, { v: 65, n: '自由' }, { v: 90, n: '狂放' }];
-    var CHANS = [{ v: 'local', n: '本地引擎（离线）' }, { v: 'cloud', n: '云端通道（预留）' }];
+    function refreshKeyHint() {
+        var p = provById(curProvId());
+        var box = el('cvAiKeyHint');
+        if (!box) return;
+        box.innerHTML = p.keyUrl
+            ? ('去哪拿 Key：<a href="' + p.keyUrl + '" target="_blank" rel="noopener">'
+                + p.name + '控制台</a> · ' + p.note)
+            : p.note;
+    }
+
+    // 渲染当前服务商的模型芯片：点选即填入模型输入框；自定义端点没有预设模型，整行隐藏。
+    function renderModels() {
+        var box = el('cvAiModels');
+        if (!box) return;
+        box.innerHTML = '';
+        var p = provById(curProvId());
+        var list = p.models || [];
+        if (!list.length) { box.style.display = 'none'; return; }
+        box.style.display = '';
+        var cfg = cloudGet();
+        var cur = (cfg && cfg.model) ? cfg.model : p.model;
+        for (var i = 0; i < list.length; i++) (function (m) {
+            var b = document.createElement('span');
+            b.className = 'cv-chip' + (m.id === cur ? ' on' : '');
+            b.textContent = m.id;
+            b.title = m.d || m.id;
+            b.onclick = function () {
+                if (el('cvAiModel')) el('cvAiModel').value = m.id;
+                var kids = box.children;
+                for (var k = 0; k < kids.length; k++) kids[k].className = 'cv-chip';
+                b.className = 'cv-chip on';
+                if (m.d) toast(m.id + ' · ' + m.d);
+            };
+            box.appendChild(b);
+        })(list[i]);
+    }
+
+    function markProvChips() {
+        var box = el('cvAiProvs');
+        if (!box) return;
+        var id = curProvId(), kids = box.children, i;
+        for (i = 0; i < kids.length; i++) {
+            kids[i].className = (PROV[i].id === id) ? 'cv-chip on' : 'cv-chip';
+        }
+        refreshKeyHint();
+    }
+
+    // 选中服务商：把端点与模型自动填好，Key 保留用户已填的（换服务商 Key 通常不通用，但别擅自清空）
+    function pickProv(id) {
+        var p = provById(id);
+        var cfg = cloudGet() || {};
+        cfg.prov = p.id;
+        cfg.proto = p.proto;
+        if (p.ep) cfg.ep = p.ep;
+        if (p.model) cfg.model = p.model;
+        cloudSet(cfg);
+        if (el('cvAiEp')) el('cvAiEp').value = cfg.ep || '';
+        if (el('cvAiModel')) el('cvAiModel').value = cfg.model || '';
+        markProvChips();
+        renderModels();
+        refreshStatus();
+        toast('已选「' + p.name + '」' + (p.ep ? '，端点与模型已自动填好，只差 Key' : '，请自行填写端点与模型'));
+    }
+
+    function refreshStatus() {
+        var cfg = cloudGet();
+        var pv = provById(curProvId());
+        if (!cfg || !cfg.ep) { setStatus('未配置', '在右侧选服务商、填端点与 Key'); return; }
+        if (!cfg.key) { setStatus('待填 Key', pv.name + ' · 端点已填，只差一个 API Key'); return; }
+        setStatus('已就绪', pv.name + ' · 点「✨ 生成纹样」开始出图');
+    }
+
+    function saveCfg() {
+        var p = provById(curProvId());
+        var o = {
+            prov: p.id,
+            proto: p.proto,
+            ep: String(el('cvAiEp').value || '').trim(),
+            key: String(el('cvAiKey').value || '').trim(),
+            model: String(el('cvAiModel').value || '').trim()
+        };
+        cloudSet(o);
+        markProvChips();
+        refreshStatus();
+        if (!o.ep || !o.key) {
+            toast('已保存（' + (o.ep ? 'Key 还空着' : '端点和 Key 都还空着') + '，填好才能出图）');
+            return;
+        }
+        toast('已保存「' + p.name + '」配置，可以点「✨ 生成纹样」了');
+    }
+
+    // ---------------------------------------------------------------- 提示词
+
     var IDEAS = ['靛蓝', '藕荷', '青碧', '暖棕旧锦', '苔绿',
         '八角', '盘王印', '四十八勾', '蝴蝶妈妈',
         '四方连续', '二方连续', '团花', '散点',
@@ -4889,150 +3763,9 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         '苔绿山间，八角花二方连续成带，圆点底纹，轻盈雅致'
     ];
 
-    var curN = 4, curFree = 65;
-
-    function chip(box, text, on, fn) {
-        var b = document.createElement('span');
-        b.className = 'cv-chip' + (on ? ' on' : '');
-        b.textContent = text;
-        b.onclick = fn;
-        box.appendChild(b);
-    }
-
-    function markChips(box, idx) {
-        var kids = box.children, i;
-        for (i = 0; i < kids.length; i++) {
-            kids[i].className = (i === idx) ? 'cv-chip on' : 'cv-chip';
-        }
-    }
-
-    function markChanChips() {
-        var box = el('cvAiChans');
-        if (!box) return;
-        var kids = box.children, i;
-        for (i = 0; i < kids.length; i++) {
-            kids[i].className = (CHANS[i].v === chan) ? 'cv-chip on' : 'cv-chip';
-        }
-        var box2 = el('cvAiCloud');
-        if (box2) box2.className = 'cv-ai-cloud' + (chan === 'cloud' ? ' on' : '');
-    }
-
-    function setGenBusy(b) {
-        var btn = el('cvAiGen');
-        if (!btn) return;
-        btn.disabled = !!b;
-        btn.textContent = b ? '⏳ 调用中…' : '✨ 生成纹样';
-    }
-
-    function localGen(text, n, freedom) {
-        var seed = (hash(text || '麓山绘梦·纹样') ^ ((seedSalt * 2654435761) >>> 0)) >>> 0;
-        var res = baseParams(text, seed);
-        cands = buildVariants(res.params, n, freedom, seed);
-        sel = 0;
-        renderCands();
-        drawPreview();
-        renderRead(res);
-        setChanLine('本地引擎', '离线 · 种子 ' + (seed % 1000000));
-        return res;
-    }
-
-    function generate(quiet) {
+    function promptText() {
         var ta = el('cvAiPrompt');
-        var text = ta ? String(ta.value || '').replace(/\s+/g, ' ').trim() : '';
-        var n = curN, freedom = curFree;
-
-        if (chan === 'cloud') {
-            if (typeof Promise !== 'function') { chan = 'local'; markChanChips(); toast('此环境不支持 Promise，已切回本地引擎'); }
-        }
-
-        if (chan === 'cloud') {
-            hideCloud();
-            setGenBusy(true);
-            setChanLine('云端通道', '调用中…');
-            cloudCall(text, n).then(function (imgs) {
-                setGenBusy(false);
-                showCloud(imgs);
-            }).catch(function (e) {
-                setGenBusy(false);
-                toast('云端通道不可用（' + e.message + '），已回落到本地引擎');
-                localGen(text, n, freedom);
-                setChanLine('本地引擎', '云端回落：' + e.message);
-            });
-            return;
-        }
-
-        hideCloud();
-        localGen(text, n, freedom);
-        if (quiet) return;
-        toast(text ? ('已出 ' + n + ' 稿（本地引擎，离线渲染）')
-            : '没写描述，已按随机种子出一版 —— 想更贴题就点几个灵感词');
-    }
-
-    // ---------------------------------------------------------------- 动作
-
-    function currentParams() {
-        return (sel >= 0 && cands[sel]) ? cands[sel].params : null;
-    }
-
-    function adopt() {
-        var p = currentParams();
-        if (!p) { toast('先生成一版候选'); return; }
-        if (!CS || typeof CS.setState !== 'function') { toast('工作台引擎未就绪'); return; }
-        CS.setState(p);
-        setMode('studio', true);
-        toast('已采用「' + paramTitle(p) + '」，可在工具箱继续微调');
-    }
-
-    function saveWork() {
-        var p = currentParams();
-        if (!p) { toast('先生成一版候选'); return; }
-        if (!CS || typeof CS.setState !== 'function' || typeof CS.save !== 'function') { toast('工作台引擎未就绪'); return; }
-        CS.setState(p);
-        CS.save();
-    }
-
-    function pad2(n) { return (n < 10 ? '0' : '') + n; }
-
-    function exportPng() {
-        var p = currentParams();
-        if (!p) { toast('先生成一版候选'); return; }
-        var cv = document.createElement('canvas');
-        cv.width = 1920; cv.height = 1440;
-        paintInto(cv, cv.width, cv.height, p);
-        var url;
-        try { url = cv.toDataURL('image/png'); }
-        catch (e) { toast('导出失败：' + e.message); return; }
-        var d = new Date();
-        var name = '纹样AI创作_' + paramTitle(p).replace(/[ \u00b7]/g, '') + '_'
-            + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '_'
-            + pad2(d.getHours()) + pad2(d.getMinutes()) + '.png';
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = name;
-        a.rel = 'noopener';
-        document.body.appendChild(a);
-        a.click();
-        window.setTimeout(function () { if (a.parentNode) a.parentNode.removeChild(a); }, 0);
-        toast('已导出：' + name);
-        window.__cvAiLastExport = { name: name, len: url.length, w: cv.width, h: cv.height };
-    }
-
-    function again() {
-        seedSalt = (seedSalt + 1) % 100000;
-        var ta = el('cvAiPrompt');
-        var text = ta ? String(ta.value || '').replace(/\s+/g, ' ').trim() : '';
-        hideCloud();
-        localGen(text, curN, curFree);
-        toast('换了个种子，重新出了 ' + curN + ' 稿');
-    }
-
-    function idea() {
-        var ta = el('cvAiPrompt');
-        if (!ta) return;
-        var s = SAMPLES[Math.floor(Math.random() * SAMPLES.length) % SAMPLES.length];
-        ta.value = s;
-        countChars();
-        toast('已填入一条示例描述，可自行改动');
+        return ta ? String(ta.value || '').replace(/\s+/g, ' ').trim() : '';
     }
 
     function countChars() {
@@ -5050,108 +3783,151 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         countChars();
     }
 
-    // ---------------------------------------------------------------- 模式切换
-
-    var mode = 'studio';
-
-    function setMode(m, quiet) {
-        if (m !== 'ai' && m !== 'studio') m = 'studio';
-        mode = m;
-        var tabs = document.querySelectorAll('#cvModes .cv-mode'), i;
-        for (i = 0; i < tabs.length; i++) {
-            tabs[i].className = (tabs[i].getAttribute('data-mode') === m) ? 'cv-mode on' : 'cv-mode';
-        }
-        var panes = document.querySelectorAll('[data-pane]'), p, on;
-        for (i = 0; i < panes.length; i++) {
-            p = panes[i];
-            on = (p.getAttribute('data-pane') === m);
-            if (!p.classList) continue;
-            if (on) p.classList.remove('cv-pane-off');
-            else p.classList.add('cv-pane-off');
-        }
-        try { window.localStorage.setItem(LS_MODE, m); } catch (e) { }
-        if (heroP) heroP.textContent = (m === 'ai') ? HERO_AI : heroOrig;
-        if (m === 'ai') {
-            drawPreview();
-            if (!cands.length) renderCands();
-            setChanLine(chan === 'cloud' ? '云端通道（预留）' : '本地引擎',
-                chan === 'cloud' ? '未绑定厂商 · 失败会自动回落' : '离线运行 · 不上传、无费用');
-        } else if (CS && typeof CS.enter === 'function') {
-            CS.enter();
-        }
-        if (!quiet) toast(m === 'ai' ? '已切到 AI 创作台' : '已切回工具箱');
+    function idea() {
+        var ta = el('cvAiPrompt');
+        if (!ta) return;
+        var s = SAMPLES[Math.floor(Math.random() * SAMPLES.length) % SAMPLES.length];
+        ta.value = s;
+        countChars();
+        toast('已填入一条示例描述，可自行改动');
     }
 
-    // ---------------------------------------------------------------- 初始化
+    // ---------------------------------------------------------------- 生成
 
-    function hookTopView() {
-        if (window.__cvAiHooked) return;
-        if (typeof window.setTopView !== 'function') return;
-        window.__cvAiHooked = true;
-        var orig = window.setTopView;
-        window.setTopView = function (name) {
-            orig(name);
-            if (name === 'create') window.setTimeout(function () { drawPreview(); }, 0);
-        };
+    function chip(box, text, on, fn) {
+        var b = document.createElement('span');
+        b.className = 'cv-chip' + (on ? ' on' : '');
+        b.textContent = text;
+        b.onclick = fn;
+        box.appendChild(b);
     }
+
+    function markChips(box, idx) {
+        var kids = box.children, i;
+        for (i = 0; i < kids.length; i++) {
+            kids[i].className = (i === idx) ? 'cv-chip on' : 'cv-chip';
+        }
+    }
+
+    function setBusy(b) {
+        var btn = el('cvAiGen');
+        if (!btn) return;
+        btn.disabled = !!b;
+        btn.textContent = b ? '⏳ 出图中…' : '✨ 生成纹样';
+    }
+
+    function generate() {
+        var text = promptText();
+        if (!text) { toast('先写一句描述吧 —— 或者点「🎲 来点灵感」'); return; }
+
+        var cfg = cloudGet();
+        var pv = provById(curProvId());
+        if (!cfg || !cfg.ep || !cfg.key) {
+            setStatus('未配置', '先在右侧填好端点与 API Key 再点生成');
+            toast('还没配置：在右侧选服务商、填上 API Key');
+            return;
+        }
+        if (typeof window.fetch !== 'function') {
+            setStatus('环境不支持', '这个环境没有 fetch，无法调用云端接口');
+            toast('此环境没有 fetch，无法调用云端');
+            return;
+        }
+
+        setBusy(true);
+        clearImgs(true);
+        setStatus('出图中', pv.name + ' · 一张 10~60 秒，别急着关页面');
+        var t0 = new Date().getTime();
+
+        cloudCall(text, curN).then(function (imgs) {
+            setBusy(false);
+            showImgs(imgs, pv.name);
+            window.__cvAiLast = {
+                ok: true, prov: pv.name, prompt: text, n: imgs.length,
+                ms: new Date().getTime() - t0
+            };
+        }).catch(function (e) {
+            setBusy(false);
+            var msg = (e && e.message) ? e.message : String(e);
+            setStatus('出图失败', msg);
+            toast('出图失败：' + msg);
+            window.__cvAiLast = { ok: false, prov: pv.name, prompt: text, err: msg };
+        });
+    }
+
+    // ---------------------------------------------------------------- 动作
+
+    var lightboxSrc = null;
+
+    function openLightbox(src) {
+        lightboxSrc = src;
+        var lb = el('cvLightbox'), im = el('cvLbImg');
+        if (!lb) return;
+        if (im) im.src = src;
+        lb.className = 'cv-lightbox show';
+    }
+
+    function closeLightbox() {
+        var lb = el('cvLightbox');
+        if (lb) lb.className = 'cv-lightbox';
+        lightboxSrc = null;
+    }
+
+    function saveOne(src, i) {
+        var a = document.createElement('a');
+        a.href = src;
+        a.download = '纹样AI创作_' + stamp() + '_' + (i + 1) + '.png';
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        window.setTimeout(function () { if (a.parentNode) a.parentNode.removeChild(a); }, 0);
+        toast('已保存第 ' + (i + 1) + ' 张（若浏览器未响应下载，可右键/长按另存）');
+    }
+
+    function downloadAll() {
+        if (!lastImgs.length) { toast('还没有可下载的图'); return; }
+        var tag = stamp();
+        lastImgs.forEach(function (src, i) {
+            var a = document.createElement('a');
+            a.href = src;
+            a.download = '纹样AI创作_' + tag + '_' + (i + 1) + '.png';
+            a.target = '_blank';   // 跨域图 download 会被忽略，退化成新标签打开，仍可右键另存
+            a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            window.setTimeout(function () { if (a.parentNode) a.parentNode.removeChild(a); }, 0);
+        });
+        window.__cvAiDownloads = lastImgs.length;
+        toast('已触发下载 ' + lastImgs.length + ' 张；若浏览器忽略了下载，会改为在新标签打开，右键另存即可');
+    }
+
+    // ---------------------------------------------------------------- 构建
 
     function buildUI() {
         var box, i;
-
-        heroP = document.querySelector('#createView .tv-hero p');
-        heroOrig = heroP ? heroP.textContent : '';
 
         box = el('cvAiChips');
         if (box) for (i = 0; i < IDEAS.length; i++) (function (w) {
             chip(box, w, false, function () { addWord(w); });
         })(IDEAS[i]);
 
-        box = el('cvAiNums');
-        if (box) for (i = 0; i < NUMS.length; i++) (function (idx) {
-            chip(box, NUMS[idx] + ' 稿', NUMS[idx] === curN, function () {
-                curN = NUMS[idx];
-                markChips(box, idx);
-                toast('变体数量：' + curN + ' 稿');
-            });
+        box = el('cvAiProvs');
+        if (box) for (i = 0; i < PROV.length; i++) (function (idx) {
+            chip(box, PROV[idx].name, PROV[idx].id === curProvId(), function () { pickProv(PROV[idx].id); });
         })(i);
-
-        box = el('cvAiFrees');
-        if (box) for (i = 0; i < FREES.length; i++) (function (idx) {
-            chip(box, FREES[idx].n, FREES[idx].v === curFree, function () {
-                curFree = FREES[idx].v;
-                markChips(box, idx);
-                toast('创意自由度：' + FREES[idx].n);
-            });
-        })(i);
-
-        box = el('cvAiChans');
-        if (box) for (i = 0; i < CHANS.length; i++) (function (idx) {
-            chip(box, CHANS[idx].n, CHANS[idx].v === chan, function () {
-                chan = CHANS[idx].v;
-                markChanChips();
-                if (chan === 'cloud') {
-                    var cfg = cloudGet();
-                    if (!cfg || !cfg.ep || !cfg.key) toast('云端通道还没配置，先填端点和 Key；不填就点生成会自动回落本地');
-                    else toast('已切到云端通道');
-                } else {
-                    toast('已切回本地引擎');
-                }
-                setChanLine(chan === 'cloud' ? '云端通道（预留）' : '本地引擎',
-                    chan === 'cloud' ? '未绑定厂商 · 失败会自动回落' : '离线运行 · 不上传、无费用');
-            });
-        })(i);
-
-        var tabs = document.querySelectorAll('#cvModes .cv-mode');
-        for (i = 0; i < tabs.length; i++) (function (btn) {
-            btn.onclick = function () { setMode(btn.getAttribute('data-mode')); };
-        })(tabs[i]);
 
         if (el('cvAiGen')) el('cvAiGen').onclick = function () { generate(); };
-        if (el('cvAiAgain')) el('cvAiAgain').onclick = function () { again(); };
         if (el('cvAiExample')) el('cvAiExample').onclick = function () { idea(); };
-        if (el('cvAiAdopt')) el('cvAiAdopt').onclick = function () { adopt(); };
-        if (el('cvAiSave')) el('cvAiSave').onclick = function () { saveWork(); };
-        if (el('cvAiExport')) el('cvAiExport').onclick = function () { exportPng(); };
+        if (el('cvAiDl')) el('cvAiDl').onclick = function () { downloadAll(); };
+        if (el('cvAiClear')) el('cvAiClear').onclick = function () { clearImgs(); };
+        // 灯箱：关闭 / 保存当前大图
+        if (el('cvLbClose')) el('cvLbClose').onclick = function () { closeLightbox(); };
+        if (el('cvLbClose2')) el('cvLbClose2').onclick = function () { closeLightbox(); };
+        if (el('cvLbSave')) el('cvLbSave').onclick = function () {
+            if (lightboxSrc) saveOne(lightboxSrc, 0);
+        };
+        if (el('cvLightbox')) el('cvLightbox').addEventListener('click', function (ev) {
+            if (ev.target === el('cvLightbox')) closeLightbox();   // 点背景空白处关闭
+        });
 
         var ta = el('cvAiPrompt');
         if (ta) {
@@ -5161,50 +3937,46 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
             };
         }
 
+        // 首次打开就把推荐服务商的端点与模型灌进去，用户只需要补一个 Key
         var cfg = cloudGet();
-        if (el('cvAiEp')) el('cvAiEp').value = cfg ? (cfg.ep || '') : '';
-        if (el('cvAiKey')) el('cvAiKey').value = cfg ? (cfg.key || '') : '';
-        if (el('cvAiModel')) el('cvAiModel').value = cfg ? (cfg.model || '') : '';
-        if (el('cvAiCloudSave')) el('cvAiCloudSave').onclick = function () {
-            var o = {
-                ep: String(el('cvAiEp').value || '').trim(),
-                key: String(el('cvAiKey').value || '').trim(),
-                model: String(el('cvAiModel').value || '').trim()
-            };
-            cloudSet(o);
-            toast(o.ep && o.key ? '云端配置已存在本机浏览器' : '已保存（端点或 Key 还空着，云端通道仍会回落本地）');
-        };
+        if (!cfg) {
+            cfg = { prov: PROV[0].id, proto: PROV[0].proto, ep: PROV[0].ep, key: '', model: PROV[0].model };
+            cloudSet(cfg);
+        }
+        if (el('cvAiEp')) el('cvAiEp').value = cfg.ep || '';
+        if (el('cvAiKey')) el('cvAiKey').value = cfg.key || '';
+        if (el('cvAiModel')) el('cvAiModel').value = cfg.model || '';
+        if (el('cvAiCloudSave')) el('cvAiCloudSave').onclick = function () { saveCfg(); };
 
         countChars();
-        markChanChips();
-        renderCands();
+        markProvChips();
+        renderModels();
+        refreshStatus();
     }
 
     function init() {
-        if (!el('cvAiCanvas')) return;             // 本页没装 AI 面板，静默退出
-        CS = window['CVStudio'] || null;
+        if (!el('cvAiPrompt')) return;             // 本页没装 AI 面板，静默退出
         buildUI();
-        hookTopView();
-        if (!window.__cvAiHooked) window.setTimeout(hookTopView, 300);
-        var m = 'studio';
-        try { m = window.localStorage.getItem(LS_MODE) || 'studio'; } catch (e) { }
-        setMode(m, true);
-        if (CS && typeof CS.paintTo !== 'function') {
-            var btn = el('cvAiGen');
-            if (btn) { btn.disabled = true; btn.textContent = '引擎未就绪'; }
-            var note = el('cvAiCandNote');
-            if (note) note.textContent = '本地渲染引擎缺少 paintTo 接口，AI 生成暂不可用。';
-        }
         window.CVAI = {
-            version: '1.0',
-            mode: function () { return mode; },
-            setMode: setMode,
-            channel: function () { return chan; },
-            parse: parse,
+            version: '2.0',
+            mode: 'cloud-only',
+            provider: curProvId,
+            pickProvider: pickProv,
+            cloudConfig: cloudGet,
+            setCloudConfig: cloudSet,
+            cloudCall: cloudCall,
+            cloudTimeout: function () { return CLOUD_TIMEOUT; },
+            buildBody: buildBody,
+            parseImgs: parseImgs,
             generate: generate,
-            variants: function () { return cands; },
-            current: currentParams,
-            seedSalt: function () { return seedSalt; }
+            prompt: promptText,
+            count: function () { return curN; },
+            setCount: function (v) { curN = 1; },
+            images: function () { return lastImgs.slice(); },
+            downloadAll: downloadAll,
+            showImgs: showImgs,
+            clear: clearImgs,
+            last: function () { return window.__cvAiLast || null; }
         };
     }
 
