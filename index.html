@@ -3487,6 +3487,7 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
             return {
                 model: cfg.model || 'Kwai-Kolors/Kolors',
                 prompt: prompt,
+                negative_prompt: '人物，人像，人脸，手，照片，写实摄影，场景，文字，水印，签名',
                 image_size: '1024x1024',
                 // 硅基流动 Kolors/Qwen-Image 单次只回 1 张（batch_size 参数被忽略），固定 1
                 batch_size: 1,
@@ -3780,6 +3781,14 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         return ta ? String(ta.value || '').replace(/\s+/g, ' ').trim() : '';
     }
 
+    // 用户描述只是题材词，必须套上纹样风格壳再发给模型 ——
+    // 否则「朱红，瑶锦，回纹」会被自由发挥成人像/场景（2026-10-13 实测）。
+    function patternPrompt(userText) {
+        var t = String(userText || '').replace(/[，,、\s]+$/, '');
+        return '中国传统织锦纹样图案，' + t +
+            '，平面装饰图案，构图饱满，织锦织物质感，细节清晰，无人物，无场景，无文字';
+    }
+
     function countChars() {
         var ta = el('cvAiPrompt'), c = el('cvAiCount');
         if (!ta || !c) return;
@@ -3850,11 +3859,12 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         setStatus('出图中', pv.name + ' · 一张 10~60 秒，别急着关页面');
         var t0 = new Date().getTime();
 
-        cloudCall(text, curN).then(function (imgs) {
+        var fp = patternPrompt(text);
+        cloudCall(fp, curN).then(function (imgs) {
             setBusy(false);
             showImgs(imgs, pv.name);
             window.__cvAiLast = {
-                ok: true, prov: pv.name, prompt: text, n: imgs.length,
+                ok: true, prov: pv.name, prompt: text, fullPrompt: fp, n: imgs.length,
                 ms: new Date().getTime() - t0
             };
         }).catch(function (e) {
@@ -3862,7 +3872,7 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
             var msg = (e && e.message) ? e.message : String(e);
             setStatus('出图失败', msg);
             toast('出图失败：' + msg);
-            window.__cvAiLast = { ok: false, prov: pv.name, prompt: text, err: msg };
+            window.__cvAiLast = { ok: false, prov: pv.name, prompt: text, fullPrompt: fp, err: msg };
         });
     }
 
@@ -3982,6 +3992,7 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
             parseImgs: parseImgs,
             generate: generate,
             prompt: promptText,
+            patternPrompt: patternPrompt,
             count: function () { return curN; },
             setCount: function (v) { curN = 1; },
             images: function () { return lastImgs.slice(); },
