@@ -1,0 +1,212 @@
+/* 麓山绘梦·纹鉴 - 二次创作派生谱系样式 */
+/* 视觉语言与 region-chain-css.css 保持一致；表单/按钮复用其 .form-group/.btn-* 类 */
+/* ========================================================= */
+
+.derivation-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 80px 20px 40px;
+  background: #0f0f1e;
+  color: #fff;
+  min-height: 100vh;
+}
+
+.derivation-header {
+  text-align: center;
+  margin-bottom: 28px;
+  position: relative;
+}
+
+.derivation-header h2 {
+  font-size: 32px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #34d399, #10b981);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.derivation-header p {
+  font-size: 15px;
+  color: #a0a0b8;
+  margin: 0;
+}
+
+/* 顶部工具栏：返回 + 焦点标签 */
+.dv-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.dv-back {
+  background: #252542;
+  color: #a0a0b8;
+  border: 1px solid #3a3a5c;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.dv-back:hover { background: #3a3a5c; color: #fff; }
+
+.dv-focus-label {
+  font-size: 14px;
+  color: #a0a0b8;
+}
+.dv-focus-label strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 状态 / 错误条 */
+.dv-status {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 14px;
+  background: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.25);
+}
+.dv-status.dv-error {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+/* 图谱区 */
+.dv-graph-scroll {
+  overflow: auto;
+  background: #0f0f1e;
+  border: 1px solid #2a2a40;
+  border-radius: 12px;
+  padding: 10px;
+  min-height: 160px;
+}
+svg.derivation-graph { display: block; }
+.dv-node-clickable { cursor: pointer; }
+.dv-node-clickable:hover rect { stroke: #34d399; }
+
+.dv-empty {
+  text-align: center;
+  color: #6b6b8c;
+  padding: 48px 0;
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+/* 图例 */
+.dv-legend {
+  display: flex;
+  gap: 22px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: #a0a0b8;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.dv-legend .sw {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* 登记表单 */
+.dv-form-section {
+  margin-top: 32px;
+  background: #1a1a2e;
+  border: 1px solid #2a2a40;
+  border-radius: 16px;
+  padding: 28px;
+}
+.dv-form-section h3 {
+  font-size: 20px;
+  margin-bottom: 18px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dv-form-section h3::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: #10b981;
+  border-radius: 2px;
+}
+
+.dv-role-toggle {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.dv-role-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #a0a0b8;
+  cursor: pointer;
+}
+.dv-role-toggle input { accent-color: #10b981; width: 16px; height: 16px; }
+
+/* 全屏浮层容器（与 region-chain 一致） */
+.derivation-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  overflow-y: auto;
+  background: rgba(8, 8, 18, 0.96);
+  backdrop-filter: blur(2px);
+}
+.derivation-overlay .derivation-container {
+  min-height: auto;
+  background: transparent;
+}
+
+.derivation-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #3a3a5c;
+  background: #252542;
+  color: #a0a0b8;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.derivation-close-btn:hover {
+  background: #3a3a5c;
+  color: #fff;
+  transform: rotate(90deg);
+}
+
+.derivation-header { position: relative; }
+
+/* 动画 */
+@keyframes dvFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.derivation-container { animation: dvFadeIn 0.6s ease-out; }
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .derivation-container { padding: 60px 16px 20px; }
+  .dv-form-section { padding: 20px; }
+  .dv-role-toggle { flex-direction: column; gap: 12px; }
+  .form-actions { flex-direction: column; }
+  .btn-primary, .btn-secondary { width: 100%; }
+}
