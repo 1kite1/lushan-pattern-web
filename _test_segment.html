@@ -1,0 +1,165 @@
+<!-- 浏览器端分割测试页面（一次性使用，可删） -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>分割测试</title>
+<style>
+body{font-family:system-ui;padding:20px;background:#1a1a2e;color:#eee}
+.row{display:flex;gap:20px;margin:20px 0}
+.col{flex:1}
+img,canvas{max-width:100%;border:2px solid #555;border-radius:8px}
+h2{color:#7df}
+button{padding:10px 20px;background:#7df;color:#000;border:none;border-radius:6px;cursor:pointer;margin:5px}
+.info{background:#2a2a3e;padding:12px;border-radius:6px;margin:10px 0;font-family:monospace;font-size:13px}
+</style>
+</head><body>
+<h1>🧪 U-Net 替代方案：经典CV分割测试</h1>
+<p>上传一张带背景的纹样照片，验证 segmentPattern 抠图效果</p>
+<input type="file" id="fileIn" accept="image/*">
+<button onclick="location.href='/'">返回主页</button>
+
+<div class="info" id="info">等待上传...</div>
+
+<div class="row">
+<div class="col"><h2>原图</h2><img id="orig" style="max-height:400px"></div>
+<div class="col"><h2>分割后</h2><canvas id="out" style="max-height:400px"></canvas></div>
+</div>
+
+<!-- 引入主 index.html 的算法（直接复制粘贴） -->
+<script>
+// ====== 复制主程序的算法 ======
+async function segmentPattern(img) {
+    if (!img || img.width < 32 || img.height < 32) return img;
+    const MAX_DIM = 600;
+    const scale = Math.min(1, MAX_DIM / Math.max(img.width, img.height));
+    const w = Math.max(1, Math.round(img.width * scale));
+    const h = Math.max(1, Math.round(img.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, w, h);
+    const id = ctx.getImageData(0, 0, w, h);
+    const { data } = id;
+    const total = w * h;
+    const gray = new Uint8ClampedArray(total);
+    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+        gray[j] = (data[i] * 299 + data[i + 1] * 587 + data[i + 2] * 114) / 1000 | 0;
+    }
+    const samples = [];
+    for (let x = 0; x < w; x += 8) { samples.push(gray[x]); samples.push(gray[(h - 1) * w + x]); }
+    for (let y = 0; y < h; y += 8) { samples.push(gray[y * w]); samples.push(gray[y * w + (w - 1)]); }
+    samples.sort((a, b) => a - b);
+    const bgColor = samples[Math.floor(samples.length * 0.5)] || 128;
+    const otsuTh = otsuThreshold(gray);
+    const diffTh = Math.max(18, Math.min(60, otsuTh * 0.4));
+    const mask = new Uint8ClampedArray(total);
+    for (let i = 0; i < total; i++) {
+        mask[i] = Math.abs(gray[i] - bgColor) > diffTh ? 255 : 0;
+    }
+    let m = erode(mask, w, h, 2);
+    m = dilate(m, w, h, 2);
+    m = dilate(m, w, h, 3);
+    m = erode(m, w, h, 3);
+    m = keepLargestComponent(m, w, h);
+    const out = new Uint8ClampedArray(data.length);
+    let foreground = 0;
+    for (let i = 0, j = 0; i < out.length; i += 4, j++) {
+        if (m[j] === 0) { out[i] = 255; out[i + 1] = 255; out[i + 2] = 255; out[i + 3] = 255; }
+        else { out[i] = data[i]; out[i + 1] = data[i + 1]; out[i + 2] = data[i + 2]; out[i + 3] = 255; foreground++; }
+    }
+    ctx.putImageData(new ImageData(out, w, h), 0, 0);
+    return { canvas, info: { bgColor, otsuTh, diffTh, foreground, total, ratio: (foreground/total*100).toFixed(1)+'%' } };
+}
+function otsuThreshold(gray) {
+    const hist = new Array(256).fill(0);
+    for (let i = 0; i < gray.length; i++) hist[gray[i]]++;
+    const total = gray.length;
+    let sum = 0; for (let i = 0; i < 256; i++) sum += i * hist[i];
+    let sumB = 0, wB = 0, maxVar = 0, threshold = 30;
+    for (let t = 0; t < 256; t++) {
+        wB += hist[t]; if (wB === 0) continue;
+        const wF = total - wB; if (wF === 0) break;
+        sumB += t * hist[t];
+        const mB = sumB / wB, mF = (sum - sumB) / wF;
+        const v = wB * wF * (mB - mF) * (mB - mF);
+        if (v > maxVar) { maxVar = v; threshold = t; }
+    }
+    return threshold;
+}
+function dilate(mask, w, h, k) {
+    const out = new Uint8ClampedArray(mask.length); const r = (k - 1) >> 1;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        let mx = 0;
+        for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+            const ny = y + dy, nx = x + dx;
+            if (ny >= 0 && ny < h && nx >= 0 && nx < w) { const v = mask[ny * w + nx]; if (v > mx) mx = v; }
+        }
+        out[y * w + x] = mx;
+    }
+    return out;
+}
+function erode(mask, w, h, k) {
+    const out = new Uint8ClampedArray(mask.length); const r = (k - 1) >> 1;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        let mn = 255;
+        for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+            const ny = y + dy, nx = x + dx;
+            if (ny >= 0 && ny < h && nx >= 0 && nx < w) { const v = mask[ny * w + nx]; if (v < mn) mn = v; }
+        }
+        out[y * w + x] = mn;
+    }
+    return out;
+}
+function keepLargestComponent(mask, w, h) {
+    const labels = new Int32Array(mask.length);
+    let nextLabel = 1; const sizes = new Map();
+    for (let i = 0; i < mask.length; i++) {
+        if (mask[i] > 0 && labels[i] === 0) {
+            const label = nextLabel++;
+            const q = new Int32Array(mask.length); let head = 0, tail = 0;
+            q[tail++] = i; labels[i] = label; let size = 0;
+            while (head < tail) {
+                const idx = q[head++]; size++;
+                const x = idx % w, y = (idx - x) / w;
+                if (x > 0) { const n = idx - 1; if (mask[n] > 0 && labels[n] === 0) { labels[n] = label; q[tail++] = n; } }
+                if (x < w - 1) { const n = idx + 1; if (mask[n] > 0 && labels[n] === 0) { labels[n] = label; q[tail++] = n; } }
+                if (y > 0) { const n = idx - w; if (mask[n] > 0 && labels[n] === 0) { labels[n] = label; q[tail++] = n; } }
+                if (y < h - 1) { const n = idx + w; if (mask[n] > 0 && labels[n] === 0) { labels[n] = label; q[tail++] = n; } }
+            }
+            sizes.set(label, size);
+        }
+    }
+    let maxLabel = 0, maxSize = 0;
+    for (const [lb, sz] of sizes) if (sz > maxSize) { maxSize = sz; maxLabel = lb; }
+    const out = new Uint8ClampedArray(mask.length);
+    for (let i = 0; i < mask.length; i++) out[i] = labels[i] === maxLabel ? 255 : 0;
+    return out;
+}
+
+// ====== UI ======
+document.getElementById('fileIn').onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const dataUrl = await new Promise(r => { const fr = new FileReader(); fr.onload = ev => r(ev.target.result); fr.readAsDataURL(f); });
+    document.getElementById('orig').src = dataUrl;
+    const img = new Image();
+    img.onload = async () => {
+        const t0 = performance.now();
+        const result = await segmentPattern(img);
+        const dt = (performance.now() - t0).toFixed(0);
+        // 显示结果
+        const outCanvas = document.getElementById('out');
+        outCanvas.width = result.canvas.width;
+        outCanvas.height = result.canvas.height;
+        outCanvas.getContext('2d').drawImage(result.canvas, 0, 0);
+        document.getElementById('info').innerHTML = `
+            <b>⏱ 耗时:</b> ${dt}ms<br>
+            <b>📐 输入尺寸:</b> ${img.width}×${img.height} → ${result.canvas.width}×${result.canvas.height}<br>
+            <b>🎨 背景色估算:</b> ${result.info.bgColor} (灰度)<br>
+            <b>📊 Otsu阈值:</b> ${result.info.otsuTh}<br>
+            <b>🔍 差异阈值:</b> ${result.info.diffTh}<br>
+            <b>✂️ 前景占比:</b> ${result.info.ratio} (${result.info.foreground}/${result.info.total}像素)<br>
+            <b>✅ 结论:</b> ${parseFloat(result.info.ratio) > 5 ? '有前景，抠图成功' : '前景太小，可能原图太干净或对比度不够'}
+        `;
+    };
+    img.src = dataUrl;
+};
+</script>
+</body></html>
