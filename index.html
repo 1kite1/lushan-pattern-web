@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -490,14 +490,14 @@
   .lib-nav-tab{padding:6px 10px;font-size:12.5px;}
 }
 
-/* ===== 顶层视图：二次创作 / 特征提取 ===== */
-#createView,#featureView{position:fixed;left:0;right:0;bottom:0;top:var(--tv-top,64px);z-index:1200;
+/* ===== 顶层视图：二次创作 ===== */
+#createView{position:fixed;left:0;right:0;bottom:0;top:var(--tv-top,64px);z-index:1200;
   display:none;overflow-y:auto;overflow-x:hidden;background:#0f0f1e;color:#fff;text-align:left;
   font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
   -webkit-font-smoothing:antialiased;}
-#createView.lib-open,#featureView.lib-open{display:block;}
-#createView *,#featureView *{box-sizing:border-box;}
-#createView input,#featureView input{font-family:inherit;}
+#createView.lib-open{display:block;}
+#createView *{box-sizing:border-box;}
+#createView input{font-family:inherit;}
 
 /* 共用骨架（与资源库同一套视觉语言） */
 .tv-head{position:sticky;top:0;z-index:5;background:rgba(15,15,30,.92);
@@ -612,72 +612,8 @@
 .cv-work-b b{display:block;font-size:14px;font-weight:600;color:#fff;}
 .cv-work-b span{display:block;font-size:11.5px;color:#6b6b8c;margin-top:6px;}
 
-/* ---- 特征提取 ---- */
-.fv-io{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;margin-bottom:26px;}
-.fv-drop{border:1.5px dashed #3a3a5c;border-radius:16px;background:#1a1a2e;
-  padding:38px 20px;text-align:center;transition:.18s;}
-.fv-drop:hover{border-color:#a78bfa;background:#1d1d36;}
-.fv-drop-icon{font-size:34px;opacity:.85;margin-bottom:12px;}
-.fv-drop-t{font-size:15px;font-weight:600;color:#fff;}
-.fv-drop-h{font-size:12.5px;color:#6b6b8c;margin-top:8px;}
-.fv-sample{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;padding:16px;}
-.fv-sample-h{font-size:12px;letter-spacing:.18em;color:#6b6b8c;font-weight:600;margin-bottom:12px;}
-.fv-sample-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.fv-sample-thumb{aspect-ratio:1/1;border-radius:11px;cursor:pointer;border:2px solid transparent;transition:.16s;}
-.fv-sample-thumb:hover{transform:translateY(-2px);}
-.fv-sample-thumb.on{border-color:#a78bfa;}
-.fv-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:18px;margin-bottom:26px;}
-.fv-card{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;padding:17px 18px;}
-.fv-card-h{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:#fff;margin-bottom:14px;}
-.fv-card-h .fv-ico{color:#a78bfa;}
-.fv-card-h b{margin-left:auto;font-size:11.5px;font-weight:600;color:#c4b5fd;
-  border:1px solid rgba(167,139,250,.4);border-radius:999px;padding:2px 9px;background:rgba(167,139,250,.12);}
-.fv-bars{display:flex;align-items:flex-end;gap:3px;height:66px;margin-bottom:12px;}
-.fv-bars i{flex:1;background:linear-gradient(180deg,#a78bfa,#818cf8);border-radius:2px 2px 0 0;min-height:3px;}
-.fv-card-f{font-size:12px;color:#6b6b8c;line-height:1.7;}
-.fv-card-f b{color:#a0a0b8;font-variant-numeric:tabular-nums;}
-.fv-vector{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;padding:18px;margin-bottom:26px;}
-.fv-vector-code{font-family:"JetBrains Mono",Consolas,monospace;font-size:12.5px;color:#c4b5fd;
-  background:#15152a;border:1px solid #2a2a40;border-radius:11px;padding:13px 15px;line-height:1.85;
-  overflow-x:auto;white-space:pre;margin-bottom:16px;}
-.fv-vector-bars{display:flex;align-items:flex-end;gap:4px;height:86px;}
-.fv-vector-bars i{flex:1;background:linear-gradient(180deg,rgba(167,139,250,.95),rgba(129,140,248,.45));
-  border-radius:2px 2px 0 0;min-height:3px;}
-.fv-match{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;overflow:hidden;}
-.fv-match-row{display:grid;grid-template-columns:56px minmax(0,1fr) 132px;gap:14px;align-items:center;
-  padding:14px 18px;border-top:1px solid #2a2a40;}
-.fv-match-row:first-child{border-top:0;}
-.fv-match-thumb{width:56px;height:56px;border-radius:11px;}
-.fv-match-meta b{display:block;font-size:14px;font-weight:600;color:#fff;}
-.fv-match-meta span{display:block;font-size:11.5px;color:#6b6b8c;margin-top:4px;}
-.fv-match-score{text-align:right;}
-.fv-match-score b{font-size:15px;color:#a78bfa;font-variant-numeric:tabular-nums;
-  font-family:"Noto Serif SC","Songti SC",serif;}
-.fv-match-bar{height:5px;border-radius:999px;background:#252542;margin-top:7px;overflow:hidden;}
-.fv-match-bar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#818cf8,#a78bfa);}
-
-@media (max-width:1100px){
-  .cv-studio{grid-template-columns:210px minmax(0,1fr);}
-  .cv-ctrl{grid-column:1/-1;}
 }
-@media (max-width:900px){
-  .tv-head-in{padding:12px 14px;gap:10px;}
-  .tv-brand{display:none;}
-  .tv-btn{padding:0 13px;font-size:12.5px;}
-  .tv-wrap{padding:16px;}
-  .tv-hero{padding:24px 20px;}
-  .tv-stats{gap:22px;}
-  .cv-studio{grid-template-columns:minmax(0,1fr);}
-  .cv-stage{order:-1;}
-  .cv-works{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;}
-  .fv-io{grid-template-columns:minmax(0,1fr);}
-  .fv-cards{grid-template-columns:minmax(0,1fr);}
-  .fv-match-row{grid-template-columns:48px minmax(0,1fr);gap:12px;padding:12px 14px;}
-  .fv-match-thumb{width:48px;height:48px;}
-  .fv-match-score{grid-column:1/-1;text-align:left;}
-  .fv-vector-code{font-size:11.5px;}
-}
-/* 窄屏：收起品牌文字，把顶栏空间让给 4 个页签（此前 2 页签时够用，加到 4 个就溢出 40px）；
+/* 窄屏：收起品牌文字，把顶栏空间让给 3 个页签（此前 2 页签时够用，加到 4 个就溢出 40px）；
    仍保留 overflow-x 兜底，极端窄屏可横向滑动 */
 @media (max-width:600px){
   .top-nav .logo{gap:0;}
@@ -690,6 +626,7 @@
     </style>
     <link rel="stylesheet" href="mobile.css">
     <link rel="stylesheet" href="region-chain-css.css">
+    <link rel="stylesheet" href="derivation-css.css">
 </head>
 <body>
     <!-- 顶部导航 -->
@@ -706,7 +643,6 @@
             <span class="lib-nav-tab on" data-view="library" onclick="setTopView('library')">资源库</span>
             <span class="lib-nav-tab" data-view="trace" onclick="setTopView('trace')">纹样溯源</span>
             <span class="lib-nav-tab" data-view="create" onclick="setTopView('create')">二次创作</span>
-            <span class="lib-nav-tab" data-view="feature" onclick="setTopView('feature')">特征提取</span>
         </div>
         <div class="top-right">
             <div class="lang-switch">
@@ -1826,7 +1762,6 @@
         } catch (e) { return null; }
     }
 
-
 // === U-Net 语义分割（经典CV组合，零体积增加）===
 async function segmentPattern(img) {
     const W = img.width, H = img.height;
@@ -2164,6 +2099,7 @@ async function segmentPattern(img) {
                     <button class="icon-btn" onclick="registerCurrentOnChain()" title="上链确权登记">上链</button>
                     <button class="icon-btn" onclick="verifyCurrentOnChain()" title="链上验真">验真</button>
                     <button class="icon-btn" onclick="openRegionChain()" title="区域链确权">区域链</button>
+                    <button class="icon-btn" onclick="openDerivationGraph()" title="二次创作派生谱系">谱系</button>
                     <button class="icon-btn" onclick="generateComplianceReport()" title="商用合规检测报告">合规</button>
                     <button class="icon-btn" onclick="openEditModal('${result.id}')" title="编辑">✏️</button>
                 </div>
@@ -2874,7 +2810,7 @@ async function segmentPattern(img) {
     // ===== 链上确权（v1.x）：指纹哈希 → 后端代理 → 上链，原图不上链 =====
     const CHAIN_CONFIG = {
         provider: 'mock',            // mock | wenchang | zhixin | antchain
-        proxyUrl: 'https://web-production-3c20e.up.railway.app',
+        proxyUrl: 'http://localhost:8787',   // 桌面端默认连本地服务（离线/本地 MySQL 模式）
         owner: '待填写权属人',
         enabled: true
     };
@@ -2994,6 +2930,7 @@ async function segmentPattern(img) {
     async function openRegionChain() {
         if (!CHAIN_CONFIG.enabled) { showToast('链上确权未启用', 'error'); return; }
         if (!currentImage) { showToast('请先上传并溯源一张图片', 'error'); return; }
+        // 确保有当前指纹
         if (!window.currentFingerprint) {
             try { window.currentFingerprint = await computeFingerprintForResult(); }
             catch (e) { window.currentFingerprint = null; }
@@ -3003,10 +2940,24 @@ async function segmentPattern(img) {
         initRegionChainUI();
     }
 
+    // ===== 二次创作派生谱系入口 =====
+    async function openDerivationGraph() {
+        if (!CHAIN_CONFIG.enabled) { showToast('链上服务未启用', 'error'); return; }
+        if (!window.currentFingerprint) {
+            try { window.currentFingerprint = await computeFingerprintForResult(); }
+            catch (e) { window.currentFingerprint = null; }
+        }
+        if (!window.currentFingerprint) { showToast('无法生成指纹，请先溯源一张图片', 'error'); return; }
+        if (typeof initDerivationUI !== 'function') { showToast('派生谱系模块未加载', 'error'); return; }
+        const name = (window.currentResult && window.currentResult.name) || '';
+        initDerivationUI(window.currentFingerprint, name);
+    }
+
     // ===== 启动 =====
     loadData();
     </script>
     <script src="region-chain-ui.js"></script>
+    <script src="derivation-ui.js"></script>
     <script src="mobile.js"></script>
     <!-- [SW disabled for Capacitor APK - uncomment if needed]
     <script>
@@ -3068,7 +3019,7 @@ async function segmentPattern(img) {
     </div>
 </div>
 
-<!-- ===== 顶层视图：二次创作 / 特征提取 ===== -->
+<!-- ===== 顶层视图：二次创作 ===== -->
 <div id="createView">
     <div class="tv-head">
         <div class="tv-head-in">
@@ -3079,17 +3030,63 @@ async function segmentPattern(img) {
     <div class="tv-wrap">
 
         <div class="cv-pane" data-pane="ai">
-            <div class="tv-bar">
-                <span class="t">AI 创作台</span>
-                <span class="c" id="cvAiChanLine">未配置 · 在右侧选服务商、填一个 Key 就能出图</span>
-            </div>
+                <div class="tv-bar">
+                    <span class="t">AI 创作台</span>
+                    <span class="c" id="cvAiChanLine">未配置 · 在右侧选服务商、填一个 Key 就能出图</span>
+                </div>
 
-            <div class="cv-ai-prompt">
+                <!-- ===== 图生图 · 二次创作（只保留图生图一条线）===== -->
+                <div class="cv-entry" id="cvEntry">
+                    <div class="cv-entry-head">
+                        <span class="cv-entry-title">图生图 · 二次创作</span>
+                        <span class="cv-entry-sub">选一张源纹样作为图案基准，生成后自动登记「新创作」派生关系并回流谱系（独立确权，仅记录派生自源纹样）</span>
+                    </div>
+                    <div class="cv-entry-src">
+                        <span class="cv-entry-lbl">源纹样</span>
+                        <span class="cv-entry-src-name" id="cvSrcName">未指定（默认取当前溯源纹样）</span>
+                        <button class="cv-tool" type="button" id="cvSrcPick">📚 选源纹样</button>
+                        <button class="cv-tool ghost" type="button" id="cvSrcClear">清除</button>
+                    </div>
+                    <div class="cv-entry-judge new" id="cvEntryJudge"></div>
+                    <button class="tv-btn" type="button" id="cvEntryQuery" style="display:none;margin-top:2px;">🔗 查看派生谱系</button>
+                </div>
+
+                <div class="cv-ai-prompt">
                 <textarea class="cv-ai-ta" id="cvAiPrompt" rows="3" placeholder="描述你想要的纹样… 例如：靛蓝底、八角团花、密布四方连续、古朴双钩"></textarea>
                 <div class="cv-ai-prow">
                     <div class="cv-chips" id="cvAiChips"></div>
                     <span class="cv-ai-cnt" id="cvAiCount">0 字</span>
                 </div>
+                <div class="cv-ai-mode">
+                    <span class="cv-mode-btn on" id="cvModeTxt" onclick="setCvMode('txt')">✏️ 文生图</span>
+                    <span class="cv-mode-btn" id="cvModeImg" onclick="setCvMode('img')">🖼️ 图生图</span>
+                    <span class="cv-ai-mode-hint" id="cvAiModeHint">纯文本描述即生成纹样，无需任何参考图</span>
+                </div>
+                <div class="cv-ai-refs cv-pane-off" id="cvAiRefs">
+                    <div class="cv-ai-ref">
+                        <span class="cv-ai-ref-t">底图（图案基准 · 本地纹样，可选）</span>
+                        <button class="cv-tool" type="button" id="cvAiRefA">📷 选原图</button>
+                        <button class="cv-tool" type="button" id="cvAiRefALib">📚 纹样库当底图</button>
+                        <button class="cv-tool ghost" type="button" id="cvAiRefAClear">清除</button>
+                        <img class="cv-ai-ref-img cv-pane-off" id="cvAiRefAImg" alt="底图预览">
+                    </div>
+                    <input type="file" id="cvAiRefAFile" accept="image/*" hidden>
+                    <div class="cv-ai-ref-tip">
+                        图生图：纹样库当底图或选原图（📚 / 📷）作为<b>图案基准</b>。
+                        需服务商支持图像编辑 —— 硅基流动选 <b>Qwen-Image-Edit-2509</b>。
+                        图片会自动缩到长边 1024 再上传。
+                    </div>
+                </div>
+
+                <div class="cv-lib-picker cv-pane-off" id="cvLibPicker">
+                    <div class="cv-lib-picker-in">
+                        <div class="cv-lib-picker-h">从纹样库选一张当底图（图案基准）
+                            <button class="cv-tool ghost" type="button" id="cvLibClose">✕ 关闭</button>
+                        </div>
+                        <div class="cv-lib-grid" id="cvLibGrid"></div>
+                    </div>
+                </div>
+
                 <div class="cv-ai-tools">
                     <span class="sp"></span>
                     <button class="tv-btn" type="button" id="cvAiExample">🎲 来点灵感</button>
@@ -3140,12 +3137,7 @@ async function segmentPattern(img) {
                     <button class="tv-btn" type="button" id="cvAiCloudSave" style="width:100%;">保存配置</button>
 
                     <div class="tip">
-                        选<b>硅基流动</b>时端点与模型已自动填好，只差一个 Key —— 快手 Kolors 模型<b>免费</b>，
-                        中文原生，一张 10~60 秒。<br>
-                        各家协议并不相同（硅基流动返回 images[].url，智谱返回 data[].url），本页按服务商分别适配，
-                        取不到还会递归扫描整个响应兜底。<br>
-                        本页只走云端出图：Key 只存在本机浏览器，只发往你填的那个端点。没填 Key、网络不通、
-                        被跨域拦、返回异常、超时 150 秒 —— 任一情况都会把原因直接报出来，不会偷偷出图。
+                        选硅基流动时端点与模型已自动填好，只差一个 Key —— 图生图用 Qwen 图编（按量计费，约 3 毛/张），Kolors 为免费文生图模型（默认填充，本页以图生图为主）。
                     </div>
 
                     <div class="cv-ai-note">
@@ -3162,99 +3154,6 @@ async function segmentPattern(img) {
     </div>
 </div>
 
-<div id="featureView">
-    <div class="tv-head">
-        <div class="tv-head-in">
-            <button class="tv-back" onclick="setTopView('trace')">← 返回纹鉴</button>
-            <div class="tv-brand">纹样<em>特征提取</em></div>
-            <div class="tv-actions">
-                <button class="tv-btn" id="fvResetBtn">🔄 重置</button>
-                <button class="tv-btn primary" id="fvRunBtn">⚡ 开始提取</button>
-            </div>
-        </div>
-    </div>
-    <div class="tv-wrap">
-        <section class="tv-hero">
-            <span class="tv-eyebrow">图像特征 · 量化比对</span>
-            <h1>把纹样<span>拆成数据</span></h1>
-            <p>对纹样图像做多尺度特征分解，输出纹理、色彩、形状与周期结构四组量化指标，作为检索与相似度比对的依据。</p>
-            <div class="tv-stats">
-                <div class="s"><div class="n" id="fvStatDims">—</div><div class="l">特征维度</div></div>
-                <div class="s"><div class="n">4</div><div class="l">特征族</div></div>
-                <div class="s"><div class="n" id="fvStatMs">—</div><div class="l">本次提取耗时</div></div>
-            </div>
-        </section>
-
-        <div class="fv-io">
-            <div class="fv-drop" id="fvDrop" role="button" tabindex="0" aria-label="选择或拖入纹样图片">
-                <div class="fv-drop-idle" id="fvDropIdle">
-                    <div class="fv-drop-icon">🖼</div>
-                    <div class="fv-drop-t">拖入纹样图片</div>
-                    <div class="fv-drop-h">支持 JPG / PNG，单张不超过 10MB · 也可以点这里选择文件</div>
-                </div>
-                <div class="fv-drop-busy" id="fvDropBusy">正在分析特征…</div>
-                <img class="fv-preview" id="fvPreview" alt="">
-                <div class="fv-drop-meta" id="fvDropMeta"></div>
-            </div>
-            <div class="fv-sample">
-                <div class="fv-sample-h">示 例 纹 样</div>
-                <div class="fv-sample-row" id="fvSamples"></div>
-                <div class="fv-sample-tip" id="fvSampleTip">点一张，直接跑一遍真实特征</div>
-            </div>
-            <input type="file" id="fvFile" accept="image/*" hidden>
-        </div>
-
-        <div class="tv-bar">
-            <span class="t">特征族</span>
-            <span class="c" id="fvCardsNote">等待提取 · 选图后自动计算</span>
-        </div>
-        <div class="fv-cards" id="fvCards">
-            <div class="fv-card" data-fv="lbp">
-                <div class="fv-card-h"><span class="fv-ico">▦</span>纹理特征 <b>LBP</b></div>
-                <div class="fv-bars"></div>
-                <div class="fv-card-f"></div>
-            </div>
-            <div class="fv-card" data-fv="hsv">
-                <div class="fv-card-h"><span class="fv-ico">◐</span>色彩特征 <b>HSV</b></div>
-                <div class="fv-bars"></div>
-                <div class="fv-card-f"></div>
-            </div>
-            <div class="fv-card" data-fv="hu">
-                <div class="fv-card-h"><span class="fv-ico">⬡</span>形状特征 <b>Hu 矩</b></div>
-                <div class="fv-bars"></div>
-                <div class="fv-card-f"></div>
-            </div>
-            <div class="fv-card" data-fv="fft">
-                <div class="fv-card-h"><span class="fv-ico">∿</span>周期结构 <b>FFT</b></div>
-                <div class="fv-bars"></div>
-                <div class="fv-card-f"></div>
-            </div>
-        </div>
-
-        <div class="tv-bar">
-            <span class="t">特征向量</span>
-            <span class="c" id="fvVecNote">归一化后前 24 维</span>
-        </div>
-        <div class="fv-vector">
-            <div class="fv-vector-code" id="fvVecCode">[ 等待提取 ]</div>
-            <div class="fv-vector-bars" id="fvVecBars"></div>
-        </div>
-
-        <div class="tv-bar">
-            <span class="t">相似纹样匹配</span>
-            <span class="c">需接入纹样库检索</span>
-        </div>
-        <div class="fv-note" id="fvNote">
-            本页只做特征提取 —— 上面这几组数值就是检索比对真正吃的输入。接上纹样库检索后，这里会显示按余弦相似度排序的匹配结果。
-        </div>
-
-        <div class="tv-foot">
-            特征提取结果为图像量化指标 · 不构成纹样版权判定依据
-        </div>
-    </div>
-</div>
-
-<!-- ===== 顶层视图：二次创作 / 特征提取 ===== -->
 
 
 <!-- ===== AI 创作台：交互层（样式 + 引擎）===== -->
@@ -3273,11 +3172,31 @@ async function segmentPattern(img) {
       hidden 的 UA 表现不可靠，显式 display:none 才稳。 */
 .cv-pane-off{display:none!important;}
 
-/* ---------- 两栏：出图结果 + 模型配置 ---------- */
-.cv-ai-only{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start;}
+/* ---------- 上下堆叠：出图结果 + 模型配置（不再左右分栏） ---------- */
+.cv-ai-only{display:flex;flex-direction:column;gap:18px;align-items:stretch;}
 .cv-ai-main,.cv-ai-side{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;padding:16px;}
 
+/* ---------- 图生图：参考图区 ---------- */
+.cv-ai-refs{margin-top:10px;border-top:1px dashed #2a2a40;padding-top:12px;
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.cv-ai-ref{background:#15152b;border:1px solid #2a2a40;border-radius:12px;padding:10px 11px;}
+.cv-ai-ref-t{display:block;font-size:11.5px;color:#8a8ab0;letter-spacing:.5px;margin-bottom:8px;}
+.cv-ai-ref-img{display:block;width:100%;max-height:120px;object-fit:contain;
+  margin-top:8px;border-radius:8px;background:#0f0f20;}
+.cv-ai-ref-tip{grid-column:1 / -1;font-size:11.5px;line-height:1.8;color:#6f6f95;}
+.cv-ai-ref-tip b{color:#9aa8ff;font-weight:600;}
+@media (max-width:720px){ .cv-ai-refs{grid-template-columns:1fr;} }
+
 /* ---------- 提示词区 ---------- */
+.cv-ai-mode{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;}
+.cv-ai-mode.cv-mode-locked .cv-mode-btn:first-child{display:none;}
+.cv-ai-mode.cv-mode-locked .cv-mode-btn{cursor:default;}
+.cv-mode-btn{display:inline-block;padding:7px 14px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;
+    border:1px solid #2a2a40;background:#15152a;color:#b9b9d6;user-select:none;transition:.15s;}
+.cv-mode-btn:hover{border-color:#7c5cff;color:#fff;}
+.cv-mode-btn.on{background:linear-gradient(135deg,#7c5cff,#39d0d8);border-color:transparent;color:#fff;
+    box-shadow:0 4px 14px rgba(124,92,255,.35);}
+.cv-ai-mode-hint{font-size:12px;color:#8a8ab0;letter-spacing:.3px;}
 .cv-ai-prompt{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;padding:16px 16px 14px;
   margin-bottom:18px;}
 #createView .cv-ai-ta{display:block;width:100%;box-sizing:border-box;min-height:74px;max-height:220px;
@@ -3346,8 +3265,34 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
 .cv-ai-chan-line.warn b{color:#fcd34d;}
 #createView .cv-ai-in{display:block;width:100%;box-sizing:border-box;height:34px;padding:0 11px;
   border-radius:9px;border:1px solid #3a3a5c;background:#13132a;color:#e2e6ff;font-family:inherit;
-  font-size:12.5px;outline:none;margin-bottom:8px;}
+  font-size:12.5px;outline:none;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #createView .cv-ai-in:focus{border-color:#a78bfa;}
+#createView .cv-chip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+
+/* ===== 二创入口（溯源重构 / 特征二创 双入口）===== */
+#createView .cv-entry{background:#15152e;border:1px solid #2a2a4a;border-radius:14px;padding:14px 16px;margin:0 0 14px;}
+#createView .cv-entry-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+#createView .cv-entry-title{font-size:15px;font-weight:700;color:#c4b5fd;}
+#createView .cv-entry-sub{font-size:12px;color:#8a8aa8;}
+#createView .cv-entry-src{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+#createView .cv-entry-lbl{font-size:13px;color:#a0a0b8;font-weight:600;}
+#createView .cv-entry-src-name{font-size:13px;color:#e6e6f5;flex:1;min-width:160px;word-break:break-all;}
+#createView .cv-entry-tabs{display:flex;gap:10px;margin-bottom:10px;}
+#createView .cv-entry-tab{flex:1;padding:10px 12px;border:1px solid #2a2a4a;background:#1a1a36;border-radius:10px;color:#b8b8d8;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;}
+#createView .cv-entry-tab:hover{border-color:#6d5dbf;}
+#createView .cv-entry-tab.on{background:linear-gradient(135deg,#3a2a6a,#5a3a9a);border-color:#8b5cf6;color:#fff;}
+#createView .cv-entry-desc{font-size:13px;color:#9a9ac0;line-height:1.7;margin-bottom:8px;}
+#createView .cv-entry-judge{font-size:13px;font-weight:600;padding:8px 12px;border-radius:8px;background:#1e1e3a;margin-bottom:10px;}
+#createView .cv-entry-judge.new{color:#86efac;border-left:3px solid #34d399;}
+#createView .cv-entry-judge.deriv{color:#c4b5fd;border-left:3px solid #8b5cf6;}
+#createView .cv-entry-feat{margin-top:4px;}
+#createView .cv-entry-feat-h{font-size:13px;color:#a0a0b8;margin-bottom:8px;font-weight:600;}
+#createView .cv-entry-feat-grid{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+#createView .cv-feat-card{flex:1;min-width:160px;background:#1a1a36;border:1px solid #2a2a4a;border-radius:10px;padding:10px;}
+#createView .cv-feat-t{font-size:12px;color:#c4b5fd;font-weight:600;margin-bottom:6px;}
+#createView .cv-feat-img{width:100%;height:120px;object-fit:contain;background:#0e0e1e;border-radius:8px;display:none;}
+#createView .cv-feat-img.show{display:block;}
+#createView .cv-feat-meta{font-size:11px;color:#8a8aa8;margin-top:6px;line-height:1.5;}
 .cv-ai-side .tip{font-size:11px;color:#6b6b8c;line-height:1.8;margin-top:12px;}
 .cv-ai-side .tip b{color:#fcd34d;font-weight:600;}
 
@@ -3360,12 +3305,28 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
   padding-top:12px;border-top:1px dashed #2f2f4a;}
 .cv-ai-note b{color:#a0a0b8;font-weight:600;}
 
+    /* ---------- 纹样库当底图选择器 ---------- */
+    .cv-lib-picker{position:fixed;inset:0;z-index:2100;display:flex;align-items:center;
+      justify-content:center;background:rgba(8,8,18,.86);padding:24px;}
+    .cv-lib-picker.cv-pane-off{display:none!important;}
+    .cv-lib-picker-in{width:min(880px,94vw);max-height:86vh;display:flex;flex-direction:column;
+      background:#15152b;border:1px solid #2a2a40;border-radius:16px;overflow:hidden;}
+    .cv-lib-picker-h{display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:14px 16px;font-size:14px;color:#e2e6ff;border-bottom:1px solid #2a2a40;
+      font-family:"Noto Serif SC","Songti SC",serif;letter-spacing:.04em;}
+    .cv-lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:12px;
+      padding:16px;overflow:auto;}
+    .cv-lib-cell{position:relative;cursor:pointer;border:1px solid #2a2a40;border-radius:12px;
+      overflow:hidden;background:#0f0f20;transition:.16s;}
+    .cv-lib-cell:hover{border-color:#a78bfa;transform:translateY(-2px);}
+    .cv-lib-cell.is-off{opacity:.4;cursor:default;}
+    .cv-lib-cell img{display:block;width:100%;height:104px;object-fit:cover;background:#0f0f20;}
+    .cv-lib-cell span{display:block;padding:6px 8px;font-size:11px;color:#a0a0b8;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    @media (max-width:560px){ .cv-lib-grid{grid-template-columns:repeat(auto-fill,minmax(84px,1fr));} }
+
 /* ---------- 响应式 ---------- */
-@media (max-width:1199px){
-  .cv-ai-only{grid-template-columns:minmax(0,1fr) 272px;}
-}
 @media (max-width:900px){
-  .cv-ai-only{grid-template-columns:1fr;}
   .cv-ai-prompt{padding:13px;}
   .cv-ai-tools .sp{display:none;}
   .cv-ai-tools .lbl{display:none;}
@@ -3404,9 +3365,10 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
             id: 'siliconflow', name: '硅基流动', proto: 'siliconflow',
             ep: 'https://api.siliconflow.cn/v1/images/generations',
             model: 'Kwai-Kolors/Kolors', keyUrl: 'https://cloud.siliconflow.cn/account/ak',
-            note: '快手 Kolors 免费（¥0/张）· 中文原生 · 一张 10~60 秒',
+            note: '快手对应文生图，Qwen对应图生图',
             models: [
-                { id: 'Kwai-Kolors/Kolors', d: '免费 · 中文原生 · 风格写实明快' }
+                { id: 'Kwai-Kolors/Kolors', name: 'Kolors', d: '免费 · 中文原生 · 风格写实明快' },
+                { id: 'Qwen/Qwen-Image-Edit-2509', name: 'Qwen 图编', d: '图生图/图像编辑 · 3毛/张 · 仅底图生效' }
             ]
         },
         {
@@ -3452,20 +3414,38 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
     }
 
     // ---------------------------------------------------------------- 云配置读写
+    // 以内存变量 _cvCfg 为「真相源」，localStorage 仅作跨刷新持久化。
+    // 原因：Electron / 部分浏览器 / file:// 下 localStorage 可能被禁用或写入静默失败，
+    // 若 cloudGet 永远读不到，界面状态会永远卡在「未配置」。改为内存优先后，
+    // 即使存储不可用，选服务商、填端点也能即时反映到界面与生成逻辑。
 
-    function cloudGet() {
-        try { return JSON.parse(window.localStorage.getItem(LS_CLOUD) || 'null'); }
+    var _cvCfg = (function () {
+        try { var r = window.localStorage.getItem(LS_CLOUD); return r ? JSON.parse(r) : null; }
         catch (e) { return null; }
-    }
+    })();
+
+    // 自建代理通道已移除：历史配置若仍指向已下线的服务商，整份丢弃走默认。
+    // 否则 cfg.proto 会残留 'proxy' → 跳过 Key 校验 → 继续 POST 本机 8788。
+    (function () {
+        if (!_cvCfg || !_cvCfg.prov) return;
+        var ok = false, i;
+        for (i = 0; i < PROV.length; i++) if (PROV[i].id === _cvCfg.prov) { ok = true; break; }
+        if (!ok) _cvCfg = null;
+    })();
+
+    function cloudGet() { return _cvCfg; }
 
     function cloudSet(o) {
-        try { window.localStorage.setItem(LS_CLOUD, JSON.stringify(o)); return true; }
-        catch (e) { return false; }
+        _cvCfg = o;
+        try { window.localStorage.setItem(LS_CLOUD, JSON.stringify(o)); } catch (e) { }
+        return true;
     }
 
     function curProvId() {
         var cfg = cloudGet();
-        return (cfg && cfg.prov) ? cfg.prov : PROV[0].id;
+        var id = (cfg && cfg.prov) ? cfg.prov : PROV[0].id;
+        var p = provById(id);
+        return (p && p.id === id) ? id : PROV[0].id;
     }
 
     // ---------------------------------------------------------------- 请求体 / 响应解析
@@ -3484,7 +3464,17 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
     // 请求体：按协议分派。用户没填的字段用各家的默认值兜住。
     function buildBody(proto, cfg, prompt, n) {
         if (proto === 'siliconflow') {
-            return {
+            var ar = activeRefs();
+            // 图生图：有底图时强制切到编辑模型，并去掉 image_size（Qwen 编辑模型不支持该字段），只发 prompt+image
+            if (ar.a) {
+                return {
+                    model: 'Qwen/Qwen-Image-Edit-2509',
+                    prompt: prompt,
+                    image: ar.a,
+                    negative_prompt: '人物，人像，人脸，照片，写实摄影，场景，现代文字，水印'
+                };
+            }
+            var sf = {
                 model: cfg.model || 'Kwai-Kolors/Kolors',
                 prompt: prompt,
                 negative_prompt: '人物，人像，人脸，手，照片，写实摄影，场景，文字，水印，签名',
@@ -3494,6 +3484,7 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
                 num_inference_steps: 20,
                 guidance_scale: 3.5
             };
+            return sf;
         }
         return {
             model: cfg.model || 'text-to-image',
@@ -3502,6 +3493,75 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
             size: '1024x1024',
             response_format: 'b64_json'
         };
+    }
+
+    // 参考图（图生图用）：a=底图（dataURL）；refSeed 用于复现
+    var refImgs = { a: '', b: '' };
+    var refSeed = 0;
+
+    // 创作模式：'txt' = 文生图（纯文本，忽略所有参考图）；'img' = 图生图（使用参考图）
+    var cvMode = 'txt';
+    // 当前模式下真正要送出的参考图：文生图模式下恒为空，图生图模式才用 refImgs
+    function activeRefs() { return (cvMode === 'img') ? refImgs : { a: '', b: '' }; }
+
+    // 切换创作模式：文生图隐藏参考图区，图生图显示之；同步更新提示与状态行
+    function setCvMode(m) {
+        // 源纹样已带图时强制图生图，不允许切回文生图
+        if (m === 'txt' && cvSrcFp && refImgs.a) return;
+        cvMode = m;
+        var t = el('cvModeTxt'), i = el('cvModeImg');
+        if (t) t.className = 'cv-mode-btn' + (m === 'txt' ? ' on' : '');
+        if (i) i.className = 'cv-mode-btn' + (m === 'img' ? ' on' : '');
+        var refs = el('cvAiRefs');
+        if (refs) refs.className = (m === 'img') ? 'cv-ai-refs' : 'cv-ai-refs cv-pane-off';
+        var hint = el('cvAiModeHint');
+        if (hint) hint.textContent = (m === 'txt')
+            ? '纯文本描述即生成纹样，无需任何参考图'
+            : '本地纹样底图（图案基准）';
+        // 进入图生图：自动把模型切到编辑模型（否则底图会被文生图模型忽略），并切换提示词占位符
+        if (m === 'img') {
+            var cfg2 = cloudGet() || {};
+            if (cfg2.proto === 'siliconflow' && !/Image-Edit/.test(cfg2.model || '')) {
+                cfg2.model = 'Qwen/Qwen-Image-Edit-2509';
+                cloudSet(cfg2);
+                if (el('cvAiModel')) el('cvAiModel').value = cfg2.model;
+                renderModels();
+                toast('图生图已自动切到 Qwen 编辑模型（底图才会生效）');
+            }
+        }
+        var ta = el('cvAiPrompt');
+        if (ta) ta.placeholder = (m === 'img')
+            ? '写编辑指令，如：改成蓝底团花 · 加八角纹 · 把主花换成莲花'
+            : '描述你想要的纹样… 例如：靛蓝底、八角团花、密布四方连续、古朴双钩';
+        refreshStatus();
+    }
+
+    function updateModeLocked(locked) {
+        var box = el('cvAiMode');
+        if (box) box.className = locked ? 'cv-ai-mode cv-mode-locked' : 'cv-ai-mode';
+    }
+
+    function fileToDataUrl(file, cb, maxSide) {
+        var fr = new FileReader();
+        fr.onload = function () {
+            var src = String(fr.result || '');
+            if (!maxSide) { cb(null, src); return; }
+            // 大图先缩到 maxSide，省带宽也省上游的体量限制
+            var im = new Image();
+            im.onload = function () {
+                var s = Math.min(1, maxSide / Math.max(im.width, im.height));
+                if (s >= 1) { cb(null, src); return; }
+                var c = document.createElement('canvas');
+                c.width = Math.round(im.width * s);
+                c.height = Math.round(im.height * s);
+                c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+                try { cb(null, c.toDataURL('image/png')); } catch (e) { cb(null, src); }
+            };
+            im.onerror = function () { cb(null, src); };
+            im.src = src;
+        };
+        fr.onerror = function () { cb(new Error('读图失败')); };
+        fr.readAsDataURL(file);
     }
 
     var IMG_URL_RE = /^(https?:\/\/|data:image\/)/;
@@ -3562,18 +3622,20 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
             // proto 兜底也要走预设：老配置里没有 proto 字段，不能默认成 openai
             var proto = cfg.proto || provById(cfg.prov || PROV[0].id).proto;
             var body = buildBody(proto, cfg, prompt, n);
+            var timeoutMs = CLOUD_TIMEOUT;
             var ctl = null, timer = 0, aborted = false;
             if (typeof window.AbortController === 'function') ctl = new window.AbortController();
             timer = window.setTimeout(function () {
                 aborted = true;
                 if (ctl) { try { ctl.abort(); } catch (e) { } }
-            }, CLOUD_TIMEOUT);
+            }, timeoutMs);
 
             var opt = {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.key },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             };
+            if (cfg.key) opt.headers['Authorization'] = 'Bearer ' + cfg.key;
             if (ctl) opt.signal = ctl.signal;
 
             window.fetch(cfg.ep, opt).then(function (r) {
@@ -3589,7 +3651,7 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
                 resolve(imgs);
             }).catch(function (e) {
                 window.clearTimeout(timer);
-                if (aborted) { reject(new Error('超时（超过 ' + Math.round(CLOUD_TIMEOUT / 1000) + ' 秒没返回）')); return; }
+                if (aborted) { reject(new Error('超时（超过 ' + Math.round(timeoutMs / 1000) + ' 秒没返回）')); return; }
                 var msg = (e && e.message) ? e.message : String(e);
                 if (/abort/i.test(msg)) msg = '请求被中断';
                 else if (/Failed to fetch|NetworkError|Load failed|Network request failed/i.test(msg)) {
@@ -3674,10 +3736,17 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         var p = provById(curProvId());
         var box = el('cvAiKeyHint');
         if (!box) return;
+        // 让「去哪拿 Key」后面的说明随当前选中模型变化（切到 Qwen 不再显示 Kolors 文案）
+        var mid = (el('cvAiModel') && el('cvAiModel').value) || p.model;
+        var md = '', list = p.models || [];
+        for (var i = 0; i < list.length; i++) {
+            if (list[i].id === mid) { md = list[i].d || ''; break; }
+        }
+        var tail = md || p.note;
         box.innerHTML = p.keyUrl
             ? ('去哪拿 Key：<a href="' + p.keyUrl + '" target="_blank" rel="noopener">'
-                + p.name + '控制台</a> · ' + p.note)
-            : p.note;
+                + p.name + '控制台</a> · ' + tail)
+            : tail;
     }
 
     // 渲染当前服务商的模型芯片：点选即填入模型输入框；自定义端点没有预设模型，整行隐藏。
@@ -3694,17 +3763,20 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         for (var i = 0; i < list.length; i++) (function (m) {
             var b = document.createElement('span');
             b.className = 'cv-chip' + (m.id === cur ? ' on' : '');
-            b.textContent = m.id;
-            b.title = m.d || m.id;
+            b.textContent = m.name || m.id;
+            b.title = (m.name && m.name !== m.id ? (m.id + ' · ') : '') + (m.d || '');
+            b.dataset.modelId = m.id;
             b.onclick = function () {
                 if (el('cvAiModel')) el('cvAiModel').value = m.id;
                 var kids = box.children;
                 for (var k = 0; k < kids.length; k++) kids[k].className = 'cv-chip';
                 b.className = 'cv-chip on';
                 if (m.d) toast(m.id + ' · ' + m.d);
+                refreshKeyHint();
             };
             box.appendChild(b);
         })(list[i]);
+        refreshKeyHint();
     }
 
     function markProvChips() {
@@ -3734,12 +3806,20 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         toast('已选「' + p.name + '」' + (p.ep ? '，端点与模型已自动填好，只差 Key' : '，请自行填写端点与模型'));
     }
 
+    function refNote() {
+        if (cvMode !== 'img') return ' · 文生图';
+        var ar = activeRefs();
+        // 自建代理（唯一支持 image2 的通道）已移除：现在只送底图 ar.a，第二张不会送出
+        if (ar.a) return ' · 图生图（底图已选）';
+        return ' · 图生图（未选参考图）';
+    }
+
     function refreshStatus() {
         var cfg = cloudGet();
         var pv = provById(curProvId());
         if (!cfg || !cfg.ep) { setStatus('未配置', '在右侧选服务商、填端点与 Key'); return; }
         if (!cfg.key) { setStatus('待填 Key', pv.name + ' · 端点已填，只差一个 API Key'); return; }
-        setStatus('已就绪', pv.name + ' · 点「✨ 生成纹样」开始出图');
+        setStatus('已就绪', pv.name + refNote() + ' · 点「✨ 生成纹样」');
     }
 
     function saveCfg() {
@@ -3787,6 +3867,17 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         var t = String(userText || '').replace(/[，,、\s]+$/, '');
         return '中国传统织锦纹样图案，' + t +
             '，平面装饰图案，构图饱满，织锦织物质感，细节清晰，无人物，无场景，无文字';
+    }
+
+    // 图生图（编辑模式）：用户描述当作「编辑指令」直接发，
+    // 不再套"生成一张织锦纹样图"的文生图壳，否则编辑模型会误解为重新生成而忽略底图。
+    function editPrompt(userText) {
+        var t = String(userText || '').replace(/[，,、\s]+$/, '');
+        // 图生图：编辑模型直接看底图，提示词应是「以底图为灵感的生成/修改指令」，
+        // 而非"生成一张织锦图"的文生图壳（否则编辑模型会误解为重新生成、忽略底图）。
+        if (!t) t = '生成一张与参考图风格、配色、结构相似但细节有所变化的新纹样图';
+        return '参考纹样图：' + t +
+            '。请以此为底本生成新的传统纹样图，保持相近的艺术风格、色彩气质与装饰母题，平面装饰风格，细节清晰，无人物、无场景、无文字';
     }
 
     function countChars() {
@@ -3839,7 +3930,10 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
 
     function generate() {
         var text = promptText();
-        if (!text) { toast('先写一句描述吧 —— 或者点「🎲 来点灵感」'); return; }
+        // 图生图模式（有底图）允许空描述：直接以底图为灵感生成一张相似的图
+        var ar0 = activeRefs();
+        var isImg = (cvMode === 'img') && !!ar0.a;
+        if (!isImg && !text) { toast('先写一句描述吧 —— 或者点「🎲 来点灵感」'); return; }
 
         var cfg = cloudGet();
         var pv = provById(curProvId());
@@ -3859,7 +3953,7 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         setStatus('出图中', pv.name + ' · 一张 10~60 秒，别急着关页面');
         var t0 = new Date().getTime();
 
-        var fp = patternPrompt(text);
+        var fp = isImg ? editPrompt(text) : patternPrompt(text);
         cloudCall(fp, curN).then(function (imgs) {
             setBusy(false);
             showImgs(imgs, pv.name);
@@ -3867,6 +3961,12 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
                 ok: true, prov: pv.name, prompt: text, fullPrompt: fp, n: imgs.length,
                 ms: new Date().getTime() - t0
             };
+            // 二创：图生图生成后自动登记派生关系（新创作，派生自源纹样）
+            if (imgs && imgs.length) {
+                cvFingerprintOf(imgs[0]).then(function (dfp) {
+                    cvRegisterDerivation(dfp);
+                }).catch(function () { /* 指纹/登记失败不阻断出图 */ });
+            }
         }).catch(function (e) {
             setBusy(false);
             var msg = (e && e.message) ? e.message : String(e);
@@ -3924,6 +4024,142 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
 
     // ---------------------------------------------------------------- 构建
 
+    // 参考图：选图 → 缩放 → dataURL（只存内存，刷新即清，不落 localStorage）
+    function bindRef(which) {
+        var slot = (which === 'A') ? 'a' : 'b';
+        var btn = el('cvAiRef' + which);
+        var clr = el('cvAiRef' + which + 'Clear');
+        var file = el('cvAiRef' + which + 'File');
+        var prev = el('cvAiRef' + which + 'Img');
+        if (btn && file) btn.onclick = function () { try { file.click(); } catch (e) { } };
+        if (file) file.onchange = function (ev) {
+            var f = ev && ev.target && ev.target.files && ev.target.files[0];
+            if (!f) return;
+            toast('正在读取参考图…');
+            fileToDataUrl(f, function (err, src) {
+                if (err || !src) { toast('读图失败，换一张试试'); return; }
+                refImgs[slot] = src;
+                if (prev) { prev.src = src; prev.className = 'cv-ai-ref-img'; }
+                toast('底图已就位（' + Math.round(src.length / 1024) + ' KB）');
+                refreshStatus();
+            }, 1024);
+            try { file.value = ''; } catch (e) { }     // 允许重复选同一个文件
+        };
+        if (clr) clr.onclick = function () {
+            refImgs[slot] = '';
+            if (prev) { prev.src = ''; prev.className = 'cv-ai-ref-img cv-pane-off'; }
+            toast('已清除底图');
+            // 底图与源纹样绑定：清除底图时同步清除源纹样，恢复文生图
+            if (slot === 'a') cvSetSource(null, null);
+            refreshStatus();
+        };
+    }
+
+    // ---------- 库纹样当底图（图生图）：从纹样库挑一张当图案基准 ----------
+    function urlToDataUrl(url, cb, maxSide) {
+        function scale(src) {
+            if (!src) { cb(new Error('图片解码失败')); return; }
+            if (!maxSide) { cb(null, src); return; }
+            var im = new Image();
+            im.onload = function () {
+                var s = Math.min(1, maxSide / Math.max(im.width, im.height));
+                if (s >= 1) { cb(null, src); return; }
+                var c = document.createElement('canvas');
+                c.width = Math.round(im.width * s); c.height = Math.round(im.height * s);
+                c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+                try { cb(null, c.toDataURL('image/png')); } catch (e) { cb(null, src); }
+            };
+            im.onerror = function () { cb(null, src); };
+            im.src = src;
+        }
+        function fallback() {
+            var im = new Image();
+            im.crossOrigin = 'anonymous';
+            im.onload = function () {
+                try {
+                    var c = document.createElement('canvas');
+                    c.width = im.width; c.height = im.height;
+                    c.getContext('2d').drawImage(im, 0, 0);
+                    scale(c.toDataURL('image/png'));
+                } catch (e) { cb(new Error('读取失败，请改用「📷 选原图」上传本地图')); }
+            };
+            im.onerror = function () { cb(new Error('读取失败，请改用「📷 选原图」上传本地图')); };
+            im.src = url;
+        }
+        try {
+            if (typeof window.fetch === 'function') {
+                window.fetch(url).then(function (r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.blob();
+                }).then(function (b) {
+                    var fr = new FileReader();
+                    fr.onload = function () { scale(String(fr.result || '')); };
+                    fr.onerror = function () { fallback(); };
+                    fr.readAsDataURL(b);
+                }).catch(function () { fallback(); });
+                return;
+            }
+        } catch (e) {}
+        fallback();
+    }
+
+    function loadPatternAsBase(p) {
+        if (!p || !p.imageUrl) { toast('这条纹样没有可用图片'); return; }
+        var urls = (Array.isArray(p.imageUrls) && p.imageUrls.length) ? p.imageUrls : [p.imageUrl];
+        var url = urls[0];
+        var fp = p.fingerprint || ('lib_' + (p.code || p.name || 'x') + '_' + url.length);
+        // 底图与源纹样绑定：选库纹样当底图 = 同时把它设为源纹样，并自动走图生图
+        cvSetSource(fp, p.name || p.code || '纹样', url);
+        closeLibPicker();
+    }
+
+    // 纹样库选择器：cvPickerMode 决定点选行为（base=当底图 / source=当源纹样）
+    var cvPickerMode = 'base';
+    function renderLibGrid(box) {
+        box.innerHTML = '';
+        var list = (window.IMPORTED_PATTERNS || []).filter(function (p) { return p && p.imageUrl; });
+        if (!list.length) { toast('纹样库还没有数据'); return; }
+        list.forEach(function (p) {
+            var urls = (Array.isArray(p.imageUrls) && p.imageUrls.length) ? p.imageUrls : [p.imageUrl];
+            var d = document.createElement('div');
+            d.className = 'cv-lib-cell';
+            d.title = (p.name || p.code || '纹样') + (cvPickerMode === 'source' ? ' · 点选当源纹样' : ' · 点选当底图');
+            var im = document.createElement('img');
+            im.src = urls[0]; im.alt = p.name || p.code || '纹样'; im.loading = 'lazy';
+            im.onerror = function () { d.classList.add('is-off'); };
+            var cap = document.createElement('span');
+            cap.textContent = (p.name || p.code || '纹样');
+            d.appendChild(im); d.appendChild(cap);
+            d.onclick = function () { if (!d.classList.contains('is-off')) (cvPickerMode === 'source' ? pickSrcFromLib(p) : loadPatternAsBase(p)); };
+            box.appendChild(d);
+        });
+    }
+
+    function openLibPicker() {
+        var box = el('cvLibGrid');
+        if (!box) return;
+        renderLibGrid(box);
+        var pk = el('cvLibPicker');
+        if (pk) pk.className = 'cv-lib-picker';
+    }
+
+    function closeLibPicker() {
+        var pk = el('cvLibPicker');
+        if (pk) pk.className = 'cv-lib-picker cv-pane-off';
+    }
+
+    function bindLibPicker() {
+        var b = el('cvAiRefALib');
+        if (b) b.onclick = function () { cvPickerMode = 'base'; openLibPicker(); };
+        var c = el('cvLibClose');
+        if (c) c.onclick = function () { closeLibPicker(); };
+        var pk = el('cvLibPicker');
+        if (pk) pk.addEventListener('click', function (ev) {
+            if (ev.target === pk) closeLibPicker();
+        });
+    }
+
+
     function buildUI() {
         var box, i;
 
@@ -3938,6 +4174,10 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         })(i);
 
         if (el('cvAiGen')) el('cvAiGen').onclick = function () { generate(); };
+        // 模式切换：内联 onclick="setCvMode(...)" 在全局作用域取不到 IIFE 内的 setCvMode，
+        // 会静默 ReferenceError（表现＝点了没反应）。改在 JS 内绑定，覆盖失效的内联属性。
+        if (el('cvModeTxt')) el('cvModeTxt').onclick = function () { setCvMode('txt'); };
+        if (el('cvModeImg')) el('cvModeImg').onclick = function () { setCvMode('img'); };
         if (el('cvAiExample')) el('cvAiExample').onclick = function () { idea(); };
         if (el('cvAiDl')) el('cvAiDl').onclick = function () { downloadAll(); };
         if (el('cvAiClear')) el('cvAiClear').onclick = function () { clearImgs(); };
@@ -3970,10 +4210,147 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         if (el('cvAiModel')) el('cvAiModel').value = cfg.model || '';
         if (el('cvAiCloudSave')) el('cvAiCloudSave').onclick = function () { saveCfg(); };
 
+        bindRef('A');
+        bindLibPicker();
+
+        // 图生图 · 二创入口：绑定与初始化（只保留图生图一条线）
+        if (el('cvSrcPick')) el('cvSrcPick').onclick = function () { cvPickSource(); };
+        if (el('cvSrcClear')) el('cvSrcClear').onclick = function () { cvSetSource(null, null); };
+        if (window.currentFingerprint) {
+            var p0 = findPatternByFingerprint(window.currentFingerprint);
+            var u0 = p0 ? ((Array.isArray(p0.imageUrls) && p0.imageUrls.length) ? p0.imageUrls[0] : p0.imageUrl) : '';
+            cvSetSource(window.currentFingerprint, '当前溯源纹样', u0 || null);
+        }
+        cvInitEntry();
+
         countChars();
         markProvChips();
         renderModels();
-        refreshStatus();
+        setCvMode(cvMode);   // 按当前模式初始化参考图区显隐
+    }
+
+    // ---------------------------------------------------------------- 图生图 · 二创入口（只保留图生图一条线）
+    var cvSrcFp = null, cvSrcName = null;  // 源纹样指纹 + 名称
+
+    // 图生图 = 以源纹样为图案基准做当代化重构，按分层权属模型判定为「新创作」：独立确权，仅记录派生自源纹样
+    function cvInitEntry() {
+        var j = el('cvEntryJudge');
+        if (j) j.textContent = '判定：新创作（独立确权）· 生成后自动登记派生关系';
+    }
+
+    function cvSetSource(fp, name, imgUrl) {
+        cvSrcFp = fp || null;
+        cvSrcName = name || null;
+        var n = el('cvSrcName');
+        if (n) n.textContent = cvSrcName ? (cvSrcName + (cvSrcFp ? ' · ' + cvSrcFp.slice(0, 12) + '…' : '')) : '未指定（默认取当前溯源纹样）';
+
+        // 未指定源纹样：清除底图、恢复文生图与模式切换
+        if (!cvSrcFp) {
+            refImgs.a = ''; refImgs.b = '';
+            var prevA = el('cvAiRefAImg'); if (prevA) { prevA.src = ''; prevA.className = 'cv-ai-ref-img cv-pane-off'; }
+            var prevB = el('cvAiRefBImg'); if (prevB) { prevB.src = ''; prevB.className = 'cv-ai-ref-img cv-pane-off'; }
+            setCvMode('txt');
+            updateModeLocked(false);
+            return;
+        }
+
+        // 源纹样有图：自动加载为底图并锁定为图生图模式（只显示图生图）
+        if (imgUrl) {
+            updateModeLocked(true);
+            urlToDataUrl(imgUrl, function (err, src) {
+                if (err || !src) {
+                    toast((err && err.message) || '读取源纹样图失败');
+                    refImgs.a = '';
+                    var prev = el('cvAiRefAImg'); if (prev) { prev.src = ''; prev.className = 'cv-ai-ref-img cv-pane-off'; }
+                    setCvMode('txt');
+                    updateModeLocked(false);
+                    return;
+                }
+                refImgs.a = src;
+                var prev = el('cvAiRefAImg'); if (prev) { prev.src = src; prev.className = 'cv-ai-ref-img'; }
+                setCvMode('img');
+                refreshStatus();
+            }, 1024);
+        } else {
+            updateModeLocked(false);
+        }
+    }
+
+    function findPatternByFingerprint(fp) {
+        if (!fp) return null;
+        var list = window.IMPORTED_PATTERNS || [];
+        for (var i = 0; i < list.length; i++) {
+            var p = list[i];
+            if (p && p.fingerprint === fp) return p;
+        }
+        return null;
+    }
+
+    function pickSrcFromLib(p) {
+        var urls = (Array.isArray(p.imageUrls) && p.imageUrls.length) ? p.imageUrls : [p.imageUrl];
+        var fp = p.fingerprint || ('lib_' + (p.code || p.name || 'x') + '_' + urls[0].length);
+        cvSetSource(fp, p.name || p.code || '纹样', urls[0] || null);
+        closeLibPicker();
+    }
+
+    function cvPickSource() {
+        cvPickerMode = 'source';
+        openLibPicker();
+    }
+
+    // ---------- 图像工具（载入 / 灰度画布，供指纹与复现使用）----------
+    function cvLoadImg(src) {
+        return new Promise(function (res, rej) {
+            var im = new Image();
+            im.crossOrigin = 'anonymous';
+            im.onload = function () { res(im); };
+            im.onerror = function () { rej(new Error('图片加载失败')); };
+            im.src = src;
+        });
+    }
+
+    function cvToGrayCanvas(im, maxSide) {
+        var s = Math.min(1, maxSide / Math.max(im.width, im.height));
+        var w = Math.max(8, Math.round(im.width * s)), h = Math.max(8, Math.round(im.height * s));
+        var c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(im, 0, 0, w, h);
+        return c;
+    }
+
+    // ---------- 新图指纹 + 派生关系登记 ----------
+    function cvFingerprintOf(src) {
+        if (!window.crypto || !crypto.subtle) { return Promise.reject(new Error('环境不支持 crypto.subtle')); }
+        return cvLoadImg(src).then(function (im) {
+            var c = cvToGrayCanvas(im, 64);
+            var g = c.getContext('2d'); var d = g.getImageData(0,0,c.width,c.height).data;
+            var s = '';
+            for (var i = 0; i < d.length; i += 4) s += String.fromCharCode(d[i]);
+            return crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)).then(function (buf) {
+                return Array.prototype.map.call(new Uint8Array(buf), function (b) { return b.toString(16).padStart(2,'0'); }).join('');
+            });
+        });
+    }
+
+    function cvRegisterDerivation(derivedFp, judgeBasis) {
+        if (!cvSrcFp) { toast('未指定源纹样，跳过派生登记'); return Promise.resolve(null); }
+        if (!window.CHAIN_CONFIG || !CHAIN_CONFIG.enabled) { toast('链服务未启用，跳过派生登记'); return Promise.resolve(null); }
+        var body = {
+            source_fingerprint: cvSrcFp,
+            derived_fingerprint: derivedFp,
+            relation_type: 'new_creation',
+            judge_basis: judgeBasis || '创作台·图生图二创'
+        };
+        return fetch(CHAIN_CONFIG.proxyUrl + '/api/derivations', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        }).then(function (r) { return r.json().catch(function(){return {};}); }).then(function (j) {
+            if (j && (j.id || j.ok)) {
+                toast('已登记「新创作」派生关系：' + cvSrcName + ' → 新纹样');
+                var q = el('cvEntryQuery');
+                if (q) { q.style.display = ''; q.onclick = function () { if (typeof initDerivationUI === 'function') initDerivationUI(cvSrcFp, cvSrcName); }; }
+                return j;
+            }
+            return j;
+        }).catch(function (e) { toast('派生登记失败：' + ((e && e.message) || e)); return null; });
     }
 
     function init() {
@@ -4008,728 +4385,6 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
 })();
 </script>
 
-<!-- ===== 特征提取：交互层（样式 + 引擎）===== -->
-<style>
-/* ===== 特征提取（交互版）—— 2026-10-09 由静态展示页升级 =====
-   自成一块，不并入「资源库样式块」，避免被 patch_library_dark.py 的真相源回滚。
-   只补交互态与动态元素，基础外观仍沿用 .tv-* / .fv-* 原规则。 */
-
-.fv-drop{min-height:232px;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  outline:none;}
-.fv-drop:focus-visible{border-color:#a78bfa;}
-.fv-drop.is-over{border-color:#a78bfa;background:#221f3c;}
-.fv-drop.has-img{padding:14px;}
-.fv-drop.has-img .fv-drop-idle{display:none;}
-.fv-drop.has-img .fv-drop-h{display:none;}
-
-.fv-drop-busy{display:none;font-size:14px;font-weight:600;color:#c4b5fd;}
-.fv-drop.is-busy .fv-drop-idle{display:none;}
-.fv-drop.is-busy .fv-preview{display:none;}
-.fv-drop.is-busy .fv-drop-busy{display:block;}
-
-.fv-preview{display:none;width:100%;max-height:280px;object-fit:contain;border-radius:12px;
-  background:#15152a;}
-.fv-drop.has-img .fv-preview{display:block;}
-
-.fv-drop-meta{display:none;margin-top:12px;font-size:12.5px;color:#a0a0b8;line-height:1.7;
-  text-align:center;word-break:break-all;}
-.fv-drop.has-img .fv-drop-meta{display:block;}
-.fv-drop-meta b{color:#c4b5fd;font-variant-numeric:tabular-nums;}
-.fv-drop-meta .fv-drop-warn{color:#fca5a5;}
-
-.fv-sample-thumb{position:relative;overflow:hidden;background-color:#1b1b32;background-size:cover;
-  background-position:center;}
-.fv-sample-thumb img{display:block;width:100%;height:100%;object-fit:cover;}
-.fv-sample-name{position:absolute;left:0;right:0;bottom:0;padding:5px 7px;font-size:10.5px;
-  color:#e6e6f5;background:linear-gradient(transparent,rgba(10,10,22,.88));
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.fv-sample-thumb.is-off{cursor:default;opacity:.5;}
-.fv-sample-thumb.is-off:hover{transform:none;}
-.fv-sample-tip{margin-top:11px;font-size:11.5px;color:#6b6b8c;text-align:center;line-height:1.6;}
-
-.fv-card-f{min-height:21px;}
-.fv-card-f .fv-empty{color:#6b6b8c;}
-
-.fv-bars i,.fv-vector-bars i{transition:height .28s cubic-bezier(.22,.8,.3,1);}
-.fv-bars i.is-flat,.fv-vector-bars i.is-flat{background:#2f2f52;}
-
-.fv-vector-code.is-idle{color:#6b6b8c;}
-
-.fv-note{border:1px dashed #3a3a5c;border-radius:14px;background:#1a1a2e;padding:20px 22px;
-  margin-bottom:26px;font-size:13.5px;line-height:1.85;color:#a0a0b8;}
-.fv-note b{color:#c4b5fd;}
-
-.fv-toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);z-index:1400;
-  max-width:82vw;padding:11px 18px;border-radius:12px;background:rgba(26,26,46,.96);
-  border:1px solid #3a3a5c;color:#e6e6f5;font-size:13px;line-height:1.6;
-  box-shadow:0 10px 30px rgba(0,0,0,.45);opacity:0;pointer-events:none;
-  transition:opacity .2s ease, transform .2s ease;}
-.fv-toast.on{opacity:1;transform:translateX(-50%) translateY(-6px);}
-
-@media (max-width:900px){
-  .fv-io{grid-template-columns:minmax(0,1fr);}
-}
-</style>
-<script>
-/* ===== 特征提取：本地特征引擎 + 页面交互（2026-10-09） =====
-   四组特征全部本地计算，零网络、零依赖、离线可用：
-     LBP  旋转不变均匀局部二值模式（8 邻域，10 类）—— 纹理
-     HSV  H 12 桶（按饱和加权）+ S/V 均值与标准差      —— 色彩
-     Hu   7 个 Hu 不变矩（Otsu 二值化后）              —— 形状
-     FFT  128² 功率谱，8 径向环 + 8 角度扇区           —— 周期结构
-   拼成的向量长度即 hero 上「特征维度」显示的数字。 */
-(function () {
-    'use strict';
-
-    var SIZE = 128;        // 分析分辨率（2 的幂，FFT 需要）
-    var MAX_BYTES = 10 * 1024 * 1024;
-    var LBP_BINS = 10, HSV_BINS = 16, HU_BINS = 7, FFT_BINS = 16;
-    var VEC_HEAD = 24;     // 特征向量区展示的前 N 维
-
-    var last = null;
-    var pending = false;
-    var seq = 0;
-    var curObjectUrl = null;
-
-    function $(id) { return document.getElementById(id); }
-
-    function esc(s) {
-        return String(s === null || s === undefined ? '' : s)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
-    function hex2(v) {
-        var n = Math.max(0, Math.min(255, Math.round(v)));
-        return (n < 16 ? '0' : '') + n.toString(16);
-    }
-
-    function toast(msg) {
-        var el = document.querySelector('.fv-toast');
-        if (!el) {
-            el = document.createElement('div');
-            el.className = 'fv-toast';
-            document.body.appendChild(el);
-        }
-        el.textContent = msg;
-        el.classList.add('on');
-        clearTimeout(el.__t);
-        el.__t = setTimeout(function () { el.classList.remove('on'); }, 2600);
-    }
-
-    /* ---------------- 图像 -> 分析画布（居中裁剪成正方形） ---------------- */
-
-    function coverCanvas(src, sw, sh) {
-        var cv = document.createElement('canvas');
-        cv.width = SIZE;
-        cv.height = SIZE;
-        var g = cv.getContext('2d', { willReadFrequently: true });
-        var side = Math.max(1, Math.min(sw, sh));
-        var sx = Math.max(0, (sw - side) / 2);
-        var sy = Math.max(0, (sh - side) / 2);
-        g.drawImage(src, sx, sy, side, side, 0, 0, SIZE, SIZE);
-        return cv;
-    }
-
-    /* ---------------- LBP：旋转不变均匀模式 ---------------- */
-
-    function uniformRI(code) {
-        var t = 0, i;
-        for (i = 0; i < 8; i++) {
-            if (((code >> i) & 1) !== ((code >> ((i + 1) % 8)) & 1)) t++;
-        }
-        if (t > 2) return 9;             // 非均匀
-        var pc = 0;
-        for (i = 0; i < 8; i++) { if ((code >> i) & 1) pc++; }
-        return pc;                       // 0..8 共 9 个均匀旋转不变类
-    }
-
-    function groupLbp(g) {
-        var bins = new Float64Array(LBP_BINS);
-        var total = 0, contrast = 0;
-        var N = SIZE;
-        for (var y = 1; y < N - 1; y++) {
-            for (var x = 1; x < N - 1; x++) {
-                var c = g[y * N + x];
-                var code = 0, sum = 0, k, v;
-                for (k = 0; k < 8; k++) {
-                    var dx = [1, 1, 0, -1, -1, -1, 0, 1][k];
-                    var dy = [0, 1, 1, 1, 0, -1, -1, -1][k];
-                    v = g[(y + dy) * N + (x + dx)];
-                    if (v >= c) code |= (1 << k);
-                    sum += Math.abs(v - c);
-                }
-                contrast += sum / 8;
-                total++;
-                bins[uniformRI(code)]++;
-            }
-        }
-        var vals = new Array(LBP_BINS), maxB = 0;
-        for (var i = 0; i < LBP_BINS; i++) {
-            vals[i] = total ? bins[i] / total : 0;
-            if (vals[i] > maxB) maxB = vals[i];
-        }
-        return {
-            key: 'lbp', name: '纹理特征', tag: 'LBP', dims: LBP_BINS, values: vals,
-            foot: '对比度 <b>' + (contrast / (total || 1) / 255).toFixed(3) +
-                  '</b> · 一致性 <b>' + maxB.toFixed(3) + '</b>'
-        };
-    }
-
-    /* ---------------- HSV：色相直方图 + 饱和/明度统计 ---------------- */
-
-    function groupHsv(rgba) {
-        var hist = new Float64Array(12);
-        var hr = new Float64Array(12), hg = new Float64Array(12), hb = new Float64Array(12);
-        var hCnt = new Float64Array(12);
-        var sSum = 0, sSq = 0, vSum = 0, vSq = 0, n = SIZE * SIZE;
-        for (var i = 0; i < n; i++) {
-            var r = rgba[i * 4] / 255, gg = rgba[i * 4 + 1] / 255, b = rgba[i * 4 + 2] / 255;
-            var mx = r > gg ? (r > b ? r : b) : (gg > b ? gg : b);
-            var mn = r < gg ? (r < b ? r : b) : (gg < b ? gg : b);
-            var d = mx - mn;
-            var s = mx > 1e-6 ? d / mx : 0;
-            var h = 0;
-            if (d > 1e-6) {
-                if (mx === r) h = ((gg - b) / d) % 6;
-                else if (mx === gg) h = (b - r) / d + 2;
-                else h = (r - gg) / d + 4;
-                h *= 60;
-                if (h < 0) h += 360;
-            }
-            sSum += s; sSq += s * s; vSum += mx; vSq += mx * mx;
-            if (s > 0.08) {                       // 低饱和像素不参与色相统计
-                var bIdx = Math.min(11, Math.floor(h / 30));
-                hist[bIdx] += s;
-                hr[bIdx] += r; hg[bIdx] += gg; hb[bIdx] += b;
-                hCnt[bIdx]++;
-            }
-        }
-        var hSum = 0, k;
-        for (k = 0; k < 12; k++) hSum += hist[k];
-        var vals = new Array(HSV_BINS), peak = -1, peakV = -1;
-        for (k = 0; k < 12; k++) {
-            vals[k] = hSum > 1e-9 ? hist[k] / hSum : 0;
-            if (vals[k] > peakV) { peakV = vals[k]; peak = k; }
-        }
-        var sMean = sSum / n, vMean = vSum / n;
-        vals[12] = sMean;
-        vals[13] = Math.sqrt(Math.max(0, sSq / n - sMean * sMean));
-        vals[14] = vMean;
-        vals[15] = Math.sqrt(Math.max(0, vSq / n - vMean * vMean));
-
-        // 主色：取峰值色相桶内像素的平均 RGB（必须按桶内像素数取平均，累加值不能直接当颜色用）
-        var mainHex = '#6b6b8c';
-        if (peak >= 0 && hCnt[peak] > 0) {
-            mainHex = '#' + hex2(hr[peak] / hCnt[peak] * 255)
-                          + hex2(hg[peak] / hCnt[peak] * 255)
-                          + hex2(hb[peak] / hCnt[peak] * 255);
-        }
-
-        // 色相熵（归一化到 0..1）
-        var ent = 0;
-        for (k = 0; k < 12; k++) { if (vals[k] > 1e-9) ent -= vals[k] * Math.log(vals[k]); }
-        ent = ent / Math.log(12);
-
-        return {
-            key: 'hsv', name: '色彩特征', tag: 'HSV', dims: HSV_BINS, values: vals,
-            foot: '主色 <b>' + mainHex + '</b> · 色相熵 <b>' + ent.toFixed(2) + '</b>'
-        };
-    }
-
-    /* ---------------- Hu 矩：Otsu 二值化 -> 7 个不变矩 ---------------- */
-
-    function otsu(g) {
-        var hist = new Float64Array(256), i;
-        for (i = 0; i < g.length; i++) {
-            hist[Math.max(0, Math.min(255, Math.round(g[i])))]++;
-        }
-        var total = g.length, sum = 0;
-        for (i = 0; i < 256; i++) sum += i * hist[i];
-        var sumB = 0, wB = 0, best = -1, thr = 128;
-        for (i = 0; i < 256; i++) {
-            wB += hist[i];
-            if (wB === 0) continue;
-            var wF = total - wB;
-            if (wF === 0) break;
-            sumB += i * hist[i];
-            var mB = sumB / wB, mF = (sum - sumB) / wF;
-            var between = wB * wF * (mB - mF) * (mB - mF);
-            if (between > best) { best = between; thr = i; }
-        }
-        return thr;
-    }
-
-    function groupHu(g) {
-        var N = SIZE, thr = otsu(g), bin = new Uint8Array(N * N);
-        var m00 = 0, mx = 0, my = 0, x, y, i;
-        for (y = 0; y < N; y++) {
-            for (x = 0; x < N; x++) {
-                var on = g[y * N + x] > thr ? 1 : 0;
-                bin[y * N + x] = on;
-                if (on) { m00++; mx += x; my += y; }
-            }
-        }
-        if (m00 < N * N * 0.005 || m00 > N * N * 0.995) {   // 极端图兜底：改用中位数阈值
-            var tmp = Array.prototype.slice.call(g).sort(function (a, b) { return a - b; });
-            var med = tmp[Math.floor(tmp.length / 2)];
-            m00 = 0; mx = 0; my = 0;
-            for (i = 0; i < N * N; i++) {
-                var on2 = g[i] > med ? 1 : 0;
-                bin[i] = on2;
-                if (on2) { m00++; mx += i % N; my += Math.floor(i / N); }
-            }
-        }
-        // 归一化中心矩
-        var cxm = mx / (m00 || 1), cym = my / (m00 || 1);
-        var mu = new Float64Array(16);          // mu[p*4+q]，p+q<=3
-        for (y = 0; y < N; y++) {
-            for (x = 0; x < N; x++) {
-                if (!bin[y * N + x]) continue;
-                var dx = x - cxm, dy = y - cym;
-                var p2 = dx * dx, p3 = p2 * dx;
-                var q2 = dy * dy, q3 = q2 * dy;
-                mu[0] += 1;               // p0q0
-                mu[1] += dy;              // p0q1
-                mu[2] += q2;              // p0q2
-                mu[3] += q3;              // p0q3
-                mu[4] += dx;              // p1q0
-                mu[5] += dx * dy;         // p1q1
-                mu[6] += dx * q2;         // p1q2
-                mu[8] += p2;              // p2q0
-                mu[9] += p2 * dy;         // p2q1
-                mu[12] += p3;             // p3q0
-            }
-        }
-        function eta(p, q) {
-            var raw = mu[p * 4 + q];
-            return raw / Math.pow(mu[0] || 1, 1 + (p + q) / 2);
-        }
-        var e20 = eta(2, 0), e02 = eta(0, 2), e11 = eta(1, 1);
-        var e30 = eta(3, 0), e21 = eta(2, 1), e12 = eta(1, 2), e03 = eta(0, 3);
-        var hu = [
-            e20 + e02,
-            (e20 - e02) * (e20 - e02) + 4 * e11 * e11,
-            (e30 - 3 * e12) * (e30 - 3 * e12) + (3 * e21 - e03) * (3 * e21 - e03),
-            (e30 + e12) * (e30 + e12) + (e21 + e03) * (e21 + e03),
-            (e30 - 3 * e12) * (e30 + e12) * ((e30 + e12) * (e30 + e12) - 3 * (e21 + e03) * (e21 + e03))
-                + (3 * e21 - e03) * (e21 + e03) * (3 * (e30 + e12) * (e30 + e12) - (e21 + e03) * (e21 + e03)),
-            (e20 - e02) * ((e30 + e12) * (e30 + e12) - (e21 + e03) * (e21 + e03))
-                + 4 * e11 * (e30 + e12) * (e21 + e03),
-            (3 * e21 - e03) * (e30 + e12) * ((e30 + e12) * (e30 + e12) - 3 * (e21 + e03) * (e21 + e03))
-                - (e30 - 3 * e12) * (e21 + e03) * (3 * (e30 + e12) * (e30 + e12) - (e21 + e03) * (e21 + e03))
-        ];
-        var logged = hu.map(function (v) {
-            return (v < 0 ? -1 : 1) * Math.log1p(Math.abs(v));
-        });
-
-        // 对称性（水平 + 垂直镜像的平均一致率）、紧致度 4πA/P²
-        var diff = 0, per = 0;
-        for (y = 0; y < N; y++) {
-            for (x = 0; x < N; x++) {
-                var v = bin[y * N + x];
-                if (v !== bin[y * N + (N - 1 - x)]) diff++;
-                if (v !== bin[(N - 1 - y) * N + x]) diff++;
-                if (!v) continue;
-                if (x === 0 || y === 0 || x === N - 1 || y === N - 1) per++;
-                else if (!bin[y * N + x - 1] || !bin[y * N + x + 1] ||
-                         !bin[(y - 1) * N + x] || !bin[(y + 1) * N + x]) per++;
-            }
-        }
-        var sym = 1 - diff / (2 * N * N);
-        var compact = per > 0 ? (4 * Math.PI * m00) / (per * per) : 0;
-
-        return {
-            key: 'hu', name: '形状特征', tag: 'Hu 矩', dims: HU_BINS, values: logged,
-            foot: '对称性 <b>' + sym.toFixed(3) + '</b> · 紧致度 <b>' + compact.toFixed(3) + '</b>'
-        };
-    }
-
-    /* ---------------- FFT：可分离 2D 快速傅里叶 -> 环/扇区能量 ---------------- */
-
-    var TWC = {};
-
-    function twiddle(len) {
-        var t = TWC[len];
-        if (t) return t;
-        var half = len >> 1, cr = new Float64Array(half), ci = new Float64Array(half);
-        for (var k = 0; k < half; k++) {
-            var a = -2 * Math.PI * k / len;
-            cr[k] = Math.cos(a); ci[k] = Math.sin(a);
-        }
-        t = { re: cr, im: ci, half: half };
-        TWC[len] = t;
-        return t;
-    }
-
-    function fft1d(re, im, n) {
-        var i, j, bit, t;
-        for (i = 1, j = 0; i < n; i++) {
-            bit = n >> 1;
-            for (; j & bit; bit >>= 1) { j ^= bit; }
-            j ^= bit;
-            if (i < j) {
-                t = re[i]; re[i] = re[j]; re[j] = t;
-                t = im[i]; im[i] = im[j]; im[j] = t;
-            }
-        }
-        for (var len = 2; len <= n; len <<= 1) {
-            var tw = twiddle(len), half = tw.half;
-            for (i = 0; i < n; i += len) {
-                for (var k = 0; k < half; k++) {
-                    var cr = tw.re[k], ci = tw.im[k];
-                    var ur = re[i + k], ui = im[i + k];
-                    var xr = re[i + k + half], xi = im[i + k + half];
-                    var vr = xr * cr - xi * ci, vi = xr * ci + xi * cr;
-                    re[i + k] = ur + vr; im[i + k] = ui + vi;
-                    re[i + k + half] = ur - vr; im[i + k + half] = ui - vi;
-                }
-            }
-        }
-    }
-
-    function groupFft(g) {
-        var N = SIZE, n2 = N * N, i, x, y;
-        var re = new Float64Array(n2), im = new Float64Array(n2);
-        var mean = 0;
-        for (i = 0; i < n2; i++) mean += g[i];
-        mean /= n2;
-        for (y = 0; y < N; y++) {
-            var wy = 0.5 - 0.5 * Math.cos(2 * Math.PI * y / (N - 1));
-            for (x = 0; x < N; x++) {
-                var wx = 0.5 - 0.5 * Math.cos(2 * Math.PI * x / (N - 1));
-                re[y * N + x] = (g[y * N + x] - mean) * wx * wy;
-            }
-        }
-        var rr = new Float64Array(N), ii = new Float64Array(N);
-        for (y = 0; y < N; y++) {
-            for (x = 0; x < N; x++) { rr[x] = re[y * N + x]; ii[x] = im[y * N + x]; }
-            fft1d(rr, ii, N);
-            for (x = 0; x < N; x++) { re[y * N + x] = rr[x]; im[y * N + x] = ii[x]; }
-        }
-        for (x = 0; x < N; x++) {
-            for (y = 0; y < N; y++) { rr[y] = re[y * N + x]; ii[y] = im[y * N + x]; }
-            fft1d(rr, ii, N);
-            for (y = 0; y < N; y++) { re[y * N + x] = rr[y]; im[y * N + x] = ii[y]; }
-        }
-
-        var RINGS = 8, SECT = 8, half = N >> 1, maxR = N / 2;
-        var ring = new Float64Array(RINGS), sect = new Float64Array(SECT);
-        var ringSum = 0, sectSum = 0, peakP = -1, peakR = 0, rMin = 0.04 * maxR;
-        for (y = 0; y < N; y++) {
-            var dy = y < half ? y : y - N;
-            for (x = 0; x < N; x++) {
-                var dx = x < half ? x : x - N;
-                var p = re[y * N + x] * re[y * N + x] + im[y * N + x] * im[y * N + x];
-                var r = Math.sqrt(dx * dx + dy * dy);
-                if (r < rMin) continue;                   // 剔除极低频与直流
-                var rb = Math.min(RINGS - 1, Math.floor(r / maxR * RINGS));
-                ring[rb] += p; ringSum += p;
-                var ang = Math.atan2(dy, dx);
-                if (ang < 0) ang += Math.PI;              // 频谱中心对称 -> [0, π)
-                var sb = Math.min(SECT - 1, Math.floor(ang / Math.PI * SECT));
-                sect[sb] += p; sectSum += p;
-                if (p > peakP) { peakP = p; peakR = r; }
-            }
-        }
-        var vals = new Array(FFT_BINS), k;
-        for (k = 0; k < RINGS; k++) vals[k] = ringSum > 1e-12 ? ring[k] / ringSum : 0;
-        for (k = 0; k < SECT; k++) vals[RINGS + k] = sectSum > 1e-12 ? sect[k] / sectSum : 0;
-
-        var ent = 0;
-        for (k = 0; k < SECT; k++) { if (vals[RINGS + k] > 1e-9) ent -= vals[RINGS + k] * Math.log(vals[RINGS + k]); }
-        ent /= Math.log(SECT);
-
-        return {
-            key: 'fft', name: '周期结构', tag: 'FFT', dims: FFT_BINS, values: vals,
-            foot: '主频 <b>' + peakR.toFixed(1) + ' cyc</b> · 方向性 <b>' + (1 - ent).toFixed(2) + '</b>'
-        };
-    }
-
-    /* ---------------- 计算与渲染 ---------------- */
-
-    function normGroup(grp) {
-        var v = grp.values, mn = Infinity, mx = -Infinity, i;
-        for (i = 0; i < v.length; i++) { if (v[i] < mn) mn = v[i]; if (v[i] > mx) mx = v[i]; }
-        var rng = mx - mn;
-        grp.norm = v.map(function (q) {
-            return rng > 1e-12 ? (q - mn) / rng : 0.5;
-        });
-        return grp;
-    }
-
-    function compute(src, sw, sh) {
-        var cv = coverCanvas(src, sw, sh);
-        var rgba = cv.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, SIZE, SIZE).data;
-        var n2 = SIZE * SIZE, g = new Float64Array(n2);
-        for (var i = 0; i < n2; i++) {
-            g[i] = 0.299 * rgba[i * 4] + 0.587 * rgba[i * 4 + 1] + 0.114 * rgba[i * 4 + 2];
-        }
-        var groups = [groupLbp(g), groupHsv(rgba), groupHu(g), groupFft(g)];
-        groups.forEach(normGroup);
-
-        // 拼成完整向量（各组归一化值顺序拼接），并对其再做一次整体 min-max
-        var vec = [];
-        groups.forEach(function (grp) { vec = vec.concat(grp.norm); });
-        var totalDims = 0;
-        groups.forEach(function (grp) { totalDims += grp.dims; });
-        return { groups: groups, vector: vec, totalDims: totalDims };
-    }
-
-    function barsHtml(norms, cap) {
-        var out = '';
-        for (var i = 0; i < norms.length; i++) {
-            var pct = 8 + 92 * Math.max(0, Math.min(1, norms[i]));
-            out += '<i class="' + (norms[i] <= 0.02 ? 'is-flat' : '') +
-                   '" style="height:' + (cap ? Math.min(pct, cap) : pct).toFixed(1) + '%"></i>';
-        }
-        return out;
-    }
-
-    function render(res, meta) {
-        last = res;
-        res.ms = meta.ms;
-
-        $('fvStatDims').textContent = res.totalDims;
-        $('fvStatMs').textContent = meta.ms.toFixed(0) + ' ms';
-        $('fvCardsNote').innerHTML = esc(meta.label || '本次结果') + ' · ' +
-            res.groups.map(function (grp) { return grp.tag + ' ' + grp.dims; }).join(' / ');
-
-        res.groups.forEach(function (grp) {
-            var card = document.querySelector('.fv-card[data-fv="' + grp.key + '"]');
-            if (!card) return;
-            card.querySelector('.fv-bars').innerHTML = barsHtml(grp.norm);
-            card.querySelector('.fv-card-f').innerHTML = grp.foot;
-        });
-
-        var head = res.vector.slice(0, VEC_HEAD);
-        $('fvVecNote').textContent = '归一化后前 ' + head.length + ' 维（共 ' + res.totalDims + ' 维）';
-        var code = $('fvVecCode');
-        code.classList.remove('is-idle');
-        var rows = [];
-        for (var i = 0; i < head.length; i += 8) {
-            rows.push(head.slice(i, i + 8).map(function (v) { return v.toFixed(2); }).join(', '));
-        }
-        code.textContent = '[ ' + rows[0] + ',\n  ' + rows.slice(1).join(',\n  ') + ' ]';
-        $('fvVecBars').innerHTML = barsHtml(head);
-    }
-
-    function renderIdle() {
-        last = null;
-        $('fvStatDims').textContent = '—';
-        $('fvStatMs').textContent = '—';
-        $('fvCardsNote').textContent = '等待提取 · 选图后自动计算';
-        document.querySelectorAll('.fv-card').forEach(function (card) {
-            card.querySelector('.fv-bars').innerHTML = '';
-            card.querySelector('.fv-card-f').innerHTML = '<span class="fv-empty">尚未提取</span>';
-        });
-        $('fvVecNote').textContent = '归一化后前 24 维';
-        var code = $('fvVecCode');
-        code.classList.add('is-idle');
-        code.textContent = '[ 等待提取 ]';
-        $('fvVecBars').innerHTML = '';
-    }
-
-    function setBusy(on) {
-        pending = on;
-        var d = $('fvDrop');
-        if (on) d.classList.add('is-busy');
-        else d.classList.remove('is-busy');
-    }
-
-    function previewObjectUrl(url) {
-        var img = $('fvPreview');
-        img.src = url;
-        $('fvDrop').classList.add('has-img');
-    }
-
-    function releaseObjectUrl() {
-        if (curObjectUrl) {
-            try { URL.revokeObjectURL(curObjectUrl); } catch (e) { /* 忽略 */ }
-            curObjectUrl = null;
-        }
-    }
-
-    function reportImage(name, sw, sh, bytes) {
-        $('fvDropMeta').innerHTML = '<b>' + esc(name) + '</b><br>' +
-            sw + ' × ' + sh + ' px' +
-            (bytes ? ' · ' + (bytes / 1024).toFixed(0) + ' KB' : '') +
-            ' · 分析分辨率 ' + SIZE + ' × ' + SIZE;
-    }
-
-    function feedImage(img, label, name, bytes, objectUrl) {
-        var sw = img.naturalWidth || img.width, sh = img.naturalHeight || img.height;
-        if (!sw || !sh) { toast('这张图读不出尺寸，换一张试试'); return; }
-        if (objectUrl) previewObjectUrl(objectUrl);
-        reportImage(name || label, sw, sh, bytes);
-        setBusy(true);
-        var my = ++seq;
-        setTimeout(function () {
-            if (my !== seq) return;
-            var t0 = (window.performance || Date).now();
-            try {
-                var res = compute(img, sw, sh);
-                var ms = (window.performance || Date).now() - t0;
-                setBusy(false);
-                render(res, { ms: ms, label: label });
-            } catch (err) {
-                setBusy(false);
-                toast('特征提取失败：' + (err && err.message ? err.message : err));
-            }
-        }, 24);
-    }
-
-    /* ---------------- 输入：拖拽 / 选择文件 / 示例 ---------------- */
-
-    function handleFile(file) {
-        if (!file) return;
-        if (file.type && file.type.indexOf('image/') !== 0) {
-            toast('只支持图片文件（JPG / PNG 等）');
-            return;
-        }
-        if (file.size > MAX_BYTES) {
-            toast('图片超过 10MB，请先压缩后再试');
-            return;
-        }
-        var url = URL.createObjectURL(file);
-        releaseObjectUrl();
-        curObjectUrl = url;
-        var img = new Image();
-        img.onload = function () {
-            feedImage(img, '本地图片', file.name, file.size, url);
-        };
-        img.onerror = function () {
-            URL.revokeObjectURL(url);
-            toast('这张图加载失败，换一张试试');
-        };
-        img.src = url;
-    }
-
-    function loadUrl(url) {
-        return new Promise(function (resolve, reject) {
-            var img = new Image();
-            img.onload = function () {
-                feedImage(img, '示例纹样', url.split('/').pop(), 0, url);
-                resolve(last);
-            };
-            img.onerror = function () { reject(new Error('图片加载失败：' + url)); };
-            img.src = url;
-        });
-    }
-
-    function initSamples() {
-        var box = $('fvSamples'), tip = $('fvSampleTip');
-        var list = (window.IMPORTED_PATTERNS || []).filter(function (p) {
-            return p && p.imageUrl;
-        });
-        if (!list.length) {
-            tip.textContent = '纹样库未就绪，可拖入自己的图片';
-            return;
-        }
-        var step = Math.max(1, Math.floor(list.length / 4)), picks = [], i;
-        for (i = 0; i < 4 && i * step < list.length; i++) picks.push(list[i * step]);
-
-        picks.forEach(function (p, idx) {
-            var d = document.createElement('div');
-            d.className = 'fv-sample-thumb' + (idx === 0 ? ' on' : '');
-            d.setAttribute('data-src', p.imageUrl);
-            d.innerHTML = '<img src="' + esc(p.imageUrl) + '" alt="" loading="lazy" decoding="async">' +
-                '<span class="fv-sample-name">' + esc(p.name || p.code || '纹样') + '</span>';
-            var im = d.querySelector('img');
-            im.addEventListener('error', function () {
-                d.classList.add('is-off');
-                d.style.background = '#1b1b32';
-                d.querySelector('img').style.display = 'none';
-            });
-            d.addEventListener('click', function () {
-                if (d.classList.contains('is-off')) { toast('这张示例图没能加载，试试拖入自己的图片'); return; }
-                document.querySelectorAll('.fv-sample-thumb').forEach(function (o) { o.classList.remove('on'); });
-                d.classList.add('on');
-                loadUrl(p.imageUrl).catch(function (e) { toast(e.message); });
-            });
-            box.appendChild(d);
-        });
-        tip.textContent = '点一张，直接跑一遍真实特征';
-    }
-
-    /* ---------------- 绑定 ---------------- */
-
-    function init() {
-        var drop = $('fvDrop'), fileEl = $('fvFile');
-        if (!drop || !fileEl) return;
-
-        drop.addEventListener('click', function () { fileEl.click(); });
-        drop.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileEl.click(); }
-        });
-        ['dragenter', 'dragover'].forEach(function (ev) {
-            drop.addEventListener(ev, function (e) {
-                e.preventDefault();
-                if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-                drop.classList.add('is-over');
-            });
-        });
-        ['dragleave', 'dragend'].forEach(function (ev) {
-            drop.addEventListener(ev, function () { drop.classList.remove('is-over'); });
-        });
-        drop.addEventListener('drop', function (e) {
-            e.preventDefault();
-            drop.classList.remove('is-over');
-            var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-            if (f) handleFile(f);
-        });
-        fileEl.addEventListener('change', function () {
-            if (fileEl.files && fileEl.files[0]) handleFile(fileEl.files[0]);
-            fileEl.value = '';
-        });
-
-        $('fvRunBtn').addEventListener('click', function () {
-            var img = $('fvPreview');
-            if (!img.src) { toast('请先拖入或选择一张纹样图片'); return; }
-            var probe = new Image();
-            probe.onload = function () { feedImage(probe, '重新提取', null, 0, img.src); };
-            probe.onerror = function () { toast('图片已失效，请重新选择'); };
-            probe.src = img.src;
-        });
-
-        $('fvResetBtn').addEventListener('click', function () {
-            seq++;
-            setBusy(false);
-            releaseObjectUrl();
-            var img = $('fvPreview');
-            img.removeAttribute('src');
-            $('fvDrop').classList.remove('has-img');
-            $('fvDropMeta').innerHTML = '';
-            renderIdle();
-            toast('已重置');
-        });
-
-        renderIdle();
-        initSamples();
-    }
-
-    window.FVFeature = {
-        SIZE: SIZE,
-        loadUrl: loadUrl,
-        handleFile: handleFile,
-        reset: function () { $('fvResetBtn').click(); },
-        getLast: function () { return last; },
-        extractFromImage: function (img) {
-            var sw = img.naturalWidth || img.width, sh = img.naturalHeight || img.height;
-            var t0 = (window.performance || Date).now();
-            var res = compute(img, sw, sh);
-            res.ms = (window.performance || Date).now() - t0;
-            return res;
-        }
-    };
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-})();
-</script>
 
 <!-- 纹样详情 -->
 <div id="libDetail" onclick="if(event.target===this){libCloseDetail();}">
@@ -4768,8 +4423,8 @@ function libImgUrl(u) {
     return LIB_BASE + (u.charAt(0) === '/' ? '' : '/') + u;
 }
 
-/* ---------- 顶层视图开关（资源库 / 纹样溯源 / 二次创作 / 特征提取） ---------- */
-var TOP_VIEWS = { library: 'libraryView', create: 'createView', feature: 'featureView' };
+/* ---------- 顶层视图开关（资源库 / 纹样溯源 / 二次创作） ---------- */
+var TOP_VIEWS = { library: 'libraryView', create: 'createView' };
 
 function tvSyncTop(el) {
     var tn = document.querySelector('.top-nav');
