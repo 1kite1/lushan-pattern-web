@@ -495,9 +495,49 @@
   display:none;overflow-y:auto;overflow-x:hidden;background:#0f0f1e;color:#fff;text-align:left;
   font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
   -webkit-font-smoothing:antialiased;}
+#linecreateView{position:fixed;left:0;right:0;bottom:0;top:var(--tv-top,64px);z-index:1200;
+  display:none;overflow-y:auto;overflow-x:hidden;background:#0f0f1e;color:#fff;text-align:left;
+  font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;}
 #createView.lib-open{display:block;}
-#createView *{box-sizing:border-box;}
-#createView input{font-family:inherit;}
+#linecreateView.lib-open{display:block;}
+#linecreateView .fl-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:22px 24px;max-width:980px;}
+#linecreateView .fl-card-head h3{margin:0 0 6px;font-size:18px;}
+#linecreateView .fl-card-head p{margin:0 0 16px;font-size:13px;line-height:1.7;opacity:.72;}
+#linecreateView .fl-src{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;padding:12px 0;border-top:1px dashed rgba(255,255,255,.10);}
+#linecreateView .fl-lbl{opacity:.6;}
+#linecreateView .fl-src-name{opacity:.92;margin-right:auto;}
+#linecreateView .fl-run{display:flex;align-items:center;gap:12px;padding:14px 0 2px;}
+#linecreateView .fl-btn{cursor:pointer;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-size:14px;padding:9px 18px;border-radius:10px;}
+#linecreateView .fl-btn:hover{background:rgba(255,255,255,.12);}
+#linecreateView .fl-btn.primary{background:linear-gradient(135deg,#6d5efc,#9b5cf6);border-color:transparent;color:#fff;}
+#linecreateView .fl-status{font-size:12px;opacity:.65;}
+#linecreateView .fl-panel{margin-top:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:16px;}
+#linecreateView .fl-previews{display:flex;gap:16px;flex-wrap:wrap;}
+#linecreateView .fl-fig{margin:0;text-align:center;}
+#linecreateView .fl-fig canvas{display:block;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:#fff;}
+#linecreateView .fl-fig figcaption{font-size:12px;opacity:.65;margin-top:6px;}
+#linecreateView .fl-params{margin-top:16px;font-size:13px;line-height:2;}
+#linecreateView .fl-params .fl-kv{display:inline-block;margin-right:22px;}
+#linecreateView .fl-params b{font-size:15px;}
+#linecreateView .fl-swatches{margin-top:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:12px;}
+#linecreateView .fl-swlbl{opacity:.6;}
+#linecreateView .fl-sw{display:inline-flex;align-items:center;gap:6px;opacity:.95;}
+#linecreateView .fl-sw i{width:14px;height:14px;border-radius:3px;border:1px solid rgba(255,255,255,.28);display:inline-block;}
+#linecreateView .fl-actions{margin-top:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+#linecreateView .fl-tip{font-size:12px;opacity:.6;}
+#linecreateView .fl-picker{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);align-items:center;justify-content:center;}
+#linecreateView .fl-picker-box{background:#171726;border:1px solid rgba(255,255,255,.12);border-radius:14px;width:min(880px,92vw);max-height:78vh;display:flex;flex-direction:column;}
+#linecreateView .fl-picker-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.10);}
+#linecreateView .fl-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;padding:16px;overflow:auto;}
+#linecreateView .fl-pick-item{cursor:pointer;border:1px solid rgba(255,255,255,.10);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.03);}
+#linecreateView .fl-pick-item:hover{border-color:#9b5cf6;}
+#linecreateView .fl-pick-item img{width:100%;height:96px;object-fit:cover;display:block;}
+#linecreateView .fl-pick-item span{display:block;font-size:12px;padding:6px 8px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#createView .cv-exfeat{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;padding:8px 12px;border:1px solid rgba(155,92,246,.45);background:rgba(155,92,246,.10);border-radius:8px;font-size:12px;}
+#createView .cv-exfeat-txt{opacity:.92;}
+#createView *, #linecreateView *{box-sizing:border-box;}
+#createView input, #linecreateView input{font-family:inherit;}
 
 /* 共用骨架（与资源库同一套视觉语言） */
 .tv-head{position:sticky;top:0;z-index:5;background:rgba(15,15,30,.92);
@@ -643,6 +683,7 @@
             <span class="lib-nav-tab on" data-view="library" onclick="setTopView('library')">资源库</span>
             <span class="lib-nav-tab" data-view="trace" onclick="setTopView('trace')">纹样溯源</span>
             <span class="lib-nav-tab" data-view="create" onclick="setTopView('create')">二次创作</span>
+            <span class="lib-nav-tab" data-view="linecreate" onclick="setTopView('linecreate')">特征提取</span>
         </div>
         <div class="top-right">
             <div class="lang-switch">
@@ -3048,6 +3089,10 @@ async function segmentPattern(img) {
                         <button class="cv-tool ghost" type="button" id="cvSrcClear">清除</button>
                     </div>
                     <div class="cv-entry-judge new" id="cvEntryJudge"></div>
+                    <div class="cv-exfeat" id="cvFeatTag" style="display:none;">
+                        <span class="cv-exfeat-txt">🧬 已带入结构特征：<span id="cvFeatTagName"></span></span>
+                        <button class="cv-tool ghost" type="button" id="cvFeatTagClear">清除特征</button>
+                    </div>
                     <button class="tv-btn" type="button" id="cvEntryQuery" style="display:none;margin-top:2px;">🔗 查看派生谱系</button>
                 </div>
 
@@ -3156,6 +3201,52 @@ async function segmentPattern(img) {
 
 
 
+
+<div id="linecreateView">
+    <div class="tv-head">
+        <div class="tv-head-in">
+            <button class="tv-back" onclick="setTopView('trace')">← 返回纹鉴</button>
+            <div class="tv-brand">纹样<em>特征提取</em></div>
+        </div>
+    </div>
+    <div class="tv-wrap">
+        <div class="fl-card">
+            <div class="fl-card-head">
+                <h3>结构特征提取</h3>
+                <p>从源纹样提取线条骨架、构图热力与结构参数，作为二次创作时的结构约束。本页只做特征提取与展示，不生成图片。</p>
+            </div>
+            <div class="fl-src">
+                <span class="fl-lbl">源纹样</span>
+                <span class="fl-src-name" id="flSrcName">未指定（默认取当前溯源纹样）</span>
+                <button class="cv-tool" type="button" id="flSrcPick">📚 选源纹样</button>
+                <button class="cv-tool ghost" type="button" id="flSrcClear">清除</button>
+            </div>
+            <div class="fl-run">
+                <button class="fl-btn" type="button" id="flExtractBtn">🔍 提取特征</button>
+                <span class="fl-status" id="flStatus">未提取</span>
+            </div>
+            <div class="fl-panel" id="flPanel" style="display:none;">
+                <div class="fl-previews">
+                    <figure class="fl-fig"><canvas id="flSkel" width="220" height="220"></canvas><figcaption>线条骨架</figcaption></figure>
+                    <figure class="fl-fig"><canvas id="flGrid" width="220" height="220"></canvas><figcaption>构图热力（8×8）</figcaption></figure>
+                    <figure class="fl-fig"><canvas id="flFeat" width="220" height="220"></canvas><figcaption>特征参考图</figcaption></figure>
+                </div>
+                <div class="fl-params" id="flParams"></div>
+                <div class="fl-actions">
+                    <button class="fl-btn primary" type="button" id="flToCreate">🖌 用此特征去二次创作 →</button>
+                    <span class="fl-tip">带上骨架与构图特征跳转到二次创作页生成，按「衍生」登记（挂回谱系）</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="fl-picker" id="flPicker" style="display:none;">
+        <div class="fl-picker-box">
+            <div class="fl-picker-head"><span>选择源纹样</span><button class="cv-tool ghost" type="button" id="flPickerClose">关闭</button></div>
+            <div class="fl-picker-grid" id="flPickerGrid"></div>
+        </div>
+    </div>
+</div>
+
 <!-- ===== AI 创作台：交互层（样式 + 引擎）===== -->
 <style>
 /* ===== AI 创作台（纯云端文生图）——2026-10-09 由「本地引擎 + 云端」双通道收敛为只走云端 =====
@@ -3170,7 +3261,13 @@ async function segmentPattern(img) {
 /* 页内面板显隐：用显式 class，不依赖 hidden 属性
    —— 三份 www/web-dist/android 文件实际跑在 BackCompat（怪异模式），
       hidden 的 UA 表现不可靠，显式 display:none 才稳。 */
-.cv-pane-off{display:none!important;}
+.cv-pane-
+
+
+
+
+
+off{display:none!important;}
 
 /* ---------- 上下堆叠：出图结果 + 模型配置（不再左右分栏） ---------- */
 .cv-ai-only{display:flex;flex-direction:column;gap:18px;align-items:stretch;}
@@ -3199,11 +3296,11 @@ async function segmentPattern(img) {
 .cv-ai-mode-hint{font-size:12px;color:#8a8ab0;letter-spacing:.3px;}
 .cv-ai-prompt{border:1px solid #2a2a40;border-radius:16px;background:#1a1a2e;padding:16px 16px 14px;
   margin-bottom:18px;}
-#createView .cv-ai-ta{display:block;width:100%;box-sizing:border-box;min-height:74px;max-height:220px;
+#createView .cv-ai-ta, #linecreateView .cv-ai-ta{display:block;width:100%;box-sizing:border-box;min-height:74px;max-height:220px;
   resize:vertical;padding:12px 13px;border-radius:12px;border:1px solid #3a3a5c;background:#13132a;
   color:#e2e6ff;font-family:inherit;font-size:13.5px;line-height:1.8;outline:none;transition:border-color .16s;}
-#createView .cv-ai-ta:focus{border-color:#a78bfa;background:#161633;}
-#createView .cv-ai-ta::placeholder{color:#585875;}
+#createView .cv-ai-ta:focus, #linecreateView .cv-ai-ta:focus{border-color:#a78bfa;background:#161633;}
+#createView .cv-ai-ta::placeholder, #linecreateView .cv-ai-ta::placeholder{color:#585875;}
 .cv-ai-prow{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-top:12px;}
 .cv-ai-prow .cv-chips{flex:1;min-width:220px;margin:0;}
 .cv-ai-cnt{font-size:11.5px;color:#6b6b8c;white-space:nowrap;padding-top:8px;letter-spacing:.04em;}
@@ -3263,36 +3360,36 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
   border-radius:11px;padding:9px 11px;line-height:1.7;margin-bottom:14px;}
 .cv-ai-chan-line b{color:#c4b5fd;font-weight:600;}
 .cv-ai-chan-line.warn b{color:#fcd34d;}
-#createView .cv-ai-in{display:block;width:100%;box-sizing:border-box;height:34px;padding:0 11px;
+#createView .cv-ai-in, #linecreateView .cv-ai-in{display:block;width:100%;box-sizing:border-box;height:34px;padding:0 11px;
   border-radius:9px;border:1px solid #3a3a5c;background:#13132a;color:#e2e6ff;font-family:inherit;
   font-size:12.5px;outline:none;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#createView .cv-ai-in:focus{border-color:#a78bfa;}
-#createView .cv-chip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+#createView .cv-ai-in:focus, #linecreateView .cv-ai-in:focus{border-color:#a78bfa;}
+#createView .cv-chip, #linecreateView .cv-chip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 
 /* ===== 二创入口（溯源重构 / 特征二创 双入口）===== */
-#createView .cv-entry{background:#15152e;border:1px solid #2a2a4a;border-radius:14px;padding:14px 16px;margin:0 0 14px;}
-#createView .cv-entry-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
-#createView .cv-entry-title{font-size:15px;font-weight:700;color:#c4b5fd;}
-#createView .cv-entry-sub{font-size:12px;color:#8a8aa8;}
-#createView .cv-entry-src{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
-#createView .cv-entry-lbl{font-size:13px;color:#a0a0b8;font-weight:600;}
-#createView .cv-entry-src-name{font-size:13px;color:#e6e6f5;flex:1;min-width:160px;word-break:break-all;}
-#createView .cv-entry-tabs{display:flex;gap:10px;margin-bottom:10px;}
-#createView .cv-entry-tab{flex:1;padding:10px 12px;border:1px solid #2a2a4a;background:#1a1a36;border-radius:10px;color:#b8b8d8;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;}
-#createView .cv-entry-tab:hover{border-color:#6d5dbf;}
-#createView .cv-entry-tab.on{background:linear-gradient(135deg,#3a2a6a,#5a3a9a);border-color:#8b5cf6;color:#fff;}
-#createView .cv-entry-desc{font-size:13px;color:#9a9ac0;line-height:1.7;margin-bottom:8px;}
-#createView .cv-entry-judge{font-size:13px;font-weight:600;padding:8px 12px;border-radius:8px;background:#1e1e3a;margin-bottom:10px;}
-#createView .cv-entry-judge.new{color:#86efac;border-left:3px solid #34d399;}
-#createView .cv-entry-judge.deriv{color:#c4b5fd;border-left:3px solid #8b5cf6;}
-#createView .cv-entry-feat{margin-top:4px;}
-#createView .cv-entry-feat-h{font-size:13px;color:#a0a0b8;margin-bottom:8px;font-weight:600;}
-#createView .cv-entry-feat-grid{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
-#createView .cv-feat-card{flex:1;min-width:160px;background:#1a1a36;border:1px solid #2a2a4a;border-radius:10px;padding:10px;}
-#createView .cv-feat-t{font-size:12px;color:#c4b5fd;font-weight:600;margin-bottom:6px;}
-#createView .cv-feat-img{width:100%;height:120px;object-fit:contain;background:#0e0e1e;border-radius:8px;display:none;}
-#createView .cv-feat-img.show{display:block;}
-#createView .cv-feat-meta{font-size:11px;color:#8a8aa8;margin-top:6px;line-height:1.5;}
+#createView .cv-entry, #linecreateView .cv-entry{background:#15152e;border:1px solid #2a2a4a;border-radius:14px;padding:14px 16px;margin:0 0 14px;}
+#createView .cv-entry-head, #linecreateView .cv-entry-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+#createView .cv-entry-title, #linecreateView .cv-entry-title{font-size:15px;font-weight:700;color:#c4b5fd;}
+#createView .cv-entry-sub, #linecreateView .cv-entry-sub{font-size:12px;color:#8a8aa8;}
+#createView .cv-entry-src, #linecreateView .cv-entry-src{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+#createView .cv-entry-lbl, #linecreateView .cv-entry-lbl{font-size:13px;color:#a0a0b8;font-weight:600;}
+#createView .cv-entry-src-name, #linecreateView .cv-entry-src-name{font-size:13px;color:#e6e6f5;flex:1;min-width:160px;word-break:break-all;}
+#createView .cv-entry-tabs, #linecreateView .cv-entry-tabs{display:flex;gap:10px;margin-bottom:10px;}
+#createView .cv-entry-tab, #linecreateView .cv-entry-tab{flex:1;padding:10px 12px;border:1px solid #2a2a4a;background:#1a1a36;border-radius:10px;color:#b8b8d8;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;}
+#createView .cv-entry-tab:hover, #linecreateView .cv-entry-tab:hover{border-color:#6d5dbf;}
+#createView .cv-entry-tab.on, #linecreateView .cv-entry-tab.on{background:linear-gradient(135deg,#3a2a6a,#5a3a9a);border-color:#8b5cf6;color:#fff;}
+#createView .cv-entry-desc, #linecreateView .cv-entry-desc{font-size:13px;color:#9a9ac0;line-height:1.7;margin-bottom:8px;}
+#createView .cv-entry-judge, #linecreateView .cv-entry-judge{font-size:13px;font-weight:600;padding:8px 12px;border-radius:8px;background:#1e1e3a;margin-bottom:10px;}
+#createView .cv-entry-judge.new, #linecreateView .cv-entry-judge.new{color:#86efac;border-left:3px solid #34d399;}
+#createView .cv-entry-judge.deriv, #linecreateView .cv-entry-judge.deriv{color:#c4b5fd;border-left:3px solid #8b5cf6;}
+#createView .cv-entry-feat, #linecreateView .cv-entry-feat{margin-top:4px;}
+#createView .cv-entry-feat-h, #linecreateView .cv-entry-feat-h{font-size:13px;color:#a0a0b8;margin-bottom:8px;font-weight:600;}
+#createView .cv-entry-feat-grid, #linecreateView .cv-entry-feat-grid{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+#createView .cv-feat-card, #linecreateView .cv-feat-card{flex:1;min-width:160px;background:#1a1a36;border:1px solid #2a2a4a;border-radius:10px;padding:10px;}
+#createView .cv-feat-t, #linecreateView .cv-feat-t{font-size:12px;color:#c4b5fd;font-weight:600;margin-bottom:6px;}
+#createView .cv-feat-img, #linecreateView .cv-feat-img{width:100%;height:120px;object-fit:contain;background:#0e0e1e;border-radius:8px;display:none;}
+#createView .cv-feat-img.show, #linecreateView .cv-feat-img.show{display:block;}
+#createView .cv-feat-meta, #linecreateView .cv-feat-meta{font-size:11px;color:#8a8aa8;margin-top:6px;line-height:1.5;}
 .cv-ai-side .tip{font-size:11px;color:#6b6b8c;line-height:1.8;margin-top:12px;}
 .cv-ai-side .tip b{color:#fcd34d;font-weight:600;}
 
@@ -3352,7 +3449,7 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
       出图数量固定 1 张（接口限制）。
    ⚠️ 失败不再回落本地（已经没有本地引擎了）—— 必须把原因直接写进状态行并 toast 出来，
       否则用户只会看到「点了没反应」。 */
-(function () {
+function createEngine(PREFIX, SKETCH) {
     'use strict';
 
     var LS_CLOUD = 'lushan_cv_ai_cloud_v1';
@@ -3398,7 +3495,7 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
 
     // ---------------------------------------------------------------- 小工具
 
-    function el(id) { return document.getElementById(id); }
+    function el(id) { return document.getElementById(PREFIX + id); }
 
     function toast(msg) {
         if (typeof window.showToast === 'function') { try { window.showToast(msg); return; } catch (e) { } }
@@ -3933,6 +4030,8 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         // 图生图模式（有底图）允许空描述：直接以底图为灵感生成一张相似的图
         var ar0 = activeRefs();
         var isImg = (cvMode === 'img') && !!ar0.a;
+        var featDriven = cvFeat.on;   // 特征驱动（特征提取页带入）：允许空描述，特征描述兜底提示词
+        if (!text && featDriven) text = '按源纹样结构特征生成新的纹样图';
         if (!isImg && !text) { toast('先写一句描述吧 —— 或者点「🎲 来点灵感」'); return; }
 
         var cfg = cloudGet();
@@ -3954,6 +4053,7 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         var t0 = new Date().getTime();
 
         var fp = isImg ? editPrompt(text) : patternPrompt(text);
+        if (featDriven && cvFeat.desc) fp += '。请延续源纹样的结构特征：' + cvFeat.desc;
         cloudCall(fp, curN).then(function (imgs) {
             setBusy(false);
             showImgs(imgs, pv.name);
@@ -4216,6 +4316,7 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         // 图生图 · 二创入口：绑定与初始化（只保留图生图一条线）
         if (el('cvSrcPick')) el('cvSrcPick').onclick = function () { cvPickSource(); };
         if (el('cvSrcClear')) el('cvSrcClear').onclick = function () { cvSetSource(null, null); };
+        if (el('cvFeatTagClear')) el('cvFeatTagClear').onclick = function () { cvClearFeatures(); };
         if (window.currentFingerprint) {
             var p0 = findPatternByFingerprint(window.currentFingerprint);
             var u0 = p0 ? ((Array.isArray(p0.imageUrls) && p0.imageUrls.length) ? p0.imageUrls[0] : p0.imageUrl) : '';
@@ -4231,11 +4332,15 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
 
     // ---------------------------------------------------------------- 图生图 · 二创入口（只保留图生图一条线）
     var cvSrcFp = null, cvSrcName = null;  // 源纹样指纹 + 名称
+    var cvFeat = { on: false, mode: 'ref', orig: '', sketchUrl: '', skelUrl: '', gridUrl: '', featUrl: '', desc: '' };  // 特征提取状态（v2）
 
     // 图生图 = 以源纹样为图案基准做当代化重构，按分层权属模型判定为「新创作」：独立确权，仅记录派生自源纹样
     function cvInitEntry() {
         var j = el('cvEntryJudge');
-        if (j) j.textContent = '判定：新创作（独立确权）· 生成后自动登记派生关系';
+        if (!j) return;
+        j.textContent = SKETCH
+            ? '判定：新创作（未提取特征）· 提取特征后按「衍生」登记（挂回谱系 · 不独立确权）'
+            : '判定：新创作（独立确权）· 生成后自动登记派生关系';
     }
 
     function cvSetSource(fp, name, imgUrl) {
@@ -4243,6 +4348,11 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
         cvSrcName = name || null;
         var n = el('cvSrcName');
         if (n) n.textContent = cvSrcName ? (cvSrcName + (cvSrcFp ? ' · ' + cvSrcFp.slice(0, 12) + '…' : '')) : '未指定（默认取当前溯源纹样）';
+
+        // 源纹样变化：作废已带入的结构特征
+        cvFeat.on = false; cvFeat.featUrl = ''; cvFeat.desc = ''; cvFeat.mode = 'ref';
+        cvFeat.skelUrl = ''; cvFeat.gridUrl = ''; cvFeat.orig = '';
+        var ftag = el('cvFeatTag'); if (ftag) ftag.style.display = 'none';
 
         // 未指定源纹样：清除底图、恢复文生图与模式切换
         if (!cvSrcFp) {
@@ -4266,14 +4376,50 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
                     updateModeLocked(false);
                     return;
                 }
-                refImgs.a = src;
-                var prev = el('cvAiRefAImg'); if (prev) { prev.src = src; prev.className = 'cv-ai-ref-img'; }
-                setCvMode('img');
+                cvFeat.orig = src;   // 保存原图 dataURL，供清除特征后恢复
+                // 已带入特征时底图应保持特征参考图，别被源图异步回填覆盖
+                if (!cvFeat.on) {
+                    refImgs.a = src;
+                    var prev = el('cvAiRefAImg'); if (prev) { prev.src = src; prev.className = 'cv-ai-ref-img'; }
+                    setCvMode('img');
+                }
                 refreshStatus();
             }, 1024);
         } else {
             updateModeLocked(false);
         }
+    }
+
+    // ---------- 外部特征接入（来自「特征提取」页）：带入骨架/构图特征驱动二次创作 ----------
+    function cvApplyExternalFeatures(f) {
+        if (!f || !f.featUrl) { toast('没有可用的特征'); return false; }
+        cvFeat.on = true; cvFeat.mode = 'ref';
+        cvFeat.featUrl = f.featUrl; cvFeat.desc = f.desc || '';
+        cvFeat.skelUrl = f.skelUrl || ''; cvFeat.gridUrl = f.gridUrl || '';
+        var tag = el('cvFeatTag'), tn = el('cvFeatTagName');
+        if (tn) tn.textContent = f.desc || '骨架 + 构图特征';
+        if (tag) tag.style.display = '';
+        refImgs.a = f.featUrl;
+        var prev = el('cvAiRefAImg');
+        if (prev) { prev.src = f.featUrl; prev.className = 'cv-ai-ref-img'; }
+        setCvMode('img');
+        var j = el('cvEntryJudge');
+        if (j) j.textContent = '判定：衍生（形式二创 · 特征驱动 · 挂回谱系 · 不独立确权）· 生成后自动登记派生关系';
+        return true;
+    }
+
+    function cvClearFeatures() {
+        cvFeat.on = false; cvFeat.featUrl = ''; cvFeat.desc = ''; cvFeat.mode = 'ref';
+        cvFeat.skelUrl = ''; cvFeat.gridUrl = '';
+        var tag = el('cvFeatTag'); if (tag) tag.style.display = 'none';
+        if (cvFeat.orig) {
+            refImgs.a = cvFeat.orig;
+            var prev = el('cvAiRefAImg');
+            if (prev) { prev.src = cvFeat.orig; prev.className = 'cv-ai-ref-img'; }
+            setCvMode('img');
+        }
+        cvInitEntry();
+        toast('已清除带入的结构特征');
     }
 
     function findPatternByFingerprint(fp) {
@@ -4334,17 +4480,18 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
     function cvRegisterDerivation(derivedFp, judgeBasis) {
         if (!cvSrcFp) { toast('未指定源纹样，跳过派生登记'); return Promise.resolve(null); }
         if (!window.CHAIN_CONFIG || !CHAIN_CONFIG.enabled) { toast('链服务未启用，跳过派生登记'); return Promise.resolve(null); }
+        var isDeriv = cvFeat.on;   // 特征驱动二创 = 形式二创 = 衍生（挂回谱系，不独立确权）
         var body = {
             source_fingerprint: cvSrcFp,
             derived_fingerprint: derivedFp,
-            relation_type: 'new_creation',
-            judge_basis: judgeBasis || '创作台·图生图二创'
+            relation_type: isDeriv ? 'derivative' : 'new_creation',
+            judge_basis: judgeBasis || (isDeriv ? '线条二创·特征驱动（衍生）' : '创作台·图生图二创')
         };
         return fetch(CHAIN_CONFIG.proxyUrl + '/api/derivations', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
         }).then(function (r) { return r.json().catch(function(){return {};}); }).then(function (j) {
             if (j && (j.id || j.ok)) {
-                toast('已登记「新创作」派生关系：' + cvSrcName + ' → 新纹样');
+                toast('已登记「' + (isDeriv ? '衍生' : '新创作') + '」派生关系：' + cvSrcName + ' → 新纹样');
                 var q = el('cvEntryQuery');
                 if (q) { q.style.display = ''; q.onclick = function () { if (typeof initDerivationUI === 'function') initDerivationUI(cvSrcFp, cvSrcName); }; }
                 return j;
@@ -4376,9 +4523,551 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
             downloadAll: downloadAll,
             showImgs: showImgs,
             clear: clearImgs,
-            last: function () { return window.__cvAiLast || null; }
+            last: function () { return window.__cvAiLast || null; },
+            setSource: cvSetSource,
+            applyFeatures: cvApplyExternalFeatures,
+            clearFeatures: cvClearFeatures,
+            features: function () { return { on: cvFeat.on, desc: cvFeat.desc, hasFeat: !!cvFeat.featUrl }; }
         };
     }
+
+    init();
+}
+
+/* 实例化创作台：二次创作（纯图生图）。特征提取页为独立模块（FeatureLab），不共用本引擎。 */
+createEngine('', false);
+</script>
+
+<script>
+/* ===== 特征提取页（独立模块）：结构化特征提取 + 可视化展示 + 带去二次创作 =====
+   与创作引擎完全解耦：本页无提示词 / 无出图 / 无权属判定，只做特征提取与展示。 */
+(function () {
+    'use strict';
+    var SRC = { fp: null, name: null, imgUrl: null, dataUrl: null };
+    var FEAT = null;
+
+    function el(id) { return document.getElementById(id); }
+    function toast(msg) {
+        if (typeof window.showToast === 'function') { try { window.showToast(msg); return; } catch (e) { } }
+        if (window.console) console.log('[FeatureLab] ' + msg);
+    }
+    function loadImg(src) {
+        return new Promise(function (res, rej) {
+            var im = new Image();
+            im.crossOrigin = 'anonymous';
+            im.onload = function () { res(im); };
+            im.onerror = function () { rej(new Error('图片加载失败')); };
+            im.src = src;
+        });
+    }
+    function urlToDataUrl(url) {
+        if (!url) return Promise.reject(new Error('无图地址'));
+        if (String(url).indexOf('data:') === 0) return Promise.resolve(url);
+        return fetch(url).then(function (r) {
+            if (!r.ok) throw new Error('读取图片失败：' + r.status);
+            return r.blob();
+        }).then(function (b) {
+            return new Promise(function (res, rej) {
+                var fr = new FileReader();
+                fr.onload = function () { res(fr.result); };
+                fr.onerror = function () { rej(new Error('读取图片失败')); };
+                fr.readAsDataURL(b);
+            });
+        });
+    }
+    function grayCanvas(im, maxSide) {
+        var s = Math.min(1, maxSide / Math.max(im.width, im.height));
+        var w = Math.max(8, Math.round(im.width * s)), h = Math.max(8, Math.round(im.height * s));
+        var c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(im, 0, 0, w, h);
+        return c;
+    }
+
+    // ---- 特征管线：SOBEL 边缘 -> 二值线稿 -> Zhang-Suen 骨架 -> 8x8 构图热力 -> 参数 ----
+    function edgeBin(imgSrc) {
+        return loadImg(imgSrc).then(function (im) {
+            var c = grayCanvas(im, 512);
+            var w = c.width, h = c.height, n = w * h;
+            var d = c.getContext('2d').getImageData(0, 0, w, h).data;
+            var gray = new Float64Array(n), mag = new Float64Array(n);
+            var i, x, y, idx;
+            for (i = 0; i < n; i++) gray[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+            for (y = 1; y < h - 1; y++) {
+                for (x = 1; x < w - 1; x++) {
+                    idx = y * w + x;
+                    var gx = -gray[idx - w - 1] - 2 * gray[idx - 1] - gray[idx + w - 1]
+                             + gray[idx - w + 1] + 2 * gray[idx + 1] + gray[idx + w + 1];
+                    var gy = -gray[idx - w - 1] - 2 * gray[idx - w] - gray[idx - w + 1]
+                             + gray[idx + w - 1] + 2 * gray[idx + w] + gray[idx + w + 1];
+                    mag[idx] = Math.sqrt(gx * gx + gy * gy);
+                }
+            }
+            var arr = Array.prototype.slice.call(mag).sort(function (a, b) { return a - b; });
+            var thr = arr[Math.floor(arr.length * 0.75)] || 0;
+            var bin = new Uint8Array(n);
+            for (i = 0; i < n; i++) bin[i] = (mag[i] >= thr && mag[i] > 0) ? 1 : 0;
+            return { gray: gray, mag: mag, bin: bin, w: w, h: h };
+        });
+    }
+    function binUrl(bin, w, h) {
+        var c = document.createElement('canvas'); c.width = w; c.height = h;
+        var g = c.getContext('2d'), od = g.createImageData(w, h);
+        for (var i = 0; i < w * h; i++) {
+            var v = bin[i] ? 0 : 255;
+            od.data[i * 4] = od.data[i * 4 + 1] = od.data[i * 4 + 2] = v;
+            od.data[i * 4 + 3] = 255;
+        }
+        g.putImageData(od, 0, 0);
+        return c.toDataURL('image/png');
+    }
+    function thin(bin, w, h) {
+        var img = new Uint8Array(bin), changed = true, guard = 0;
+        while (changed && guard < 30) {
+            changed = false; guard++;
+            for (var step = 0; step < 2; step++) {
+                var mark = [];
+                for (var y = 1; y < h - 1; y++) {
+                    for (var x = 1; x < w - 1; x++) {
+                        var i = y * w + x;
+                        if (!img[i]) continue;
+                        var p = [img[i - w - 1], img[i - w], img[i - w + 1], img[i + 1],
+                                 img[i + w + 1], img[i + w], img[i + w - 1], img[i - 1]];
+                        var B = 0, A = 0, k;
+                        for (k = 0; k < 8; k++) B += p[k];
+                        if (B < 2 || B > 6) continue;
+                        for (k = 0; k < 8; k++) { if (p[k] === 0 && p[(k + 1) % 8] === 1) A++; }
+                        if (A !== 1) continue;
+                        if (step === 0) { if (p[1] && p[3] && p[5]) continue; if (p[3] && p[5] && p[7]) continue; }
+                        else { if (p[1] && p[3] && p[7]) continue; if (p[1] && p[5] && p[7]) continue; }
+                        mark.push(i);
+                    }
+                }
+                for (var m = 0; m < mark.length; m++) { img[mark[m]] = 0; changed = true; }
+            }
+        }
+        return img;
+    }
+    function gridHeat(mag, w, h) {
+        var G = 8, cell = new Float64Array(G * G), max = 0, i;
+        for (var y = 0; y < h; y++) {
+            for (var x = 0; x < w; x++) {
+                cell[Math.floor(y * G / h) * G + Math.floor(x * G / w)] += mag[y * w + x];
+            }
+        }
+        for (i = 0; i < G * G; i++) {
+            cell[i] /= (w / G) * (h / G);
+            if (cell[i] > max) max = cell[i];
+        }
+        var c = document.createElement('canvas'); c.width = 96; c.height = 96;
+        var g = c.getContext('2d'), s = 96 / G;
+        g.fillStyle = '#ffffff'; g.fillRect(0, 0, 96, 96);
+        for (var gy = 0; gy < G; gy++) {
+            for (var gx = 0; gx < G; gx++) {
+                var v = cell[gy * G + gx] / (max || 1);
+                g.fillStyle = 'rgba(40,80,160,' + (0.06 + 0.86 * v).toFixed(3) + ')';
+                g.fillRect(gx * s, gy * s, Math.ceil(s), Math.ceil(s));
+            }
+        }
+        return { canvas: c, cells: cell, max: max };
+    }
+    function compDesc(cells, max) {
+        var G = 8, cx, cy, center = 0, border = 0, mean = 0, lr = 0;
+        for (cy = 0; cy < G; cy++) {
+            for (cx = 0; cx < G; cx++) {
+                var v = cells[cy * G + cx] / (max || 1);
+                mean += v;
+                if (cx >= 2 && cx <= 5 && cy >= 2 && cy <= 5) center += v; else border += v;
+                if (cx < G / 2) lr += Math.abs(v - cells[cy * G + (G - 1 - cx)] / (max || 1));
+            }
+        }
+        center /= 16; border /= 48; mean /= G * G;
+        if (mean < 0.02) return '构图均匀（低密度）';
+        if (center > border * 1.5) return '中心团花式构图';
+        if (lr / (G * G / 2) < mean * 0.25) return '左右对称构图';
+        return '四方连续 / 散点式构图';
+    }
+    function symmetry(gray, w, h) {
+        var s = 0;
+        for (var y = 0; y < h; y++) {
+            for (var x = 0; x < w; x++) s += Math.abs(gray[y * w + x] - gray[y * w + (w - 1 - x)]);
+        }
+        return Math.max(0, 1 - s / (w * h * 255));
+    }
+    // ---- 主色板：k-means 聚类 + 面积占比 + 近似中文色名 ----
+    function colorName(r, g, b) {
+        var mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+        var l = (mx + mn) / 2 / 255, s = mx ? (mx - mn) / mx : 0;
+        if (l > 0.93 && s < 0.10) return '米白';
+        if (l < 0.12) return '墨黑';
+        if (s < 0.10) return l > 0.90 ? '米白' : (l > 0.72 ? '浅灰' : (l > 0.52 ? '中灰' : (l > 0.28 ? '深灰' : '墨黑')));
+        var h;
+        if (mx === r) h = (60 * ((g - b) / (mx - mn)) + 360) % 360;
+        else if (mx === g) h = 60 * ((b - r) / (mx - mn)) + 120;
+        else h = 60 * ((r - g) / (mx - mn)) + 240;
+        if (h < 15 || h >= 345) return l < 0.35 ? '暗红' : '朱红';
+        if (h < 40) return l < 0.40 ? '赭石' : '橙黄';
+        if (h < 65) return l < 0.45 ? '土黄' : '金黄';
+        if (h < 90) return '黄绿';
+        if (h < 160) return l < 0.45 ? '墨绿' : '草绿';
+        if (h < 200) return l < 0.40 ? '青绿' : '湖蓝';
+        if (h < 250) return l < 0.35 ? '藏蓝' : '靛蓝';
+        if (h < 290) return l < 0.40 ? '紫黑' : '紫罗兰';
+        return l < 0.40 ? '酒红' : '绯红';
+    }
+    function hex2(r, g, b) {
+        function h(v) { v = Math.max(0, Math.min(255, Math.round(v))).toString(16); return v.length < 2 ? '0' + v : v; }
+        return '#' + h(r) + h(g) + h(b);
+    }
+    function paletteOf(imgSrc) {
+        return loadImg(imgSrc).then(function (im) {
+            var S = 96;
+            var c = document.createElement('canvas'); c.width = S; c.height = S;
+            var g = c.getContext('2d'); g.drawImage(im, 0, 0, S, S);
+            var px = g.getImageData(0, 0, S, S).data;
+            var pts = [], i, j;
+            for (i = 0; i < S * S; i++) {
+                if (px[i * 4 + 3] < 128) continue;
+                pts.push([px[i * 4], px[i * 4 + 1], px[i * 4 + 2]]);
+            }
+            if (pts.length < 8) return [];
+            var K = 6, seed = 20261019;
+            function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+            function d2(a, b) { var dr = a[0] - b[0], dg = a[1] - b[1], db = a[2] - b[2]; return dr * dr + dg * dg + db * db; }
+            var cent = [pts[Math.floor(rnd() * pts.length)].slice()];
+            while (cent.length < K) {
+                var best = null, bestD = -1;
+                for (i = 0; i < pts.length; i += 2) {
+                    var md = 1e18;
+                    for (j = 0; j < cent.length; j++) { var dd = d2(pts[i], cent[j]); if (dd < md) md = dd; }
+                    if (md > bestD) { bestD = md; best = pts[i]; }
+                }
+                cent.push(best.slice());
+            }
+            var assign = new Int32Array(pts.length);
+            for (var it = 0; it < 8; it++) {
+                var sum = [], cnt = [];
+                for (j = 0; j < K; j++) { sum.push([0, 0, 0]); cnt.push(0); }
+                for (i = 0; i < pts.length; i++) {
+                    var bi = 0, bd = 1e18;
+                    for (j = 0; j < K; j++) { var dd2 = d2(pts[i], cent[j]); if (dd2 < bd) { bd = dd2; bi = j; } }
+                    assign[i] = bi;
+                    sum[bi][0] += pts[i][0]; sum[bi][1] += pts[i][1]; sum[bi][2] += pts[i][2]; cnt[bi]++;
+                }
+                for (j = 0; j < K; j++) if (cnt[j]) cent[j] = [sum[j][0] / cnt[j], sum[j][1] / cnt[j], sum[j][2] / cnt[j]];
+            }
+            var cnt2 = [];
+            for (j = 0; j < K; j++) cnt2.push(0);
+            for (i = 0; i < pts.length; i++) cnt2[assign[i]]++;
+            var out = [];
+            for (j = 0; j < K; j++) {
+                if (!cnt2[j]) continue;
+                var rr = cent[j][0], gg = cent[j][1], bb = cent[j][2];
+                out.push({ hex: hex2(rr, gg, bb), share: cnt2[j] / pts.length, name: colorName(rr, gg, bb),
+                           rgb: [Math.round(rr), Math.round(gg), Math.round(bb)] });
+            }
+            out.sort(function (a, b) { return b.share - a.share; });
+            var merged = [];
+            for (i = 0; i < out.length; i++) {
+                var dup = false;
+                for (j = 0; j < merged.length; j++) {
+                    if (d2(out[i].rgb, merged[j].rgb) < 30 * 30) { merged[j].share += out[i].share; dup = true; break; }
+                }
+                if (!dup) merged.push(out[i]);
+            }
+            merged.sort(function (a, b) { return b.share - a.share; });
+            // 中性灰同名项合并（灰阶名本身已含明度，不需要两个「中灰」）
+            var seenN = {}, fixed = [];
+            for (i = 0; i < merged.length; i++) {
+                var nm0 = merged[i].name;
+                var isNeutral = (nm0 === '米白' || nm0 === '墨黑' || nm0 === '浅灰' || nm0 === '中灰' || nm0 === '深灰');
+                if (isNeutral && seenN[nm0]) { seenN[nm0].share += merged[i].share; continue; }
+                if (isNeutral) seenN[nm0] = merged[i];
+                fixed.push(merged[i]);
+            }
+            merged = fixed;
+            // 同名色按明度加「深/中/浅」前缀，避免面板上出现两个「墨绿」
+            var groups = {};
+            for (i = 0; i < merged.length; i++) {
+                if (!groups[merged[i].name]) groups[merged[i].name] = [];
+                groups[merged[i].name].push(merged[i]);
+            }
+            for (var nm in groups) {
+                if (!groups.hasOwnProperty(nm)) continue;
+                var arr = groups[nm];
+                if (arr.length < 2) continue;
+                if (nm === '米白' || nm === '墨黑' || nm === '浅灰' || nm === '中灰' || nm === '深灰') continue;
+                arr.sort(function (a, b) { return (a.rgb[0] + a.rgb[1] + a.rgb[2]) - (b.rgb[0] + b.rgb[1] + b.rgb[2]); });
+                var tags = arr.length === 2 ? ['深', '浅'] : ['深', '中', '浅'];
+                for (i = 0; i < arr.length; i++) arr[i].name = (tags[i] || '') + nm;
+            }
+            return merged.slice(0, 5);
+        });
+    }
+
+    // ---- 旋转对称阶数：绕质心旋转 2π/n 求骨架 IoU，取最优 n ----
+    function rotOrder(bin, w, h) {
+        var S = 128;
+        var src = document.createElement('canvas'); src.width = S; src.height = S;
+        var sg = src.getContext('2d');
+        sg.fillStyle = '#ffffff'; sg.fillRect(0, 0, S, S);
+        var t = document.createElement('canvas'); t.width = w; t.height = h;
+        var tg = t.getContext('2d'), od = tg.createImageData(w, h);
+        for (var i = 0; i < w * h; i++) {
+            var v = bin[i] ? 0 : 255;
+            od.data[i * 4] = od.data[i * 4 + 1] = od.data[i * 4 + 2] = v;
+            od.data[i * 4 + 3] = 255;
+        }
+        tg.putImageData(od, 0, 0);
+        sg.drawImage(t, 0, 0, S, S);
+        var base = sg.getImageData(0, 0, S, S).data;
+        var sx = 0, sy = 0, cnt = 0, x, y;
+        for (y = 0; y < S; y++) {
+            for (x = 0; x < S; x++) { if (base[(y * S + x) * 4] < 128) { sx += x; sy += y; cnt++; } }
+        }
+        if (!cnt) return { order: 1, score: 0 };
+        var cx = sx / cnt, cy = sy / cnt;
+        function iou(angle) {
+            var c2 = document.createElement('canvas'); c2.width = S; c2.height = S;
+            var g2 = c2.getContext('2d');
+            g2.fillStyle = '#ffffff'; g2.fillRect(0, 0, S, S);
+            g2.save(); g2.translate(cx, cy); g2.rotate(angle); g2.drawImage(src, -cx, -cy); g2.restore();
+            var d2 = g2.getImageData(0, 0, S, S).data;
+            var inter = 0, uni = 0;
+            for (var k = 0; k < S * S; k++) {
+                var a = base[k * 4] < 128, b = d2[k * 4] < 128;
+                if (a && b) inter++;
+                if (a || b) uni++;
+            }
+            return uni ? inter / uni : 0;
+        }
+        var bestN = 1, bestScore = 0;
+        for (var n = 2; n <= 12; n++) {
+            var sc = iou(Math.PI * 2 / n);
+            if (sc > bestScore) { bestScore = sc; bestN = n; }
+        }
+        return bestScore >= 0.55 ? { order: bestN, score: bestScore } : { order: 1, score: bestScore };
+    }
+
+    // ---- 重复周期：行列投影自相关找周期（四方连续判定） ----
+    function repeatPeriod(mag, w, h) {
+        var S = 128, col = new Float64Array(S), row = new Float64Array(S);
+        for (var y = 0; y < h; y++) {
+            for (var x = 0; x < w; x++) {
+                col[Math.floor(x * S / w)] += mag[y * w + x];
+                row[Math.floor(y * S / h)] += mag[y * w + x];
+            }
+        }
+        function bestLag(arr) {
+            var n = arr.length, i, mean = 0;
+            for (i = 0; i < n; i++) mean += arr[i];
+            mean /= n;
+            var a = new Float64Array(n), norm0 = 0;
+            for (i = 0; i < n; i++) { a[i] = arr[i] - mean; norm0 += a[i] * a[i]; }
+            if (!norm0) return { lag: 0, corr: 0 };
+            var best = 0, bl = 0;
+            for (var lag = 16; lag <= Math.floor(n / 2); lag++) {
+                var s = 0, n1 = 0, n2 = 0;
+                for (i = 0; i + lag < n; i++) {
+                    s += a[i] * a[i + lag];
+                    n1 += a[i] * a[i];
+                    n2 += a[i + lag] * a[i + lag];
+                }
+                var corr = s / Math.sqrt(n1 * n2 || 1);
+                if (corr > best) { best = corr; bl = lag; }
+            }
+            return { lag: bl, corr: best };
+        }
+        var bx = bestLag(col), by = bestLag(row);
+        return { px: bx.corr >= 0.5 ? bx.lag : 0, py: by.corr >= 0.5 ? by.lag : 0, cx: bx.corr, cy: by.corr };
+    }
+
+    function renderFeat(skel, heatCanvas, w, h) {
+        var t = document.createElement('canvas'); t.width = w; t.height = h;
+        var tg = t.getContext('2d'), od = tg.createImageData(w, h);
+        for (var i = 0; i < w * h; i++) {
+            od.data[i * 4] = 24; od.data[i * 4 + 1] = 24; od.data[i * 4 + 2] = 30;
+            od.data[i * 4 + 3] = skel[i] ? 255 : 0;
+        }
+        tg.putImageData(od, 0, 0);
+        var c = document.createElement('canvas'); c.width = w; c.height = h;
+        var g = c.getContext('2d');
+        g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h);
+        g.globalAlpha = 0.4; g.drawImage(heatCanvas, 0, 0, w, h); g.globalAlpha = 1;
+        g.drawImage(t, 0, 0);
+        return c.toDataURL('image/png');
+    }
+    function extractFeatures(imgSrc) {
+        return Promise.all([edgeBin(imgSrc), paletteOf(imgSrc)]).then(function (res) {
+            var r = res[0], pal = res[1] || [];
+            var skel = thin(r.bin, r.w, r.h);
+            var heat = gridHeat(r.mag, r.w, r.h);
+            var sym = symmetry(r.gray, r.w, r.h);
+            var rot = rotOrder(r.bin, r.w, r.h);
+            var rp = repeatPeriod(r.mag, r.w, r.h);
+            var skelN = 0, i;
+            for (i = 0; i < skel.length; i++) skelN += skel[i];
+            var skelRatio = skelN / (r.w * r.h);
+            var comp = compDesc(heat.cells, heat.max);
+            var repTxt = '';
+            if (rp.px) repTxt += '横向周期约 1/' + Math.round(128 / rp.px) + ' 宽';
+            if (rp.py) repTxt += (repTxt ? '、' : '') + '纵向周期约 1/' + Math.round(128 / rp.py) + ' 高';
+            var parts = ['构图' + comp, '左右对称度约' + Math.round(sym * 100) + '%',
+                         '骨架密度' + (skelRatio * 100).toFixed(1) + '%'];
+            if (pal.length) {
+                parts.push('主色 ' + pal.slice(0, 3).map(function (p) {
+                    return p.name + p.hex + '约占' + Math.round(p.share * 100) + '%';
+                }).join('、'));
+            }
+            if (rot.order > 1) parts.push(rot.order + '重旋转对称');
+            parts.push(repTxt ? '四方连续（' + repTxt + '）' : '无重复周期');
+            return {
+                sketchUrl: binUrl(r.bin, r.w, r.h),
+                skelUrl: binUrl(skel, r.w, r.h),
+                gridUrl: heat.canvas.toDataURL('image/png'),
+                featUrl: renderFeat(skel, heat.canvas, r.w, r.h),
+                params: {
+                    skeletonRatio: skelRatio, symmetry: sym, comp: comp,
+                    palette: pal, rotOrder: rot.order, rotScore: rot.score,
+                    repeat: { px: rp.px, py: rp.py, cx: rp.cx, cy: rp.cy }
+                },
+                desc: parts.join('，')
+            };
+        });
+    }
+
+    // ---- 源纹样 ----
+    function setSource(fp, name, imgUrl) {
+        SRC.fp = fp || null; SRC.name = name || null; SRC.imgUrl = imgUrl || null; SRC.dataUrl = null;
+        var n = el('flSrcName');
+        if (n) n.textContent = name ? (name + (fp ? ' · ' + String(fp).slice(0, 12) + '…' : '')) : '未指定（默认取当前溯源纹样）';
+        var panel = el('flPanel'); if (panel) panel.style.display = 'none';
+        var st = el('flStatus'); if (st) st.textContent = '未提取';
+        FEAT = null;
+        if (!imgUrl) return Promise.resolve(null);
+        return urlToDataUrl(imgUrl).then(function (du) { SRC.dataUrl = du; return du; })
+            .catch(function (e) { toast('读取源纹样失败：' + ((e && e.message) || e)); return null; });
+    }
+
+    function drawTo(id, url) {
+        var c = el(id); if (!c) return;
+        loadImg(url).then(function (im) {
+            var g = c.getContext('2d');
+            g.clearRect(0, 0, c.width, c.height);
+            g.drawImage(im, 0, 0, c.width, c.height);
+        }).catch(function () { });
+    }
+
+    function extract() {
+        if (!SRC.dataUrl && !SRC.imgUrl) { toast('请先选择源纹样'); return Promise.reject(new Error('未选择源纹样')); }
+        toast('提取特征中…（边缘 + 骨架细化 + 构图分析）');
+        var p = SRC.dataUrl ? Promise.resolve(SRC.dataUrl)
+            : urlToDataUrl(SRC.imgUrl).then(function (du) { SRC.dataUrl = du; return du; });
+        return p.then(extractFeatures).then(function (f) {
+            FEAT = f;
+            var panel = el('flPanel'); if (panel) panel.style.display = '';
+            drawTo('flSkel', f.skelUrl); drawTo('flGrid', f.gridUrl); drawTo('flFeat', f.featUrl);
+            var st = el('flStatus'); if (st) st.textContent = '已提取 ✓';
+            var ps = el('flParams');
+            if (ps) {
+                var pal = f.params.palette || [];
+                var sw = pal.map(function (p) {
+                    return '<span class="fl-sw"><i style="background:' + p.hex + '"></i>'
+                        + p.name + ' ' + Math.round(p.share * 100) + '%</span>';
+                }).join('');
+                var rep = f.params.repeat || {};
+                var repTxt2 = rep.px ? ('横向 1/' + Math.round(128 / rep.px) + ' 宽' + (rep.py ? '、纵向 1/' + Math.round(128 / rep.py) + ' 高' : ''))
+                                     : (rep.py ? '纵向 1/' + Math.round(128 / rep.py) + ' 高' : '无（单体构图）');
+                ps.innerHTML = '<span class="fl-kv">骨架密度 <b>' + (f.params.skeletonRatio * 100).toFixed(1) + '%</b></span>'
+                    + '<span class="fl-kv">左右对称度 <b>' + Math.round(f.params.symmetry * 100) + '%</b></span>'
+                    + '<span class="fl-kv">旋转对称 <b>' + (f.params.rotOrder > 1 ? f.params.rotOrder + ' 重' : '无') + '</b></span>'
+                    + '<span class="fl-kv">重复周期 <b>' + repTxt2 + '</b></span>'
+                    + '<span class="fl-kv">构图判定 <b>' + f.params.comp + '</b></span>'
+                    + (sw ? '<div class="fl-swatches"><span class="fl-swlbl">主色板</span>' + sw + '</div>' : '');
+            }
+            toast('特征已提取：可点「用此特征去二次创作」');
+            return f;
+        }).catch(function (e) {
+            toast('特征提取失败：' + ((e && e.message) || e));
+            throw e;
+        });
+    }
+
+    function toCreate() {
+        if (!FEAT) { toast('请先提取特征'); return; }
+        if (!window.CVAI || typeof window.CVAI.applyFeatures !== 'function') { toast('创作台未就绪'); return; }
+        // 先把源纹样一并带过去（派生登记需要），再套特征
+        if (window.CVAI.setSource) window.CVAI.setSource(SRC.fp, SRC.name, SRC.imgUrl);
+        var applied = window.CVAI.applyFeatures(FEAT);
+        if (applied === false) { toast('特征带入失败'); return; }
+        if (typeof window.setTopView === 'function') window.setTopView('create');
+        toast('已带特征进入二次创作：底图换成特征参考图，生成后按「衍生」登记');
+    }
+
+    // ---- 源纹样选择器（轻量，不依赖创作台） ----
+    function renderGrid() {
+        var box = el('flPickerGrid'); if (!box) return;
+        box.innerHTML = '';
+        var list = (window.IMPORTED_PATTERNS || []).filter(function (p) {
+            return p && (p.imageUrl || (p.imageUrls && p.imageUrls.length));
+        });
+        if (!list.length) { box.innerHTML = '<div style="opacity:.6;padding:8px;">纹样库还没有数据</div>'; return; }
+        list.forEach(function (p) {
+            var url = p.imageUrl || p.imageUrls[0];
+            var d = document.createElement('div'); d.className = 'fl-pick-item';
+            var im = document.createElement('img'); im.src = url; im.alt = p.name || '';
+            var sp = document.createElement('span'); sp.textContent = p.name || p.code || '纹样';
+            d.appendChild(im); d.appendChild(sp);
+            d.onclick = function () {
+                closePicker();
+                setSource(p.fingerprint || ('lib_' + (p.code || p.name || 'x')), p.name || p.code || '纹样', url);
+            };
+            box.appendChild(d);
+        });
+    }
+    function openPicker() { renderGrid(); var p = el('flPicker'); if (p) p.style.display = 'flex'; }
+    function closePicker() { var p = el('flPicker'); if (p) p.style.display = 'none'; }
+
+    function tryDefaultSource() {
+        if (SRC.fp) return true;
+        var fp = window.currentFingerprint;
+        var list = window.IMPORTED_PATTERNS || [];
+        if (!fp || !list.length) return false;
+        for (var i = 0; i < list.length; i++) {
+            var p = list[i];
+            if (p && p.fingerprint === fp) {
+                var url = p.imageUrl || (p.imageUrls && p.imageUrls[0]);
+                if (url) { setSource(fp, p.name || p.code || '纹样', url); return true; }
+            }
+        }
+        return false;
+    }
+
+    function init() {
+        var b = el('flExtractBtn'); if (b) b.onclick = function () { extract().catch(function () { }); };
+        var pk = el('flSrcPick'); if (pk) pk.onclick = openPicker;
+        var cl = el('flSrcClear'); if (cl) cl.onclick = function () { setSource(null, null, null); };
+        var pc = el('flPickerClose'); if (pc) pc.onclick = closePicker;
+        var tc = el('flToCreate'); if (tc) tc.onclick = toCreate;
+        var layer = el('flPicker');
+        if (layer) layer.onclick = function (ev) { if (ev.target === layer) closePicker(); };
+        // IMPORTED_PATTERNS 由主应用异步装载：轮询几次尝试带出当前溯源纹样
+        var tries = 0, timer = setInterval(function () {
+            tries++;
+            if (tryDefaultSource() || tries > 12) clearInterval(timer);
+        }, 500);
+        tryDefaultSource();
+    }
+
+    window.FeatureLab = {
+        version: '3.0',
+        setSource: setSource,
+        extract: extract,
+        extractFeatures: extractFeatures,
+        toCreate: toCreate,
+        state: function () { return { hasSource: !!SRC.fp, hasFeat: !!FEAT, desc: FEAT ? FEAT.desc : '', params: FEAT ? FEAT.params : null }; }
+    };
+    // 兼容旧验证入口
+    window.CVSketch = { version: '3.0', extractFeatures: extractFeatures, setSource: setSource, state: window.FeatureLab.state };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
@@ -4424,7 +5113,7 @@ function libImgUrl(u) {
 }
 
 /* ---------- 顶层视图开关（资源库 / 纹样溯源 / 二次创作） ---------- */
-var TOP_VIEWS = { library: 'libraryView', create: 'createView' };
+var TOP_VIEWS = { library: 'libraryView', create: 'createView', linecreate: 'linecreateView' };
 
 function tvSyncTop(el) {
     var tn = document.querySelector('.top-nav');
