@@ -652,7 +652,6 @@
 .cv-work-b b{display:block;font-size:14px;font-weight:600;color:#fff;}
 .cv-work-b span{display:block;font-size:11.5px;color:#6b6b8c;margin-top:6px;}
 
-}
 /* 窄屏：收起品牌文字，把顶栏空间让给 3 个页签（此前 2 页签时够用，加到 4 个就溢出 40px）；
    仍保留 overflow-x 兜底，极端窄屏可横向滑动 */
 @media (max-width:600px){
@@ -3354,6 +3353,9 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
 /* 工作台撤掉后，幽灵按钮的样式必须在本块自带 */
 .cv-tool.ghost{border-style:dashed;color:#7d7da0;}
 .cv-tool.ghost:hover{color:#c4b5fd;border-color:#a78bfa;}
+/* 工作台撤掉时连同 .cv-pane-off 一起丢了：JS 一直在给它挂 class，
+   但没有任何样式定义 → 空态与出图结果会同时显示。必须在本块自带一份。 */
+.cv-pane-off{display:none !important;}
 
 /* ---------- 配置栏 ---------- */
 .cv-ai-chan-line{font-size:12px;color:#a0a0b8;background:#171728;border:1px solid #2f2f4a;
@@ -3412,15 +3414,24 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
       padding:14px 16px;font-size:14px;color:#e2e6ff;border-bottom:1px solid #2a2a40;
       font-family:"Noto Serif SC","Songti SC",serif;letter-spacing:.04em;}
     .cv-lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:12px;
+      grid-auto-rows:132px;align-content:start;
       padding:16px;overflow:auto;}
     .cv-lib-cell{position:relative;cursor:pointer;border:1px solid #2a2a40;border-radius:12px;
-      overflow:hidden;background:#0f0f20;transition:.16s;}
+      overflow:hidden;background:#0f0f20;transition:.16s;display:flex;flex-direction:column;}
     .cv-lib-cell:hover{border-color:#a78bfa;transform:translateY(-2px);}
     .cv-lib-cell.is-off{opacity:.4;cursor:default;}
-    .cv-lib-cell img{display:block;width:100%;height:104px;object-fit:cover;background:#0f0f20;}
-    .cv-lib-cell span{display:block;padding:6px 8px;font-size:11px;color:#a0a0b8;
+    .cv-lib-cell img{display:block;width:100%;height:104px;flex:0 0 104px;object-fit:cover;background:#0f0f20;}
+    .cv-lib-cell span{display:flex;align-items:center;height:28px;padding:0 8px;font-size:11px;color:#a0a0b8;
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    @media (max-width:560px){ .cv-lib-grid{grid-template-columns:repeat(auto-fill,minmax(84px,1fr));} }
+    .cv-lib-picker-h .cv-tool{flex:0 0 auto;white-space:nowrap;}
+    @media (max-width:560px){
+      .cv-lib-picker{padding:10px;}
+      .cv-lib-picker-in{width:100%;max-height:92vh;border-radius:14px;}
+      .cv-lib-picker-h{align-items:center;padding:12px 12px 12px 14px;font-size:13px;line-height:1.35;}
+      .cv-lib-grid{grid-template-columns:repeat(2,1fr);gap:10px;grid-auto-rows:128px;padding:12px;}
+      .cv-lib-cell img{height:100px;flex:0 0 100px;}
+      .cv-lib-cell span{height:26px;font-size:11.5px;}
+    }
 
 /* ---------- 响应式 ---------- */
 @media (max-width:900px){
@@ -3429,6 +3440,10 @@ button.cv-ai-gen[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed
   .cv-ai-tools .lbl{display:none;}
   button.cv-ai-gen{flex:1;}
   .cv-ai-main,.cv-ai-side{padding:13px;}
+}
+/* 手机端：出图数量固定 1 张，单张铺满卡片宽度（此前 1 张挤在 2 列网格里只有半宽） */
+@media (max-width:560px){
+  .cv-ai-cloud-imgs{grid-template-columns:1fr;}
 }
 </style>
 <script>
